@@ -1,0 +1,19 @@
+{
+    "name": "andromeda-os",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Andromeda OS MVP v0.1",
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "test": "npm test --workspaces",
+        "build": "npm run build --workspaces",
+        "dev": "npm run dev --workspaces"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "tsx": "^4.7.0",
+        "vitest": "^1.2.0"
+    }
+}

@@ -1,0 +1,14 @@
+import { Router } from "express";
+import { TaskController } from "../controllers/TaskController";
+import { InMemoryTaskRepository } from "../../infrastructure/repositories/InMemoryTaskRepository";
+
+const router = Router();
+const repository = new InMemoryTaskRepository();
+const controller = new TaskController(repository);
+
+router.post("/", (req, res) => controller.create(req, res));
+router.get("/", (req, res) => controller.list(req, res));
+router.get("/:id", (req, res) => controller.getById(req, res));
+router.post("/:id/execute", (req, res) => controller.execute(req, res));
+
+export default router;

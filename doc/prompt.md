@@ -2,7 +2,7 @@ Você deve implementar o MVP v0.1 do projeto Andromeda OS.
 
 A especificação completa está no arquivo:
 
-* doc/mvp01.md
+* doc/Andromeda_PRD_MVP01.md
 
 Leia esse documento inteiro antes de iniciar qualquer implementação.
 
