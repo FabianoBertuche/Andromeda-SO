@@ -38,6 +38,9 @@ export class ExecuteTask {
             const oldStatus4 = task.getStatus();
             if (result.success) {
                 task.setResult(result.data);
+                if (result.data?.audit) {
+                    task.setAuditParecer(result.data.audit);
+                }
                 this.eventBus.publish(new TaskResultAvailable(task.getId(), result.data));
                 task.transitionTo(TaskStatus.AUDITING);
                 await this.repository.save(task);

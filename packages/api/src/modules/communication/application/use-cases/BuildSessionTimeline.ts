@@ -41,7 +41,9 @@ export class BuildSessionTimeline {
                     taskId: task.getId(),
                     status: task.getStatus(),
                     input: task.getRawRequest(),
-                    modelId: meta.modelId
+                    modelId: meta.modelId,
+                    agentId: meta.targetAgentId || task.getResult()?.agent?.id,
+                    profileVersion: task.getResult()?.agent?.version,
                 }
             });
 
@@ -57,6 +59,7 @@ export class BuildSessionTimeline {
                         taskId: task.getId(),
                         status: task.getStatus(),
                         result,
+                        audit: task.getAuditParecer(),
                         executionTime: task.getUpdatedAt().getTime() - task.getCreatedAt().getTime()
                     }
                 });

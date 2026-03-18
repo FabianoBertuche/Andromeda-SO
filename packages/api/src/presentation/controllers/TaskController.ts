@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
-import { CreateTask, ExecuteTask, TaskRepository, ExecutionStrategyFactory, globalEventBus, ExecuteSkill } from "@andromeda/core";
-import { SkillExecutionStrategy } from "../../infrastructure/execution/SkillExecutionStrategy";
-import { LLMExecutionStrategy } from "../../infrastructure/execution/LLMExecutionStrategy";
-import { globalSkillRegistry } from "../routes/skillRoutes";
+import { CreateTask, TaskRepository } from "@andromeda/core";
+import { createDefaultExecuteTaskUseCase } from "../../infrastructure/execution/createDefaultExecuteTaskUseCase";
 import { globalAgentRegistry } from "../routes/agentRoutes";
 
 export class TaskController {
@@ -18,7 +16,7 @@ export class TaskController {
             const useCase = new CreateTask(this.repository);
             const task = await useCase.execute({
                 rawRequest: raw_request,
-                metadata: metadata || {}
+                metadata: metadata || {},
             });
 
             return res.status(201).json(task.toJSON());
@@ -28,10 +26,10 @@ export class TaskController {
         }
     }
 
-    async list(req: Request, res: Response) {
+    async list(_req: Request, res: Response) {
         try {
             const tasks = await this.repository.findAll();
-            return res.json(tasks.map((t) => t.toJSON()));
+            return res.json(tasks.map((task) => task.toJSON()));
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
         }
@@ -49,17 +47,8 @@ export class TaskController {
 
     async execute(req: Request, res: Response) {
         try {
-            const { id } = req.params;
-
-            const executeSkill = new ExecuteSkill();
-            const skillStrategy = new SkillExecutionStrategy(globalSkillRegistry, executeSkill);
-            const llmStrategy = new LLMExecutionStrategy(globalAgentRegistry);
-            const factory = new ExecutionStrategyFactory();
-            factory.register("skill", skillStrategy);
-            factory.register("llm", llmStrategy);
-
-            const useCase = new ExecuteTask(this.repository, factory, globalEventBus);
-            const task = await useCase.execute(id);
+            const useCase = createDefaultExecuteTaskUseCase(this.repository, globalAgentRegistry);
+            const task = await useCase.execute(req.params.id);
 
             return res.json(task.toJSON());
         } catch (error: any) {

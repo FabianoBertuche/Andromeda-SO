@@ -13,6 +13,22 @@ export interface GatewayTaskStatus {
         content?: string;
         model?: string;
         error?: string;
+        agent?: {
+            id: string;
+            name: string;
+            role: string;
+            version: string;
+        };
+        audit?: {
+            overallConformanceScore: number;
+            status: string;
+            violations: string[];
+        };
+    };
+    auditParecer?: {
+        overallConformanceScore: number;
+        status: string;
+        violations: string[];
     };
 }
 

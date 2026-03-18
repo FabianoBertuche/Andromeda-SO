@@ -223,3 +223,36 @@ GET /model-center/models 304 0.830 ms req_id=0be09adc-f723-4ae0-8be7-b163b0cc0d3
 GET /model-center/models 304 0.308 ms req_id=977a5ad9-3d8b-4d77-afe9-602be7a6ca9b
 GET /model-center/models 304 0.314 ms req_id=c14120ca-eaa4-4f5b-b546-d57a25ab390d
 GET /model-center/models 304 0.270 ms req_id=6a9d72d4-b387-4a11-bcb4-ad13b66a0a32
+GET /model-center/models 304 0.387 ms req_id=024ec058-798e-48e0-a281-318f043bba32
+🔌 WS Disconnected: Socket xcRr6WH9xlHj0r5gAAAR
+🔌 WS Connected: Socket lZLGKrLv_jYBVK9TAAAT (no session)
+🔌 Socket lZLGKrLv_jYBVK9TAAAT explicitly joined session session-demo-mvp03
+GET /model-center/models 304 0.388 ms req_id=827af24b-a8f9-4c14-99a0-8493a1e32727
+GET /model-center/models 304 0.486 ms req_id=5c677d93-152e-4067-a88a-f5e1351e407e
+GET /model-center/models 304 0.220 ms req_id=04283274-bedb-4758-a5be-c6e9a794e296
+🔌 WS Disconnected: Socket lZLGKrLv_jYBVK9TAAAT
+GET /model-center/models 304 0.548 ms req_id=a6126870-4ed0-4fbe-9f17-3f6a6297e398
+GET /model-center/models 304 0.430 ms req_id=a70f0dbd-2356-4cc2-8f19-d90e72523031
+GET /model-center/models 304 0.451 ms req_id=e580cdf8-409c-4221-952d-17b3bc7dc027
+GET /model-center/models 304 0.385 ms req_id=8dc9a995-5e94-4f9a-8b2d-e1558113e72c
+GET /model-center/models 304 0.522 ms req_id=faad2ed6-1b6c-4a10-a848-ca59cd78dc3e
+🔌 WS Connected: Socket ueziBKU7Ha56ZS_XAAAW (no session)
+🔌 Socket ueziBKU7Ha56ZS_XAAAW explicitly joined session session-demo-mvp03
+GET /model-center/models 304 0.243 ms req_id=41195550-8f3b-4d5a-962f-19c94fb94292
+GET /model-center/models 304 0.280 ms req_id=5be3f93b-9a54-4cf9-a7a9-6c33b3de683d
+GET /model-center/models 304 0.318 ms req_id=e9fdacb6-5787-46b8-88cb-fb79178b161b
+GET /model-center/models 304 0.220 ms req_id=21210dbc-f9ec-43e4-9d88-fc00ec629220
+GET /model-center/models 304 0.222 ms req_id=07be897f-ed88-488d-b906-342a85d2ea2f
+GET /model-center/models 304 0.509 ms req_id=f685bbf1-3325-45ba-8863-d6342cc8785c
+GET /model-center/models 304 0.479 ms req_id=84d1fe72-7b96-4002-b9ef-b28feb180644
+GET /model-center/models 304 0.307 ms req_id=68f25294-fa69-4714-b6f1-247c1310f3b9
+GET /model-center/models 304 0.230 ms req_id=0a94b17f-274c-417a-8693-bbc3526e13c7
+GET /model-center/models 304 0.289 ms req_id=f4dfef9f-2615-4736-8989-448001b0908b
+GET /model-center/models 304 0.280 ms req_id=0a4a38ef-7cbf-4b0f-9885-96a0e8b58387
+GET /model-center/models 304 0.403 ms req_id=5f8db592-5fb9-4b6a-a0dc-9365b98c64bb
+GET /model-center/models 304 0.633 ms req_id=4726b8eb-1861-44c4-bd19-42548f932c1c
+GET /model-center/models 304 0.243 ms req_id=6d9075f1-3ff7-476e-84ea-6e6a00d7e2c6
+GET /model-center/models 304 0.343 ms req_id=04f99034-b3fb-49c7-891f-afe909eb8a12
+GET /model-center/models 304 0.502 ms req_id=0383c25e-3ac5-4e3f-9586-a5f4c224f507
+GET /model-center/models 304 0.664 ms req_id=b4a5a964-8dd9-4e46-955c-4f2b78a85fe5
+GET /model-center/models 304 1.144 ms req_id=ee71b957-56ff-4d43-a046-7128d5b15fca

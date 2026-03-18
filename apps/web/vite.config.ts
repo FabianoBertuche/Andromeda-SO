@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
         '/model-center': {
           target: apiTarget,
           changeOrigin: true,
+        },
+        '/agents': {
+          target: apiTarget,
+          changeOrigin: true,
         }
       }
     }

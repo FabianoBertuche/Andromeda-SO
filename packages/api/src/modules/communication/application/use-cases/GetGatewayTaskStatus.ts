@@ -14,6 +14,7 @@ export class GetGatewayTaskStatus {
             status: task.getStatus(),
             updatedAt: task.getUpdatedAt(),
             result: task.getResult(),
+            auditParecer: task.getAuditParecer(),
         };
     }
 }

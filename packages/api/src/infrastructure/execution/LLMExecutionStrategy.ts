@@ -1,6 +1,8 @@
 import { AgentRegistry, ExecutionResult, ExecutionStrategy, IProviderAdapter, Provider, Task } from "@andromeda/core";
 import { CognitiveRoutingSignalService } from "../../modules/cognitive/application/CognitiveRoutingSignalService";
 import { cognitiveRoutingSignalService } from "../../modules/cognitive/dependencies";
+import { AgentRuntimeOrchestrator } from "../../modules/agent-management/application/AgentRuntimeOrchestrator";
+import { agentRuntimeOrchestrator } from "../../modules/agent-management/dependencies";
 import { routeTaskUseCase } from "../../modules/model-center/dependencies";
 import { OllamaProviderAdapter } from "../adapters/providers/OllamaProviderAdapter";
 import { globalModelRepository, globalProviderRepository } from "../repositories/GlobalRepositories";
@@ -12,24 +14,53 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
         private readonly agentRegistry: AgentRegistry,
         private readonly routingSignalService: CognitiveRoutingSignalService = cognitiveRoutingSignalService,
         providerAdapter?: IProviderAdapter,
+        private readonly runtimeOrchestrator: AgentRuntimeOrchestrator = agentRuntimeOrchestrator,
     ) {
         this.ollamaAdapter = providerAdapter || new OllamaProviderAdapter();
     }
 
     async execute(task: Task): Promise<ExecutionResult> {
         try {
+            const prepared = await this.runtimeOrchestrator.prepareExecution(task);
+            if (!prepared.precheck.allowed) {
+                const blocked = this.runtimeOrchestrator.buildBlockedResponse(prepared);
+                return {
+                    success: true,
+                    data: {
+                        content: blocked.content,
+                        model: "safeguard:fallback",
+                        agent: blocked.agent,
+                        audit: blocked.audit,
+                        behaviorSnapshot: prepared.assembly.behaviorSnapshot,
+                    },
+                    strategyUsed: this.getIdentifier(),
+                };
+            }
+
             const { modelName, provider } = await this.resolveTarget(task);
             const response = await this.ollamaAdapter.chat(provider, {
                 model: modelName,
-                messages: [{ role: "user", content: task.getRawRequest() }],
+                messages: [
+                    { role: "system", content: prepared.assembly.systemPrompt },
+                    { role: "user", content: task.getRawRequest() },
+                ],
                 stream: false,
+            });
+            const finalized = this.runtimeOrchestrator.finalizeExecution({
+                task,
+                prepared,
+                responseText: response.message?.content || response.response || "Sem resposta do modelo.",
+                modelName,
             });
 
             return {
                 success: true,
                 data: {
-                    content: response.message?.content || response.response || "Sem resposta do modelo.",
+                    content: finalized.content,
                     model: modelName,
+                    agent: finalized.agent,
+                    audit: finalized.audit,
+                    behaviorSnapshot: prepared.assembly.behaviorSnapshot,
                     usage: response.usage || {
                         prompt_tokens: response.prompt_eval_count,
                         completion_tokens: response.eval_count,
@@ -78,6 +109,20 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
         const routedTarget = await this.tryRouteTask(task);
         if (routedTarget) {
             return routedTarget;
+        }
+
+        const targetAgentId = typeof metadata.targetAgentId === "string" && metadata.targetAgentId.trim().length > 0
+            ? metadata.targetAgentId.trim()
+            : undefined;
+
+        if (targetAgentId) {
+            const selectedAgent = await this.agentRegistry.findById(targetAgentId);
+            if (selectedAgent && selectedAgent.getModel() && selectedAgent.getModel() !== "automatic-router") {
+                return {
+                    modelName: selectedAgent.getModel(),
+                    provider: await this.ensureDefaultProvider(),
+                };
+            }
         }
 
         const provider = await this.ensureDefaultProvider();
