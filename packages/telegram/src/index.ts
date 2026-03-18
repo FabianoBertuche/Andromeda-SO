@@ -1,3 +1,3 @@
-import { startBot } from "./bot.ts";
+import { startBot } from "./bot.js";
 
 startBot();

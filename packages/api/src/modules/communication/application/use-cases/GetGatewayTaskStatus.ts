@@ -1,4 +1,4 @@
-import { TaskRepository } from "../../../../core/domain/task/TaskRepository";
+import { TaskRepository } from "@andromeda/core";
 
 export class GetGatewayTaskStatus {
     constructor(private readonly taskRepository: TaskRepository) { }

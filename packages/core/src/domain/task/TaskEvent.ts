@@ -6,7 +6,7 @@ export abstract class DomainEvent {
 }
 
 export class TaskCreated extends DomainEvent {
-    constructor(public readonly taskId: string) {
+    constructor(public readonly taskId: string, public readonly sessionId?: string) {
         super();
     }
 }
@@ -17,6 +17,18 @@ export class TaskStatusChanged extends DomainEvent {
         public readonly oldStatus: string,
         public readonly newStatus: string
     ) {
+        super();
+    }
+}
+
+export class TaskResultAvailable extends DomainEvent {
+    constructor(public readonly taskId: string, public readonly result: any) {
+        super();
+    }
+}
+
+export class AuditParecerAvailable extends DomainEvent {
+    constructor(public readonly taskId: string, public readonly parecer: any) {
         super();
     }
 }

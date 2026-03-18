@@ -1,7 +1,4 @@
-import { Task } from "../../core/domain/task/Task";
-import { ExecutionStrategy, ExecutionResult } from "../../core/domain/execution/ExecutionStrategy";
-import { SkillRegistry } from "../../core/domain/skill/SkillRegistry";
-import { ExecuteSkill } from "../../core/application/use-cases/ExecuteSkill";
+import { Task, ExecutionStrategy, ExecutionResult, SkillRegistry, ExecuteSkill } from "@andromeda/core";
 
 export class SkillExecutionStrategy implements ExecutionStrategy {
     constructor(

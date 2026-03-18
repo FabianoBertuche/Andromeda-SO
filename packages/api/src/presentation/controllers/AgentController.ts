@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import { AgentRegistry } from "../../core/domain/agent/AgentRegistry";
-import { Agent } from "../../core/domain/agent/Agent";
+import { Agent, AgentRegistry } from "@andromeda/core";
 
 export class AgentController {
     constructor(private readonly registry: AgentRegistry) { }

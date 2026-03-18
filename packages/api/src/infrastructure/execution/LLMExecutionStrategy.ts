@@ -1,6 +1,4 @@
-import { Task } from "../../core/domain/task/Task";
-import { ExecutionStrategy, ExecutionResult } from "../../core/domain/execution/ExecutionStrategy";
-import { AgentRegistry } from "../../core/domain/agent/AgentRegistry";
+import { Task, ExecutionStrategy, ExecutionResult, AgentRegistry } from "@andromeda/core";
 import { MockLLMProvider } from "../llm/LLMProvider";
 
 export class LLMExecutionStrategy implements ExecutionStrategy {

@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
-import { CreateTask } from "../../core/application/use-cases/CreateTask";
-import { ExecuteTask } from "../../core/application/use-cases/ExecuteTask";
-import { TaskRepository } from "../../core/domain/task/TaskRepository";
-import { ExecutionStrategyFactory } from "../../core/domain/execution/ExecutionStrategyFactory";
+import { CreateTask, ExecuteTask, TaskRepository, ExecutionStrategyFactory, globalEventBus, ExecuteSkill } from "@andromeda/core";
 import { SkillExecutionStrategy } from "../../infrastructure/execution/SkillExecutionStrategy";
 import { LLMExecutionStrategy } from "../../infrastructure/execution/LLMExecutionStrategy";
-import { ExecuteSkill } from "../../core/application/use-cases/ExecuteSkill";
 import { globalSkillRegistry } from "../routes/skillRoutes";
 import { globalAgentRegistry } from "../routes/agentRoutes";
 
@@ -58,9 +54,11 @@ export class TaskController {
             const executeSkill = new ExecuteSkill();
             const skillStrategy = new SkillExecutionStrategy(globalSkillRegistry, executeSkill);
             const llmStrategy = new LLMExecutionStrategy(globalAgentRegistry);
-            const factory = new ExecutionStrategyFactory(globalSkillRegistry, skillStrategy, llmStrategy);
+            const factory = new ExecutionStrategyFactory();
+            factory.register("skill", skillStrategy);
+            factory.register("llm", llmStrategy);
 
-            const useCase = new ExecuteTask(this.repository, factory);
+            const useCase = new ExecuteTask(this.repository, factory, globalEventBus);
             const task = await useCase.execute(id);
 
             return res.json(task.toJSON());

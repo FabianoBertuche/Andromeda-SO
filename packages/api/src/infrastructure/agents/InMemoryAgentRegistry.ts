@@ -1,5 +1,4 @@
-import { Agent } from "../../core/domain/agent/Agent";
-import { AgentRegistry } from "../../core/domain/agent/AgentRegistry";
+import { Agent, AgentRegistry } from "@andromeda/core";
 
 export class InMemoryAgentRegistry implements AgentRegistry {
     private agents: Map<string, Agent> = new Map();

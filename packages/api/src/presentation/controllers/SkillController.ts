@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import { SkillRegistry } from "../../core/domain/skill/SkillRegistry";
-import { Skill, SkillType } from "../../core/domain/skill/Skill";
-import { ExecuteSkill } from "../../core/application/use-cases/ExecuteSkill";
+import { SkillRegistry, Skill, SkillType, ExecuteSkill } from "@andromeda/core";
 
 export class SkillController {
     constructor(private readonly registry: SkillRegistry) { }

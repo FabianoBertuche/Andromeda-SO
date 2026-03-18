@@ -1,5 +1,4 @@
-import { Skill } from "../../core/domain/skill/Skill";
-import { SkillRegistry } from "../../core/domain/skill/SkillRegistry";
+import { Skill, SkillRegistry } from "@andromeda/core";
 
 export class InMemorySkillRegistry implements SkillRegistry {
     private skills: Map<string, Skill> = new Map();

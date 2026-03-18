@@ -1,5 +1,4 @@
-import { Task } from "../../core/domain/task/Task";
-import { TaskRepository } from "../../core/domain/task/TaskRepository";
+import { Task, TaskRepository } from "@andromeda/core";
 
 export class InMemoryTaskRepository implements TaskRepository {
     private tasks: Map<string, any> = new Map();
@@ -11,10 +10,16 @@ export class InMemoryTaskRepository implements TaskRepository {
     async findById(id: string): Promise<Task | null> {
         const data = this.tasks.get(id);
         if (!data) return null;
-        return new Task(data);
+        return new Task(data as any);
     }
 
     async findAll(): Promise<Task[]> {
         return Array.from(this.tasks.values()).map((data) => new Task(data));
+    }
+
+    async findBySessionId(sessionId: string): Promise<Task[]> {
+        return Array.from(this.tasks.values())
+            .filter((data) => data.sessionId === sessionId || data.metadata?.sessionId === sessionId)
+            .map((data) => new Task(data as any));
     }
 }

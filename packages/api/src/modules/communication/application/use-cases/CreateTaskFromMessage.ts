@@ -1,5 +1,5 @@
 import { UnifiedMessage } from "../../domain/entities/unified-message.entity";
-import { CreateTask } from "../../../../core/application/use-cases/CreateTask";
+import { CreateTask } from "@andromeda/core";
 
 export interface CreateTaskFromMessageInput {
     sessionId: string;

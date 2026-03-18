@@ -1,4 +1,4 @@
-import { Agent } from "../../core/domain/agent/Agent";
+import { Agent } from "@andromeda/core";
 
 export interface LLMRequest {
     agent: Agent;
