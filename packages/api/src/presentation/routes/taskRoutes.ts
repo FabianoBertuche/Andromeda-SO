@@ -2,9 +2,10 @@ import { Router } from "express";
 import { TaskController } from "../controllers/TaskController";
 import { InMemoryTaskRepository } from "../../infrastructure/repositories/InMemoryTaskRepository";
 
+import { globalTaskRepository } from "../../infrastructure/repositories/GlobalRepositories";
+
 const router = Router();
-const repository = new InMemoryTaskRepository();
-const controller = new TaskController(repository);
+const controller = new TaskController(globalTaskRepository);
 
 router.post("/", (req, res) => controller.create(req, res));
 router.get("/", (req, res) => controller.list(req, res));
