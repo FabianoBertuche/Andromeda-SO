@@ -179,7 +179,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 font-sans flex overflow-hidden">
+    <div className="h-full bg-slate-950 text-slate-300 font-sans flex overflow-hidden">
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-slate-800">
           <Terminal className="w-6 h-6 text-indigo-400 mr-2" />
@@ -230,7 +230,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+      <main className="flex-1 flex flex-col relative overflow-hidden min-h-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
         <header className="h-16 flex items-center justify-between px-6 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-3 text-sm">
             <span className="text-slate-500">Session:</span>
@@ -248,34 +248,42 @@ function App() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {activeTab === 'console' ? (
-            <ConsoleView
-              selectedAgent={selectedAgent}
-              chatMessages={chatMessages}
-              activeTask={activeTask}
-            />
+            <div className="flex-1 overflow-hidden min-h-0">
+              <ConsoleView
+                selectedAgent={selectedAgent}
+                chatMessages={chatMessages}
+                activeTask={activeTask}
+              />
+            </div>
           ) : activeTab === 'agents' ? (
-            <AgentManagementView
-              agents={agents}
-              selectedAgentId={selectedAgentId}
-              sessionId={session?.sessionId}
-              onSelectAgent={setSelectedAgentId}
-              onUseInConsole={(agentId) => {
-                setSelectedAgentId(agentId);
-                setActiveTab('console');
-              }}
-              refreshAgents={loadAgents}
-            />
+            <div className="flex-1 overflow-auto">
+              <AgentManagementView
+                agents={agents}
+                selectedAgentId={selectedAgentId}
+                sessionId={session?.sessionId}
+                onSelectAgent={setSelectedAgentId}
+                onUseInConsole={(agentId) => {
+                  setSelectedAgentId(agentId);
+                  setActiveTab('console');
+                }}
+                refreshAgents={loadAgents}
+              />
+            </div>
           ) : activeTab === 'timeline' ? (
-            <TimelineView />
+            <div className="flex-1 overflow-auto">
+              <TimelineView />
+            </div>
           ) : (
-            <ModelCenterView />
+            <div className="flex-1 overflow-auto">
+              <ModelCenterView />
+            </div>
           )}
         </div>
 
         {activeTab === 'console' && (
-          <div className="p-6 bg-transparent shrink-0">
+          <div className="sticky bottom-0 z-30 p-6 bg-slate-950/90 backdrop-blur border-t border-slate-800/70 shadow-2xl">
             <div className="max-w-3xl mx-auto flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2 px-2">
                 <span className="text-[10px] text-slate-500 uppercase font-bold">Target Agent:</span>
@@ -337,8 +345,10 @@ function App() {
 }
 
 function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgent: AgentSummary | null; chatMessages: ChatMessage[]; activeTask: any }) {
+  const [isExecutionPanelOpen, setIsExecutionPanelOpen] = useState(false);
+
   return (
-    <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
+    <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 h-full min-h-0">
       <div className="text-center py-4">
         <h2 className="text-2xl font-light text-slate-200">Andromeda Command Console</h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -346,7 +356,7 @@ function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgen
         </p>
       </div>
 
-      <div className="space-y-4 mb-8">
+      <div className="space-y-4 mb-8 flex-1 min-h-0 overflow-y-auto pr-1">
         {chatMessages.map((message, index) => (
           <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] p-4 rounded-2xl shadow-lg ${message.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-tl-none'}`}>
@@ -371,25 +381,34 @@ function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgen
             </div>
           </div>
         ))}
+        {activeTask && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setIsExecutionPanelOpen((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-indigo-200 hover:border-indigo-400 hover:text-white transition"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              {isExecutionPanelOpen ? 'Ocultar status da execucao' : 'Mostrar status da execucao'}
+            </button>
+
+            {isExecutionPanelOpen && (
+              <div className="mt-3 bg-slate-900/85 border border-slate-800/70 p-6 rounded-2xl shadow-2xl backdrop-blur-md space-y-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-indigo-400" />
+                  <h3 className="text-lg font-medium text-white">Execution Status</h3>
+                  <span className="ml-auto text-xs font-mono bg-indigo-500/10 text-indigo-200 px-2 py-1 rounded-full border border-indigo-500/30 font-bold tracking-wide">
+                    {activeTask.status || activeTask.task?.status || 'UNKNOWN'}
+                  </span>
+                </div>
+                <div className="font-mono text-xs text-slate-300 bg-black/40 p-3 rounded-xl overflow-auto border border-white/5 max-h-[320px]">
+                  <pre>{JSON.stringify(activeTask, null, 2)}</pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {activeTask && (
-        <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-white flex items-center">
-              <Activity className="w-4 h-4 mr-2 text-indigo-400" />
-              Execution Status
-            </h3>
-            <span className="text-xs font-mono bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-full border border-indigo-500/30 font-bold tracking-wide shadow-sm">
-              {activeTask.status || activeTask.task?.status || 'UNKNOWN'}
-            </span>
-          </div>
-
-          <div className="font-mono text-xs text-slate-500 bg-black/40 p-3 rounded-xl overflow-x-auto border border-white/5">
-            <pre>{JSON.stringify(activeTask, null, 2)}</pre>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
