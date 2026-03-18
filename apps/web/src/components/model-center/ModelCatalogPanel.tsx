@@ -87,7 +87,7 @@ export const ModelCatalogPanel: React.FC = () => {
         if (!playgroundModel) return;
         setTestResult('Processando...');
         try {
-            const response = await fetch('/gateway/client_message', {
+            const response = await fetch('/gateway/message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

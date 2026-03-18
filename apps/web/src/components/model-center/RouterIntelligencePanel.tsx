@@ -4,7 +4,7 @@ export const RouterIntelligencePanel: React.FC = () => {
     const [simulating, setSimulating] = useState(false);
     const [activity, setActivity] = useState('coding');
     const [decisions, setDecisions] = useState<any[]>([]);
-    const [lastResult, setLastResult] = useState<string | null>(null);
+    const [lastDecision, setLastDecision] = useState<any | null>(null);
 
     const fetchDecisions = async () => {
         try {
@@ -24,20 +24,20 @@ export const RouterIntelligencePanel: React.FC = () => {
 
     const handleSimulate = async () => {
         setSimulating(true);
-        setLastResult(null);
+        setLastDecision(null);
         try {
             const res = await fetch('/model-center/router/simulate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    type: activity,
-                    priority: 'high',
-                    requirements: [activity]
+                    taskId: `sim-${Date.now()}`,
+                    activityType: activity,
+                    requiredCapabilities: [activity]
                 })
             });
             if (res.ok) {
                 const data = await res.json();
-                setLastResult(data.chosenModelId);
+                setLastDecision(data);
                 fetchDecisions();
             }
         } catch (error) {
@@ -78,10 +78,16 @@ export const RouterIntelligencePanel: React.FC = () => {
                             {simulating ? "Processando..." : "Simular Decisão"}
                         </button>
 
-                        {lastResult && (
-                            <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
-                                <p className="text-xs text-emerald-400 uppercase font-bold mb-1">Modelo Escolhido:</p>
-                                <p className="text-lg font-mono text-white">{lastResult}</p>
+                        {lastDecision && (
+                            <div className="mt-4 space-y-1 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                                <p className="text-xs text-emerald-400 uppercase font-bold">Modelo Escolhido</p>
+                                <p className="text-lg font-mono text-white">{lastDecision.chosenModelId}</p>
+                                <p className="text-[11px] text-slate-300">
+                                    Score: {(lastDecision.score ?? 0).toFixed(2)} · Latência: {lastDecision.latencyMs ?? 0}ms
+                                </p>
+                                {lastDecision.justification && (
+                                    <p className="text-[11px] text-slate-400">Motivo: {lastDecision.justification}</p>
+                                )}
                             </div>
                         )}
                     </div>
@@ -94,24 +100,38 @@ export const RouterIntelligencePanel: React.FC = () => {
                             <thead className="bg-slate-900 text-slate-400">
                                 <tr>
                                     <th className="px-4 py-3">Timestamp</th>
-                                    <th className="px-4 py-3">Input Type</th>
-                                    <th className="px-4 py-3">Selected Model</th>
-                                    <th className="px-4 py-3">Latency</th>
+                                    <th className="px-4 py-3">Atividade</th>
+                                    <th className="px-4 py-3">Modelo</th>
+                                    <th className="px-4 py-3 hidden md:table-cell">Score</th>
+                                    <th className="px-4 py-3 hidden lg:table-cell">Latência</th>
+                                    <th className="px-4 py-3 hidden xl:table-cell">Capacidades</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-700 text-slate-300">
                                 {decisions.map((d, i) => (
                                     <tr key={i} className="hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-4 py-3 font-mono text-xs">{new Date(d.timestamp).toLocaleTimeString()}</td>
-                                        <td className="px-4 py-3"><span className="px-2 py-0.5 bg-slate-900 rounded border border-slate-600 text-[10px]">{d.input.type}</span></td>
-                                        <td className="px-4 py-3 text-indigo-400 font-medium">{d.selectedModelId}</td>
-                                        <td className="px-4 py-3 font-mono text-xs text-slate-500">{d.latencyMs}ms</td>
+                                        <td className="px-4 py-3 font-mono text-xs">
+                                            {(d.createdAt ? new Date(d.createdAt) : null)?.toLocaleTimeString() ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3">{d.activityType}</td>
+                                        <td className="px-4 py-3 text-indigo-400 font-medium">{d.chosenModelId}</td>
+                                        <td className="px-4 py-3 hidden md:table-cell text-green-400 font-semibold">{(d.score ?? 0).toFixed(2)}</td>
+                                        <td className="px-4 py-3 hidden lg:table-cell font-mono text-xs text-slate-500">{d.latencyMs ?? 0}ms</td>
+                                        <td className="px-4 py-3 hidden xl:table-cell">
+                                            <div className="flex flex-wrap gap-1">
+                                                {(d.requiredCapabilities || []).map((cap: string) => (
+                                                    <span key={cap} className="px-2 py-0.5 bg-slate-900 rounded border border-slate-600 text-[10px]">
+                                                        {cap}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                                 {decisions.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-10 text-center text-slate-500">Nenhuma decisão registrada.</td>
-                                    </tr>
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500">Nenhuma decisão registrada.</td>
+                                </tr>
                                 )}
                             </tbody>
                         </table>

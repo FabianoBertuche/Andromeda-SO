@@ -11,6 +11,7 @@ export interface RoutingDecisionProps {
     fallbackModelId?: string;
     score: number;
     estimatedCost?: number;
+    latencyMs?: number;
     justification: string;
     createdAt?: Date;
 }
@@ -32,6 +33,7 @@ export class RoutingDecision {
     getChosenModelId(): string { return this.props.chosenModelId; }
     getFallbackModelId(): string | undefined { return this.props.fallbackModelId; }
     getJustification(): string { return this.props.justification; }
+    getLatencyMs(): number | undefined { return this.props.latencyMs; }
 
     toJSON() {
         return {

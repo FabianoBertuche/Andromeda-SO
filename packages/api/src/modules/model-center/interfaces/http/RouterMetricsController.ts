@@ -15,8 +15,8 @@ export class RouterMetricsController {
 
     async simulateRoute(req: Request, res: Response) {
         try {
-            const modelId = await routeTaskUseCase.execute(req.body);
-            res.json({ chosenModelId: modelId });
+            const decision = await routeTaskUseCase.execute(req.body);
+            res.json(decision.toJSON());
         } catch (error: any) {
             res.status(400).json({ error: error.message });
         }

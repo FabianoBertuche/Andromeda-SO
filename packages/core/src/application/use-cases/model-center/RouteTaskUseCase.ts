@@ -16,7 +16,9 @@ export class RouteTaskUseCase {
         private routingDecisionRepo: IRoutingDecisionRepository
     ) { }
 
-    async execute(input: RouteTaskInputDTO): Promise<string> {
+    async execute(input: RouteTaskInputDTO): Promise<RoutingDecision> {
+        const startTime = Date.now();
+
         // 1. Obter modelos habilitados
         const allModels = await this.modelRepository.findAll();
         const enabledModels = allModels.filter(m => m.isEnabled() && m.getHealth() !== "error");
@@ -41,6 +43,8 @@ export class RouteTaskUseCase {
         const chosenModel = eligibleModels[0];
         const fallbackModel = eligibleModels.length > 1 ? eligibleModels[1] : undefined;
 
+        const latencyMs = Date.now() - startTime;
+
         // 4. Registrar a decisão
         const decision = new RoutingDecision({
             taskId: input.taskId,
@@ -50,11 +54,12 @@ export class RouteTaskUseCase {
             chosenModelId: chosenModel.getId(),
             fallbackModelId: fallbackModel?.getId(),
             score: chosenModel.getScores()[input.activityType] || chosenModel.getScores().overall || 0,
+            latencyMs,
             justification: `Escolha baseada no maior score para a atividade ${input.activityType} entre os modelos aptos a resolver.`,
         });
 
         await this.routingDecisionRepo.save(decision);
 
-        return chosenModel.getId();
+        return decision;
     }
 }
