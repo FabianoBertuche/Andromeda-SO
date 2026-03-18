@@ -1,0 +1,107 @@
+
+> @andromeda/api@0.1.0 dev
+> tsx watch src/index.ts
+
+Registering Model Center Routes...
+Initializing Andromeda OS Express App...
+Importing modelCenterRoutes...
+modelCenterRoutes imported!
+📡 CommunicationWsGateway initialized
+🚀 Andromeda OS API running on port 5005 (HTTP + WS)
+[0mGET /health [32m200[0m 1.844 ms - 15[0m
+[0mGET /model-center/models [32m200[0m 0.542 ms - 2[0m
+[0mGET /model-center/models [36m304[0m 0.398 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.391 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.503 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.510 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.508 ms - -[0m
+[0mGET /model-center/router/decisions [32m200[0m 0.866 ms - 2[0m
+[0mGET /model-center/router/decisions [36m304[0m 0.698 ms - -[0m
+[0mGET /model-center/router/config [32m200[0m 9.413 ms - 106[0m
+[0mGET /model-center/router/config [36m304[0m 1.714 ms - -[0m
+[0mPOST /model-center/router/simulate [33m400[0m 1.444 ms - 84[0m
+[0mPOST /model-center/router/simulate [33m400[0m 0.725 ms - 84[0m
+[0mGET /model-center/models [36m304[0m 0.440 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.319 ms - -[0m
+[0mPOST /model-center/providers/ollama-local-id/sync [32m200[0m 705.285 ms - 10241[0m
+[0mGET /model-center/models [32m200[0m 0.572 ms - 10241[0m
+[0mGET /model-center/models [36m304[0m 0.335 ms - -[0m
+[0mPOST /gateway/message [33m401[0m 0.542 ms - 88[0m
+[0mPOST /gateway/message [33m401[0m 0.519 ms - 88[0m
+[0mGET /model-center/models/05b91259-9c49-4200-98a5-504db73dd8f5 [32m200[0m 0.850 ms - 416[0m
+[0mDELETE /model-center/providers/b3ba1903-2297-41dc-aa44-22934c8d4291/models/rnj-1:8b-cloud [32m204[0m 46.204 ms - -[0m
+[0mGET /model-center/models [32m200[0m 0.377 ms - 9830[0m
+[0mGET /model-center/router/decisions [36m304[0m 0.396 ms - -[0m
+[0mGET /model-center/router/config [36m304[0m 4.080 ms - -[0m
+[0mGET /model-center/router/decisions [36m304[0m 0.436 ms - -[0m
+[0mGET /model-center/router/config [36m304[0m 14.624 ms - -[0m
+[0mPOST /model-center/router/simulate [33m400[0m 0.796 ms - 84[0m
+[0mPOST /model-center/router/simulate [32m200[0m 5.133 ms - 7854[0m
+[0mGET /model-center/router/decisions [32m200[0m 0.585 ms - 7856[0m
+[0mPOST /model-center/router/simulate [32m200[0m 2.424 ms - 2600[0m
+[0mGET /model-center/router/decisions [32m200[0m 0.904 ms - 10457[0m
+[0mPOST /model-center/router/simulate [32m200[0m 1.407 ms - 1336[0m
+[0mGET /model-center/router/decisions [32m200[0m 0.327 ms - 11794[0m
+[0mPOST /model-center/router/simulate [33m400[0m 0.500 ms - 84[0m
+[0mPOST /model-center/router/simulate [32m200[0m 1.182 ms - 894[0m
+[0mGET /model-center/router/decisions [32m200[0m 0.559 ms - 12689[0m
+[0mGET /model-center/models [36m304[0m 0.475 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.229 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.681 ms - -[0m
+[0mPOST /model-center/providers/ollama-local-id/pull [32m200[0m 4460.843 ms - 54[0m
+[0mGET /model-center/models [36m304[0m 0.515 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.585 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.725 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.598 ms - -[0m
+[0mPOST /model-center/providers/ollama-local-id/sync [32m200[0m 27.258 ms - 10241[0m
+[0mGET /model-center/models [32m200[0m 0.281 ms - 10241[0m
+[0mGET /model-center/models [36m304[0m 0.241 ms - -[0m
+[0mGET /model-center/router/decisions [36m304[0m 0.636 ms - -[0m
+[0mGET /model-center/router/decisions [36m304[0m 0.440 ms - -[0m
+[0mGET /model-center/router/config [36m304[0m 4.630 ms - -[0m
+[0mGET /model-center/router/config [36m304[0m 0.916 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.538 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.436 ms - -[0m
+[0mGET /model-center/models/05b91259-9c49-4200-98a5-504db73dd8f5/benchmarks [32m200[0m 0.402 ms - 2[0m
+[0mGET /model-center/models [36m304[0m 0.704 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.483 ms - -[0m
+🔌 WS Connected: Socket c56px7hmpnMyhRRsAAAB (no session)
+🔌 Socket c56px7hmpnMyhRRsAAAB explicitly joined session session-demo-mvp03
+[0mGET /model-center/models [36m304[0m 0.314 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.480 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.346 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.303 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.908 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.357 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.345 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.561 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.274 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.433 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.300 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.429 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.436 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.389 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.497 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.338 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.804 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.519 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.395 ms - -[0m
+[0mGET /health [32m200[0m 0.341 ms - 15[0m
+[0mPOST /gateway/message [33m401[0m 0.647 ms - 88[0m
+[0mGET /model-center/models [32m200[0m 0.539 ms - 10241[0m
+[0mGET /gateway/tasks//status [33m404[0m 4.023 ms - 160[0m
+[0mGET /model-center/models [36m304[0m 0.482 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.489 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.546 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.426 ms - -[0m
+[EventBus] TaskCreated capturado! Auto-executando task 6f7ca0c5-85f5-4fbf-9f97-3b4f6e309d04...
+[0mPOST /gateway/message [32m200[0m 10.437 ms - 375[0m
+[0mGET /gateway/tasks/6f7ca0c5-85f5-4fbf-9f97-3b4f6e309d04/status [32m200[0m 1.616 ms - 106[0m
+[0mGET /model-center/models [36m304[0m 1.054 ms - -[0m
+[0mGET /model-center/models [36m304[0m 0.359 ms - -[0m
+11:36:52 [tsx] change in ./src\index.ts Rerunning...
+cRegistering Model Center Routes...
+Initializing Andromeda OS Express App...
+Importing modelCenterRoutes...
+modelCenterRoutes imported!
+📡 CommunicationWsGateway initialized

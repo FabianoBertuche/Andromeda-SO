@@ -22,8 +22,13 @@ export class InMemoryRoutingDecisionRepository implements IRoutingDecisionReposi
     async getRecentDecisions(limit: number): Promise<RoutingDecision[]> {
         const all = Array.from(this.decisions.values())
             .map(data => new RoutingDecision(data))
-            .sort((a, b) => (b.toJSON().createdAt?.getTime() || 0) - (a.toJSON().createdAt?.getTime() || 0));
+            .sort((a, b) => this.getCreatedAt(b) - this.getCreatedAt(a));
 
         return all.slice(0, limit);
+    }
+
+    private getCreatedAt(decision: RoutingDecision): number {
+        const createdAt = decision.toJSON().createdAt;
+        return createdAt ? new Date(createdAt).getTime() : 0;
     }
 }

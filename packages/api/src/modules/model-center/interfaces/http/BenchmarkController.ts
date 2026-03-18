@@ -1,23 +1,24 @@
 import { Request, Response } from "express";
-import { runBenchmarkUseCase } from "../../dependencies";
 import { globalBenchmarkRepository } from "../../../../infrastructure/repositories/GlobalRepositories";
+import { sendError } from "../../../../shared/http/error-response";
+import { runBenchmarkUseCase } from "../../dependencies";
 
 export class BenchmarkController {
     async run(req: Request, res: Response) {
         try {
             const result = await runBenchmarkUseCase.execute(req.body);
-            res.status(201).json(result);
+            return res.status(201).json(result);
         } catch (error: any) {
-            res.status(400).json({ error: error.message });
+            return sendError(req, res, 400, "BAD_REQUEST", error.message);
         }
     }
 
     async list(req: Request, res: Response) {
         try {
             const results = await globalBenchmarkRepository.findByModelId(req.params.modelId);
-            res.json(results);
+            return res.json(results);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            return sendError(req, res, 500, "INTERNAL_SERVER_ERROR", error.message);
         }
     }
 }

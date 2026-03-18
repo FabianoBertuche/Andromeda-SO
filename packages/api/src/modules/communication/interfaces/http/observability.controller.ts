@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { BuildSessionTimeline } from "../../application/use-cases/BuildSessionTimeline";
 import { BuildTaskTimeline } from "../../application/use-cases/BuildTaskTimeline";
+import { sendError } from "../../../../shared/http/error-response";
 
 export class ObservabilityController {
     constructor(
@@ -14,12 +15,7 @@ export class ObservabilityController {
             const timeline = await this.buildSessionTimeline.execute(id);
             return res.status(200).json(timeline);
         } catch (error: any) {
-            return res.status(404).json({
-                error: {
-                    code: "NOT_FOUND",
-                    message: error.message,
-                },
-            });
+            return sendError(req, res, 404, "NOT_FOUND", error.message);
         }
     }
 
@@ -29,12 +25,7 @@ export class ObservabilityController {
             const timeline = await this.buildTaskTimeline.execute(taskId);
             return res.status(200).json(timeline);
         } catch (error: any) {
-            return res.status(404).json({
-                error: {
-                    code: "NOT_FOUND",
-                    message: error.message,
-                },
-            });
+            return sendError(req, res, 404, "NOT_FOUND", error.message);
         }
     }
 }

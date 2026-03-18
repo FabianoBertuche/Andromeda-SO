@@ -22,35 +22,50 @@ export class SyncModelsUseCase {
 
         const discoveredModels = await this.providerAdapter.listModels(provider);
         const syncedModels: ModelCatalogItem[] = [];
-
         const existingModels = await this.modelRepository.findByProvider(provider.getId());
 
         for (const data of discoveredModels) {
-            const existing = existingModels.find(m => m.getExternalModelId() === data.externalModelId);
+            const existing = existingModels.find(model => model.getExternalModelId() === data.externalModelId);
 
             if (existing) {
-                // Atualizações simplificadas no MVP04
-                syncedModels.push(existing);
-            } else {
-                const newModel = new ModelCatalogItem({
-                    providerId: provider.getId(),
-                    externalModelId: data.externalModelId!,
-                    displayName: data.displayName || data.externalModelId!,
-                    locality: data.locality || "cloud",
+                existing.mergeCatalogData({
+                    displayName: data.displayName,
+                    locality: data.locality,
                     family: data.family,
                     parameterSize: data.parameterSize,
                     quantization: data.quantization,
                     contextWindow: data.contextWindow,
-                    capabilities: data.capabilities || [],
-                    enabled: true,
-                    health: "ok",
+                    capabilities: data.capabilities,
                     pricing: data.pricing,
                     metrics: data.metrics,
-                    scores: data.scores
+                    scores: data.scores,
+                    recommendation: data.recommendation,
                 });
-                await this.modelRepository.save(newModel);
-                syncedModels.push(newModel);
+                await this.modelRepository.save(existing);
+                syncedModels.push(existing);
+                continue;
             }
+
+            const newModel = new ModelCatalogItem({
+                providerId: provider.getId(),
+                externalModelId: data.externalModelId!,
+                displayName: data.displayName || data.externalModelId!,
+                locality: data.locality || "cloud",
+                family: data.family,
+                parameterSize: data.parameterSize,
+                quantization: data.quantization,
+                contextWindow: data.contextWindow,
+                capabilities: data.capabilities || [],
+                enabled: true,
+                health: "ok",
+                pricing: data.pricing,
+                metrics: data.metrics,
+                scores: data.scores,
+                recommendation: data.recommendation,
+            });
+
+            await this.modelRepository.save(newModel);
+            syncedModels.push(newModel);
         }
 
         return syncedModels;

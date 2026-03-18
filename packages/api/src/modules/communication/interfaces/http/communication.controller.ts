@@ -3,6 +3,8 @@ import { ReceiveGatewayMessage } from "../../application/use-cases/ReceiveGatewa
 import { GetSession } from "../../application/use-cases/GetSession";
 import { ListSessionMessages } from "../../application/use-cases/ListSessionMessages";
 import { GetGatewayTaskStatus } from "../../application/use-cases/GetGatewayTaskStatus";
+import { GatewayValidationError } from "../../application/validators/gateway-message.validator";
+import { sendError } from "../../../../shared/http/error-response";
 
 export class CommunicationController {
     constructor(
@@ -18,12 +20,13 @@ export class CommunicationController {
             const response = await this.receiveGatewayMessage.execute(req.body, auth);
             return res.status(200).json(response);
         } catch (error: any) {
-            return res.status(400).json({
-                error: {
-                    code: "BAD_REQUEST",
-                    message: error.message || "Invalid gateway message payload",
-                },
-            });
+            if (error instanceof GatewayValidationError) {
+                return sendError(req, res, 400, "VALIDATION_ERROR", error.message, {
+                    field: error.field,
+                });
+            }
+
+            return sendError(req, res, 400, "BAD_REQUEST", error.message || "Invalid gateway message payload");
         }
     }
 
@@ -33,12 +36,7 @@ export class CommunicationController {
             const session = await this.getSession.execute(id);
             return res.status(200).json(session);
         } catch (error: any) {
-            return res.status(404).json({
-                error: {
-                    code: "NOT_FOUND",
-                    message: error.message,
-                },
-            });
+            return sendError(req, res, 404, "NOT_FOUND", error.message);
         }
     }
 
@@ -48,12 +46,7 @@ export class CommunicationController {
             const messages = await this.listSessionMessages.execute(id);
             return res.status(200).json(messages);
         } catch (error: any) {
-            return res.status(400).json({
-                error: {
-                    code: "BAD_REQUEST",
-                    message: error.message,
-                },
-            });
+            return sendError(req, res, 400, "BAD_REQUEST", error.message);
         }
     }
 
@@ -63,12 +56,7 @@ export class CommunicationController {
             const status = await this.getGatewayTaskStatus.execute(taskId);
             return res.status(200).json(status);
         } catch (error: any) {
-            return res.status(404).json({
-                error: {
-                    code: "NOT_FOUND",
-                    message: error.message,
-                },
-            });
+            return sendError(req, res, 404, "NOT_FOUND", error.message);
         }
     }
 }

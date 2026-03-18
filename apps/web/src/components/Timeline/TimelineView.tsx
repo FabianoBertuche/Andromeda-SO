@@ -11,50 +11,62 @@ export interface TimelineEntry {
 }
 
 export const TimelineView: React.FC = () => {
-    const { session } = useWs();
+    const { session, activeTask } = useWs();
     const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (!session?.sessionId) return;
 
         const fetchTimeline = async () => {
             setLoading(true);
+            setError('');
             try {
-                // Fetch the session timeline via the HTTP Observability API created in Phase 3
-                const response = await fetch(`http://localhost:5000/gateway/sessions/${session.sessionId}/timeline`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setTimeline(data.entries || []);
+                const response = await fetch(`/gateway/sessions/${session.sessionId}/timeline`);
+
+                if (!response.ok) {
+                    setError('Falha ao carregar a timeline da sessão.');
+                    return;
                 }
+
+                const data = await response.json() as { entries?: TimelineEntry[] };
+                setTimeline(data.entries || []);
             } catch (err) {
-                console.error("Erro ao buscar timeline", err);
+                console.error('Erro ao buscar timeline', err);
+                setError('Erro ao buscar a timeline da sessão.');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTimeline();
+        void fetchTimeline();
 
-        // Simples poll para MVP, idealmente o WsContext deve atualizar isso localmente
-        const interval = setInterval(fetchTimeline, 5000);
-        return () => clearInterval(interval);
-    }, [session?.sessionId]);
+        const interval = window.setInterval(() => {
+            void fetchTimeline();
+        }, 5000);
+
+        return () => window.clearInterval(interval);
+    }, [session?.sessionId, activeTask?.taskId, activeTask?.status]);
 
     if (!session) {
-        return <div className="text-slate-500 text-center p-8">Aguardando sessão...</div>;
+        return <div className="text-slate-500 text-center p-8">Aguardando sessao...</div>;
     }
 
     const getIconForType = (type: string, details?: any) => {
         switch (type) {
-            case 'message': return <MessageSquare className="w-5 h-5 text-blue-400" />;
-            case 'task_created': return <Play className="w-5 h-5 text-emerald-400" />;
-            case 'task_status': return <Activity className="w-5 h-5 text-indigo-400" />;
+            case 'message':
+                return <MessageSquare className="w-5 h-5 text-blue-400" />;
+            case 'task_created':
+                return <Play className="w-5 h-5 text-emerald-400" />;
+            case 'task_status':
+                return <Activity className="w-5 h-5 text-indigo-400" />;
             case 'task_result':
                 return details?.success === false
                     ? <XCircle className="w-5 h-5 text-red-400" />
                     : <CheckCircle className="w-5 h-5 text-emerald-400" />;
-            default: return <Code className="w-5 h-5 text-slate-400" />;
+            default:
+                return <Code className="w-5 h-5 text-slate-400" />;
         }
     };
 
@@ -62,7 +74,7 @@ export const TimelineView: React.FC = () => {
         <div className="w-full max-w-4xl mx-auto py-6">
             <h3 className="text-xl font-medium text-slate-200 mb-6 flex items-center">
                 <Clock className="w-5 h-5 mr-2 text-indigo-400" />
-                Histórico Operacional (Timeline)
+                Historico Operacional (Timeline)
                 {loading && <span className="ml-4 w-4 h-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></span>}
             </h3>
 
@@ -87,16 +99,23 @@ export const TimelineView: React.FC = () => {
                     </div>
                 ))}
             </div>
-            {timeline.length === 0 && !loading && (
-                <div className="text-center text-slate-500 mt-10">Nenhum evento registrado nesta sessão.</div>
+
+            {error && (
+                <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {error}
+                </div>
+            )}
+
+            {timeline.length === 0 && !loading && !error && (
+                <div className="text-center text-slate-500 mt-10">Nenhum evento registrado nesta sessao.</div>
             )}
         </div>
     );
 };
 
-// SVG component since imports can sometimes fail
 const Clock = (props: any) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
     </svg>
 );

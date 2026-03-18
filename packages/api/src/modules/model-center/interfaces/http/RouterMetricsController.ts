@@ -1,24 +1,25 @@
 import { Request, Response } from "express";
 import { globalRoutingDecisionRepository } from "../../../../infrastructure/repositories/GlobalRepositories";
+import { sendError } from "../../../../shared/http/error-response";
 import { routeTaskUseCase } from "../../dependencies";
 
 export class RouterMetricsController {
     async getDecisions(req: Request, res: Response) {
         try {
-            const limit = parseInt(req.query.limit as string) || 50;
+            const limit = parseInt(req.query.limit as string, 10) || 50;
             const decisions = await globalRoutingDecisionRepository.getRecentDecisions(limit);
-            res.json(decisions);
+            return res.json(decisions);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            return sendError(req, res, 500, "INTERNAL_SERVER_ERROR", error.message);
         }
     }
 
     async simulateRoute(req: Request, res: Response) {
         try {
             const decision = await routeTaskUseCase.execute(req.body);
-            res.json(decision.toJSON());
+            return res.json(decision.toJSON());
         } catch (error: any) {
-            res.status(400).json({ error: error.message });
+            return sendError(req, res, 400, "BAD_REQUEST", error.message);
         }
     }
 }

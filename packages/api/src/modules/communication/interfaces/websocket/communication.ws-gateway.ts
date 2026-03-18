@@ -1,5 +1,8 @@
 import { Server, Socket } from "socket.io";
-import { globalEventBus, TaskCreated, TaskStatusChanged, TaskResultAvailable } from "@andromeda/core";
+import { globalEventBus } from "@andromeda/core";
+import { globalTaskRepository } from "../../../../infrastructure/repositories/GlobalRepositories";
+import { parseGatewayToken, isAuthorizedGatewayToken } from "../../infrastructure/auth/gateway-token";
+import { resolveGatewayEventEnvelope } from "./gateway-event-router";
 import { globalWsSessionRegistry } from "../../infrastructure/websocket/ws-session-registry";
 
 export class CommunicationWsGateway {
@@ -17,10 +20,11 @@ export class CommunicationWsGateway {
     }
 
     private middleware(socket: Socket, next: (err?: any) => void) {
-        const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization;
+        const token = parseGatewayToken(
+            (socket.handshake.auth?.token as string | undefined) || socket.handshake.headers?.authorization?.toString()
+        );
 
-        // Simple mock authentication (matching MVP02 logic)
-        if (token && (token === "andromeda-secret-token" || token.includes("Bearer"))) {
+        if (isAuthorizedGatewayToken(token)) {
             (socket as any).user = { clientId: "web-console", scopes: ["admin"] };
             return next();
         }
@@ -84,59 +88,26 @@ export class CommunicationWsGateway {
 
     private setupEventListeners() {
         globalEventBus.subscribeAll((event) => {
-            if (!this.io) return;
-
-            const normalizedEvent = this.normalizeEvent(event);
-            if (!normalizedEvent) return;
-
-            // If event has sessionId, emit to that session room, otherwise broadcast
-            if (normalizedEvent.sessionId) {
-                this.io.to(`session:${normalizedEvent.sessionId}`).emit("gateway.event", normalizedEvent);
-            } else {
-                this.io.emit("gateway.event", normalizedEvent);
-            }
+            void this.dispatchEvent(event);
         });
     }
 
-    private normalizeEvent(event: any): any {
-        const timestamp = new Date().toISOString();
-
-        if (event instanceof TaskCreated) {
-            return {
-                type: "task.created",
-                taskId: event.taskId,
-                sessionId: event.sessionId,
-                timestamp
-            };
+    private async dispatchEvent(event: unknown) {
+        if (!this.io) {
+            return;
         }
 
-        if (event instanceof TaskStatusChanged) {
-            // Check if we can find sessionId for this task to route correctly
-            // For now we might need to broadcast or look up
-            return {
-                type: "task.updated",
-                taskId: event.taskId,
-                status: event.newStatus,
-                timestamp
-            };
+        const normalizedEvent = await resolveGatewayEventEnvelope(event, globalTaskRepository);
+        if (!normalizedEvent) {
+            return;
         }
 
-        if (event instanceof TaskResultAvailable) {
-            return {
-                type: "task.completed",
-                taskId: event.taskId,
-                result: event.result,
-                timestamp
-            };
+        if (normalizedEvent.sessionId) {
+            this.io.to(`session:${normalizedEvent.sessionId}`).emit("gateway.event", normalizedEvent);
+            return;
         }
 
-        // Generic fallback for other domain events
-        return {
-            type: "domain.event",
-            name: event.constructor.name,
-            payload: event,
-            timestamp
-        };
+        this.io.emit("gateway.event", normalizedEvent);
     }
 }
 

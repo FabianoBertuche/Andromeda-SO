@@ -4,12 +4,16 @@ console.log("Registering Model Center Routes...");
 import { ModelCatalogController } from "./ModelCatalogController";
 import { BenchmarkController } from "./BenchmarkController";
 import { RouterMetricsController } from "./RouterMetricsController";
+import { RouterConfigController } from "./RouterConfigController";
+import { PricingController } from "./PricingController";
 
 const router = Router();
 const providerCtrl = new ProviderController();
 const modelCtrl = new ModelCatalogController();
 const benchmarkCtrl = new BenchmarkController();
 const routerCtrl = new RouterMetricsController();
+const routerConfigCtrl = new RouterConfigController();
+const pricingCtrl = new PricingController();
 
 // Providers
 router.post("/providers", providerCtrl.register.bind(providerCtrl));
@@ -33,5 +37,11 @@ router.get("/models/:modelId/benchmarks", benchmarkCtrl.list.bind(benchmarkCtrl)
 // Router Intelligence
 router.get("/router/decisions", routerCtrl.getDecisions.bind(routerCtrl));
 router.post("/router/simulate", routerCtrl.simulateRoute.bind(routerCtrl));
+router.get("/router/config", routerConfigCtrl.get.bind(routerConfigCtrl));
+router.put("/router/config", routerConfigCtrl.update.bind(routerConfigCtrl));
+
+// Pricing
+router.get("/pricing", pricingCtrl.list.bind(pricingCtrl));
+router.put("/pricing/:modelId", pricingCtrl.update.bind(pricingCtrl));
 
 export default router;

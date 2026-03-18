@@ -1,0 +1,12 @@
+[2m10:59:48[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /model-center/models[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1142:49)
+    at afterConnectMultiple (node:net:1723:7)
+[2m11:00:07[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /model-center/models[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1142:49)
+    at afterConnectMultiple (node:net:1723:7)
+[2m11:00:18[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /model-center/models[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1142:49)
+    at afterConnectMultiple (node:net:1723:7)

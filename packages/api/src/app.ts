@@ -3,6 +3,9 @@ import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import { sendError } from "./shared/http/error-response";
+import { getAllowedConnectSources, isOriginAllowed } from "./shared/http/origin-config";
+import { requestContextMiddleware } from "./shared/http/request-context";
 
 console.log("Initializing Andromeda OS Express App...");
 
@@ -16,6 +19,11 @@ console.log("modelCenterRoutes imported!");
 
 const app = express();
 
+app.disable("x-powered-by");
+app.use(requestContextMiddleware);
+
+morgan.token("request-id", (_req, res) => (res.getHeader("X-Request-ID") as string | undefined) || "-");
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -25,13 +33,26 @@ app.use(helmet({
             "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             "font-src": ["'self'", "https://fonts.gstatic.com"],
             "img-src": ["'self'", "data:", "https:*"],
-            "connect-src": ["'self'", "http://localhost:5000", "ws://localhost:5000"],
+            "connect-src": getAllowedConnectSources(),
         },
     },
 }));
-app.use(cors());
-app.use(express.json());
-app.use(morgan("dev"));
+app.use(cors({
+    origin(origin, callback) {
+        if (isOriginAllowed(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        const error = new Error("Not allowed by CORS") as Error & { status?: number };
+        error.status = 403;
+        callback(error);
+    },
+    credentials: true,
+    exposedHeaders: ["X-Request-ID"],
+}));
+app.use(express.json({ limit: process.env.HTTP_JSON_LIMIT || "1mb" }));
+app.use(morgan(":method :url :status :response-time ms req_id=:request-id"));
 
 app.use("/tasks", taskRoutes);
 app.use("/skills", skillRoutes);
@@ -43,6 +64,19 @@ app.use("/console", express.static(path.join(__dirname, "modules/communication/i
 
 app.get("/health", (req, res) => {
     res.json({ status: "ok" });
+});
+
+app.use((error: Error & { status?: number; statusCode?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) {
+        next(error);
+        return;
+    }
+
+    const status = error.statusCode || error.status || 500;
+    const code = status === 403 ? "CORS_FORBIDDEN" : "INTERNAL_SERVER_ERROR";
+
+    console.error(`[HTTP:${res.locals.requestId || "unknown"}]`, error.stack || error.message);
+    sendError(req, res, status, code, status === 500 ? "Unexpected server error" : error.message);
 });
 
 export default app;

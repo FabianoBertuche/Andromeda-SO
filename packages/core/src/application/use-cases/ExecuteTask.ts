@@ -40,6 +40,14 @@ export class ExecuteTask {
                 task.setResult(result.data);
                 this.eventBus.publish(new TaskResultAvailable(task.getId(), result.data));
                 task.transitionTo(TaskStatus.AUDITING);
+                await this.repository.save(task);
+                this.eventBus.publish(new TaskStatusChanged(task.getId(), oldStatus4, task.getStatus()));
+
+                const oldStatus5 = task.getStatus();
+                task.transitionTo(TaskStatus.COMPLETED);
+                await this.repository.save(task);
+                this.eventBus.publish(new TaskStatusChanged(task.getId(), oldStatus5, task.getStatus()));
+                return task;
             } else {
                 task.transitionTo(TaskStatus.FAILED);
                 task.setResult({ error: result.error });

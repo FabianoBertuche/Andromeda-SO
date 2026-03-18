@@ -13,6 +13,7 @@ export class GetGatewayTaskStatus {
             taskId: task.getId(),
             status: task.getStatus(),
             updatedAt: task.getUpdatedAt(),
+            result: task.getResult(),
         };
     }
 }

@@ -17,8 +17,12 @@ import {
     globalRoutingDecisionRepository
 } from "../../infrastructure/repositories/GlobalRepositories";
 import { OllamaProviderAdapter } from "../../infrastructure/adapters/providers/OllamaProviderAdapter";
+import { FileModelPricingRegistry } from "./infrastructure/FileModelPricingRegistry";
+import { FileRoutingProfileRepository } from "./infrastructure/FileRoutingProfileRepository";
 
-const ollamaAdapter = new OllamaProviderAdapter();
+export const pricingRegistry = new FileModelPricingRegistry();
+export const routingProfileRepository = new FileRoutingProfileRepository();
+const ollamaAdapter = new OllamaProviderAdapter(pricingRegistry);
 
 export const registerProviderUseCase = new RegisterProviderUseCase(globalProviderRepository);
 export const syncModelsUseCase = new SyncModelsUseCase(globalProviderRepository, globalModelRepository, ollamaAdapter);
@@ -29,5 +33,14 @@ export const listRunningModelsUseCase = new ListRunningModelsUseCase(globalProvi
 export const createModelUseCase = new CreateModelUseCase(globalProviderRepository, ollamaAdapter);
 export const copyModelUseCase = new CopyModelUseCase(globalProviderRepository, ollamaAdapter);
 
-export const routeTaskUseCase = new RouteTaskUseCase(globalModelRepository, globalRoutingDecisionRepository);
-export const runBenchmarkUseCase = new RunBenchmarkUseCase(globalBenchmarkRepository, globalModelRepository);
+export const routeTaskUseCase = new RouteTaskUseCase(
+    globalModelRepository,
+    globalRoutingDecisionRepository,
+    routingProfileRepository
+);
+export const runBenchmarkUseCase = new RunBenchmarkUseCase(
+    globalBenchmarkRepository,
+    globalModelRepository,
+    globalProviderRepository,
+    ollamaAdapter
+);

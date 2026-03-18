@@ -30,6 +30,7 @@ export * from "./domain/benchmark/IBenchmarkRepository";
 export * from "./domain/router/RoutingDecision";
 export * from "./domain/router/RoutingDecisionProfile";
 export * from "./domain/router/IRoutingDecisionRepository";
+export * from "./domain/router/IRoutingProfileRepository";
 
 export * from "./application/use-cases/model-center/RegisterProviderUseCase";
 export * from "./application/use-cases/model-center/SyncModelsUseCase";

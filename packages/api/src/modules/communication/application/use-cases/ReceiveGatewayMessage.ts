@@ -5,6 +5,7 @@ import { ResolveSession } from "./ResolveSession";
 import { CommunicationMessageRepository } from "../../domain/repositories/communication-message.repository";
 import { CreateTaskFromMessage } from "./CreateTaskFromMessage";
 import { GatewayResponseMapper } from "../mappers/GatewayResponseMapper";
+import { validateGatewayMessageRequest } from "../validators/gateway-message.validator";
 
 export class ReceiveGatewayMessage {
     constructor(
@@ -19,6 +20,8 @@ export class ReceiveGatewayMessage {
         auth: { clientId: string; scopes: string[] }
     ): Promise<GatewayMessageResponseDto> {
         const startTime = Date.now();
+
+        validateGatewayMessageRequest(input);
 
         // 1. Normalizar a mensagem para o formato unificado
         const normalized = await this.channelAdapter.normalize(input);

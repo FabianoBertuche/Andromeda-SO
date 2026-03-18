@@ -1,65 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+
+interface BenchmarkSuite {
+    label: string;
+    taskType: string;
+}
+
+const benchmarkSuites: BenchmarkSuite[] = [
+    { label: 'General Coding (Python/JS)', taskType: 'coding' },
+    { label: 'Coding Debug Resolution', taskType: 'coding' },
+    { label: 'Coding Architecture Review', taskType: 'coding' },
+    { label: 'Chat & Raciocínio Completo', taskType: 'chat' },
+    { label: 'Reasoning Deep Dive', taskType: 'reasoning' },
+    { label: 'Summarization Executive Brief', taskType: 'summarization' },
+    { label: 'Translation PT-BR / EN', taskType: 'translation' },
+    { label: 'Security Offensive Review', taskType: 'reasoning' },
+    { label: 'Data Analysis Narrative', taskType: 'reasoning' },
+    { label: 'Saída Estruturada (JSON)', taskType: 'structured-output' },
+    { label: 'Extraction / OCR JSON', taskType: 'structured-output' },
+];
 
 export const BenchmarkLabPanel: React.FC = () => {
     const [running, setRunning] = useState(false);
     const [models, setModels] = useState<any[]>([]);
     const [selectedModel, setSelectedModel] = useState('');
-    const [selectedSuite, setSelectedSuite] = useState('General Coding (Python/JS)');
+    const [selectedSuite, setSelectedSuite] = useState(benchmarkSuites[0].label);
     const [benchmarks, setBenchmarks] = useState<any[]>([]);
 
     const fetchModels = async () => {
         try {
-            const res = await fetch('/model-center/models');
-            if (res.ok) {
-                const data = await res.json();
-                setModels(data);
-                if (data.length > 0) setSelectedModel(data[0].id);
-            }
+            const response = await fetch('/model-center/models');
+            if (!response.ok) return;
+
+            const data = await response.json();
+            setModels(data);
+            if (data.length > 0) setSelectedModel(data[0].id);
         } catch (error) {
-            console.error("Erro ao buscar modelos:", error);
+            console.error('Erro ao buscar modelos:', error);
         }
     };
 
     const fetchBenchmarks = async () => {
         if (!selectedModel) return;
         try {
-            const res = await fetch(`/model-center/models/${selectedModel}/benchmarks`);
-            if (res.ok) {
-                const data = await res.json();
-                setBenchmarks(data);
-            }
+            const response = await fetch(`/model-center/models/${selectedModel}/benchmarks`);
+            if (!response.ok) return;
+            const data = await response.json();
+            setBenchmarks(data);
         } catch (error) {
-            console.error("Erro ao buscar benchmarks:", error);
+            console.error('Erro ao buscar benchmarks:', error);
         }
     };
 
     useEffect(() => {
-        fetchModels();
+        void fetchModels();
     }, []);
 
     useEffect(() => {
-        fetchBenchmarks();
+        void fetchBenchmarks();
     }, [selectedModel]);
 
     const handleRun = async () => {
         if (!selectedModel) return;
         setRunning(true);
+
         try {
-            const res = await fetch('/model-center/benchmarks/run', {
+            const taskType = benchmarkSuites.find(suite => suite.label === selectedSuite)?.taskType || 'chat';
+            const response = await fetch('/model-center/benchmarks/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     modelId: selectedModel,
                     suite: selectedSuite,
-                    taskType: selectedSuite.includes('Coding') ? 'coding' : 'chat'
-                })
+                    taskType,
+                }),
             });
-            if (res.ok) {
+
+            if (response.ok) {
                 await fetchBenchmarks();
-                alert("Benchmark concluído!");
+                alert('Benchmark concluído!');
             }
         } catch (error) {
-            console.error("Erro ao rodar benchmark:", error);
+            console.error('Erro ao rodar benchmark:', error);
         } finally {
             setRunning(false);
         }
@@ -77,11 +98,11 @@ export const BenchmarkLabPanel: React.FC = () => {
                         <label className="block text-sm text-slate-400 mb-1">Modelo Alvo</label>
                         <select
                             value={selectedModel}
-                            onChange={(e) => setSelectedModel(e.target.value)}
+                            onChange={(event) => setSelectedModel(event.target.value)}
                             className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-orange-500"
                         >
-                            {models.map(m => (
-                                <option key={m.id} value={m.id}>{m.displayName || m.externalModelId}</option>
+                            {models.map(model => (
+                                <option key={model.id} value={model.id}>{model.displayName || model.externalModelId}</option>
                             ))}
                         </select>
                     </div>
@@ -89,12 +110,12 @@ export const BenchmarkLabPanel: React.FC = () => {
                         <label className="block text-sm text-slate-400 mb-1">Suíte de Testes</label>
                         <select
                             value={selectedSuite}
-                            onChange={(e) => setSelectedSuite(e.target.value)}
+                            onChange={(event) => setSelectedSuite(event.target.value)}
                             className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-orange-500"
                         >
-                            <option>General Coding (Python/JS)</option>
-                            <option>Chat & Raciocínio Completo</option>
-                            <option>Saída Estruturada (JSON)</option>
+                            {benchmarkSuites.map(suite => (
+                                <option key={suite.label} value={suite.label}>{suite.label}</option>
+                            ))}
                         </select>
                     </div>
                     <button
@@ -102,7 +123,7 @@ export const BenchmarkLabPanel: React.FC = () => {
                         disabled={running || !selectedModel}
                         className="px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50"
                     >
-                        {running ? "Executando..." : "Rodar Benchmark"}
+                        {running ? 'Executando...' : 'Rodar Benchmark'}
                     </button>
                 </div>
             </div>
@@ -121,13 +142,13 @@ export const BenchmarkLabPanel: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="text-slate-300 text-sm divide-y divide-slate-800">
-                            {benchmarks.map((b, i) => (
-                                <tr key={i}>
-                                    <td className="px-4 py-3">{models.find(m => m.id === b.modelId)?.externalModelId || b.modelId}</td>
-                                    <td className="px-4 py-3">{b.suite}</td>
-                                    <td className="px-4 py-3 font-semibold text-green-400">{b.score.toFixed(1)}</td>
-                                    <td className="px-4 py-3">{b.latencyMs}ms</td>
-                                    <td className="px-4 py-3 text-green-400">{b.success ? "Sucesso" : "Falha"}</td>
+                            {benchmarks.map((benchmark, index) => (
+                                <tr key={index}>
+                                    <td className="px-4 py-3">{models.find(model => model.id === benchmark.modelId)?.externalModelId || benchmark.modelId}</td>
+                                    <td className="px-4 py-3">{benchmark.suite}</td>
+                                    <td className="px-4 py-3 font-semibold text-green-400">{benchmark.score.toFixed(1)}</td>
+                                    <td className="px-4 py-3">{benchmark.latencyMs}ms</td>
+                                    <td className="px-4 py-3 text-green-400">{benchmark.success ? 'Sucesso' : 'Falha'}</td>
                                 </tr>
                             ))}
                             {benchmarks.length === 0 && (

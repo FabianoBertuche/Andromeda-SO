@@ -1,5 +1,21 @@
 import { v4 as uuidv4 } from "uuid";
 import { Capability } from "../model/Capability";
+import { RoutingDecisionProfile } from "./RoutingDecisionProfile";
+
+export interface RoutingCandidateScore {
+    modelId: string;
+    displayName: string;
+    locality: "local" | "cloud";
+    qualityScore: number;
+    latencyScore: number;
+    costScore: number;
+    capabilityFitScore: number;
+    stabilityScore: number;
+    weightedScore: number;
+    estimatedCost: number;
+    withinBudget: boolean;
+    latencyMs: number;
+}
 
 export interface RoutingDecisionProps {
     id?: string;
@@ -13,6 +29,8 @@ export interface RoutingDecisionProps {
     estimatedCost?: number;
     latencyMs?: number;
     justification: string;
+    weights?: RoutingDecisionProfile["weights"];
+    candidateScores?: RoutingCandidateScore[];
     createdAt?: Date;
 }
 

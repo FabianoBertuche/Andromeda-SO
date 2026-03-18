@@ -24,41 +24,37 @@ export const WsProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const [activeTask, setActiveTask] = useState<any | null>(null);
 
     useEffect(() => {
-        // Obter token do LocalStorage ou usar um hardcoded compatível com o middleware do Gateway
-        const token = localStorage.getItem("andromeda_token") || "andromeda-secret-token";
+        const token = localStorage.getItem("andromeda_token") || "andromeda_dev_web_token";
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const host = window.location.hostname || "127.0.0.1";
+        const port = window.location.port === "5173" ? "5005" : (window.location.port || "5005");
 
-        const newSocket = io("ws://localhost:5000", {
+        const newSocket = io(`${protocol}://${host}:${port}`, {
             auth: { token },
             transports: ["websocket"]
         });
 
         newSocket.on("connect", () => {
-            console.log("Conectado ao Gateway:", newSocket.id);
             setIsConnected(true);
 
-            // Criando uma sessão para testes com UUID provisório ou pedimos do backend
             const demoSessionId = "session-demo-mvp03";
             newSocket.emit("session.join", demoSessionId);
             setSession({ sessionId: demoSessionId });
         });
 
-        newSocket.on("connect_error", (err) => {
-            console.error("Erro de conexão WS:", err.message);
+        newSocket.on("connect_error", (error) => {
+            console.error("Erro de conexão WS:", error.message);
         });
 
         newSocket.on("disconnect", () => {
-            console.log("Desconectado do Gateway");
             setIsConnected(false);
         });
 
-        // O Gateway emite tudo no canal genérico 'gateway.event'
         newSocket.on("gateway.event", (payload) => {
-            console.log("Evento do Gateway recebido:", payload);
-
             if (payload.type === "task.updated") {
-                setActiveTask((prev: any) => ({ ...prev, status: payload.status, taskId: payload.taskId }));
+                setActiveTask((previous: any) => ({ ...previous, status: payload.status, taskId: payload.taskId }));
             } else if (payload.type === "task.completed") {
-                setActiveTask((prev: any) => ({ ...prev, result: payload.result, taskId: payload.taskId }));
+                setActiveTask((previous: any) => ({ ...previous, result: payload.result, taskId: payload.taskId }));
             } else if (payload.type === "task.created") {
                 setActiveTask({ status: "CREATED", taskId: payload.taskId, sessionId: payload.sessionId });
             }
