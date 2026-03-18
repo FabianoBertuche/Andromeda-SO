@@ -31,6 +31,8 @@ export * from "./domain/router/RoutingDecision";
 export * from "./domain/router/RoutingDecisionProfile";
 export * from "./domain/router/IRoutingDecisionRepository";
 export * from "./domain/router/IRoutingProfileRepository";
+export * from "./domain/cognitive/CognitiveContracts";
+export * from "./domain/cognitive/CognitivePorts";
 
 export * from "./application/use-cases/model-center/RegisterProviderUseCase";
 export * from "./application/use-cases/model-center/SyncModelsUseCase";

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { getWebsocketBaseUrl } from "../lib/runtime-config";
 
 interface WsContextData {
     socket: Socket | null;
@@ -25,11 +26,7 @@ export const WsProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
     useEffect(() => {
         const token = localStorage.getItem("andromeda_token") || "andromeda_dev_web_token";
-        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-        const host = window.location.hostname || "127.0.0.1";
-        const port = window.location.port === "5173" ? "5005" : (window.location.port || "5005");
-
-        const newSocket = io(`${protocol}://${host}:${port}`, {
+        const newSocket = io(getWebsocketBaseUrl(), {
             auth: { token },
             transports: ["websocket"]
         });

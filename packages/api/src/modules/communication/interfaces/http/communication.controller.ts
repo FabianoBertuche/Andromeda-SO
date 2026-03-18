@@ -5,6 +5,7 @@ import { ListSessionMessages } from "../../application/use-cases/ListSessionMess
 import { GetGatewayTaskStatus } from "../../application/use-cases/GetGatewayTaskStatus";
 import { GatewayValidationError } from "../../application/validators/gateway-message.validator";
 import { sendError } from "../../../../shared/http/error-response";
+import { getRequestId } from "../../../../shared/http/request-context";
 
 export class CommunicationController {
     constructor(
@@ -17,7 +18,13 @@ export class CommunicationController {
     async handleMessage(req: Request, res: Response) {
         try {
             const auth = (req as any).gatewayAuth;
-            const response = await this.receiveGatewayMessage.execute(req.body, auth);
+            const response = await this.receiveGatewayMessage.execute({
+                ...req.body,
+                metadata: {
+                    ...req.body?.metadata,
+                    requestId: req.body?.metadata?.requestId || getRequestId(req, res),
+                },
+            }, auth);
             return res.status(200).json(response);
         } catch (error: any) {
             if (error instanceof GatewayValidationError) {

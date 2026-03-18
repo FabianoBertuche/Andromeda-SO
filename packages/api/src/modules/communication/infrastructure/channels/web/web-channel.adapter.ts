@@ -32,7 +32,7 @@ export class WebChannelAdapter implements ChannelAdapterPort {
                 payload: input.content.payload,
             },
             metadata: {
-                requestId: input.metadata?.requestId,
+                requestId: input.metadata?.requestId || uuidv4(),
                 correlationId: input.metadata?.correlationId || uuidv4(),
                 messageIdempotencyKey: input.metadata?.messageIdempotencyKey,
                 timestamp,

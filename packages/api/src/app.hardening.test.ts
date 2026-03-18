@@ -45,4 +45,12 @@ describe("API hardening", () => {
         expect(response.body.error.field).toBe("content.text");
         expect(response.body.error.request_id).toMatch(/[0-9a-f-]{8,}/i);
     });
+
+    it("keeps the API operational when the cognitive service is disabled", async () => {
+        const response = await request(app).get("/internal/cognitive/health");
+
+        expect(response.status).toBe(200);
+        expect(response.body.status).toBe("disabled");
+        expect(response.body.service).toBe("cognitive-python");
+    });
 });

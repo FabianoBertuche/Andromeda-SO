@@ -1,0 +1,9 @@
+Error: Invalid transition from completed to failed
+    at Task.transitionTo (C:\FB\Andromeda-SO\packages\core\src\domain\task\Task.ts:71:19)
+    at ExecuteTask.execute (C:\FB\Andromeda-SO\packages\core\src\application\use-cases\ExecuteTask.ts:61:18)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async TaskController.execute (C:\FB\Andromeda-SO\packages\api\src\presentation\controllers\TaskController.ts:62:26)
+[routing.model-center.fallback] {
+  taskId: 'c5fab1b1-ad8b-49a6-9fb2-038ae0d4db80',
+  error: 'Não foram encontrados modelos elegíveis para as capacidades requeridas'
+}

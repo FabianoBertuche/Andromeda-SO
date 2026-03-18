@@ -1,0 +1,189 @@
+Registering Model Center Routes...
+Initializing Andromeda OS Express App...
+Importing modelCenterRoutes...
+modelCenterRoutes imported!
+📡 CommunicationWsGateway initialized
+🚀 Andromeda OS API running on port 5000 (HTTP + WS)
+GET /health 200 6.621 ms req_id=1588d2d5-1949-4c43-8ebb-4b0f63bcafb5
+[cognitive.integration.request] {
+  operation: 'health',
+  attempt: 1,
+  requestId: undefined,
+  correlationId: undefined
+}
+[cognitive.integration.success] {
+  operation: 'health',
+  attempt: 1,
+  requestId: undefined,
+  correlationId: undefined
+}
+GET /internal/cognitive/health 200 90.913 ms req_id=84bd6244-c939-4ca9-8a7a-0e5c6d50c58a
+[cognitive.integration.request] {
+  operation: 'ping',
+  attempt: 1,
+  requestId: 'dc5ea0a4-c1a2-4721-9a67-00caee4283fe',
+  correlationId: 'manual-test'
+}
+[cognitive.integration.success] {
+  operation: 'ping',
+  attempt: 1,
+  requestId: 'dc5ea0a4-c1a2-4721-9a67-00caee4283fe',
+  correlationId: 'manual-test'
+}
+POST /internal/cognitive/ping 200 20.399 ms req_id=dc5ea0a4-c1a2-4721-9a67-00caee4283fe
+POST /skills 201 1.061 ms req_id=4d8386be-48bc-4a6c-bd16-07069b9ed92f
+[EventBus] TaskCreated capturado! Auto-executando task 2bb74bea-d601-4a1a-83f9-39551a157163...
+Executando skill: calculadora com input: { a: 10, b: 20 }
+POST /tasks 201 5.260 ms req_id=ccb95d87-cf17-4dbb-8630-957cc0acd690
+POST /tasks/2bb74bea-d601-4a1a-83f9-39551a157163/execute 500 10.530 ms req_id=340f68f3-4992-4d36-83ac-6a098a1303c6
+[EventBus] TaskCreated capturado! Auto-executando task 212ff516-2260-488c-961b-3968b88f2992...
+Executando skill: calculadora com input: { a: 10, b: 20 }
+POST /tasks 201 1.565 ms req_id=e088968e-6e7c-4641-acb3-a31982c56139
+GET /tasks/212ff516-2260-488c-961b-3968b88f2992 200 0.949 ms req_id=84887daa-0db1-4bde-831e-967be0ef51ca
+[EventBus] TaskCreated capturado! Auto-executando task c5fab1b1-ad8b-49a6-9fb2-038ae0d4db80...
+[cognitive.integration.request] {
+  operation: 'classify',
+  attempt: 1,
+  requestId: '2a378dc7-4307-4a2e-bd45-91a8c8c9f548',
+  correlationId: '95c344ce-f80c-4b12-a53e-6c38ce2ee5df'
+}
+POST /gateway/message 200 4.541 ms req_id=2a378dc7-4307-4a2e-bd45-91a8c8c9f548
+[cognitive.integration.success] {
+  operation: 'classify',
+  attempt: 1,
+  requestId: '2a378dc7-4307-4a2e-bd45-91a8c8c9f548',
+  correlationId: '95c344ce-f80c-4b12-a53e-6c38ce2ee5df'
+}
+[cognitive.routing.signal] {
+  taskId: 'c5fab1b1-ad8b-49a6-9fb2-038ae0d4db80',
+  requestId: '2a378dc7-4307-4a2e-bd45-91a8c8c9f548',
+  correlationId: '95c344ce-f80c-4b12-a53e-6c38ce2ee5df',
+  activityType: 'chat.general',
+  source: 'cognitive'
+}
+[routing.signal.selected] {
+  taskId: 'c5fab1b1-ad8b-49a6-9fb2-038ae0d4db80',
+  source: 'cognitive',
+  activityType: 'chat.general',
+  warnings: []
+}
+GET /gateway/tasks/c5fab1b1-ad8b-49a6-9fb2-038ae0d4db80/status 200 1.854 ms req_id=6e0d23ac-ca21-42e3-bd2e-6292b347bc72
+GET /health 200 0.568 ms req_id=4c2e72db-b089-4497-9d79-f52c294b433b
+GET /model-center/models 200 52.030 ms req_id=282d0a94-901f-4df7-b7f7-367a0e63971a
+GET /model-center/models 304 1.767 ms req_id=1fc489b8-6868-4016-b7f3-ad189eccabe2
+GET /model-center/models 304 0.862 ms req_id=843bbe5a-0d6e-4440-939a-25fda16752e9
+GET /model-center/models 304 0.957 ms req_id=6da03f1d-8d5c-40e3-97c0-f99bf977d43a
+🔌 WS Connected: Socket zK3tqEWIgitmwzJIAAAC (no session)
+🔌 Socket zK3tqEWIgitmwzJIAAAC explicitly joined session session-demo-mvp03
+GET /model-center/models 304 0.427 ms req_id=1f20e176-1b04-43a8-bdcc-d623809f71b0
+GET /model-center/models 304 0.881 ms req_id=a04cbfd5-1349-466e-8cb2-7dc65644f53f
+GET /model-center/models 304 0.722 ms req_id=b81ef255-26c0-40cc-9c8a-db3830838da5
+GET /model-center/models 304 1.026 ms req_id=d1ef77c1-9f21-436f-b558-115e99089578
+GET /gateway/tasks/nonexistent/status 404 1.539 ms req_id=bc6765d1-f071-443a-8d97-d6b22994f87b
+GET /model-center/models 304 1.242 ms req_id=e10a1a51-365e-443c-9639-42f01903dbf5
+[EventBus] TaskCreated capturado! Auto-executando task bb0d25fc-7938-448d-b6c1-df8efe05581a...
+[cognitive.integration.request] {
+  operation: 'classify',
+  attempt: 1,
+  requestId: '5a2c1339-9e09-43e3-9fb9-393c554b8d96',
+  correlationId: '318dc342-db2a-4c8c-a662-cf988db48cfe'
+}
+POST /gateway/message 200 2.290 ms req_id=5a2c1339-9e09-43e3-9fb9-393c554b8d96
+[cognitive.integration.success] {
+  operation: 'classify',
+  attempt: 1,
+  requestId: '5a2c1339-9e09-43e3-9fb9-393c554b8d96',
+  correlationId: '318dc342-db2a-4c8c-a662-cf988db48cfe'
+}
+[cognitive.routing.signal] {
+  taskId: 'bb0d25fc-7938-448d-b6c1-df8efe05581a',
+  requestId: '5a2c1339-9e09-43e3-9fb9-393c554b8d96',
+  correlationId: '318dc342-db2a-4c8c-a662-cf988db48cfe',
+  activityType: 'chat.general',
+  source: 'cognitive'
+}
+[routing.signal.selected] {
+  taskId: 'bb0d25fc-7938-448d-b6c1-df8efe05581a',
+  source: 'cognitive',
+  activityType: 'chat.general',
+  warnings: []
+}
+🔌 WS Connected: Socket vtPaW1zdZUKmQYwRAAAE (no session)
+🔌 WS Disconnected: Socket vtPaW1zdZUKmQYwRAAAE
+GET /model-center/models 304 1.201 ms req_id=28619cbd-113c-420a-8aac-490ee73a2555
+GET /model-center/models 304 0.489 ms req_id=1475049d-3c03-48ad-9ea2-3376de8f7949
+GET /model-center/models 304 0.673 ms req_id=0ef207e9-3ca8-4d0a-b6a2-bc3544d32001
+🔌 WS Disconnected: Socket zK3tqEWIgitmwzJIAAAC
+GET /model-center/models 304 0.851 ms req_id=12e09201-f26c-465b-9366-4dd057e4f106
+GET /model-center/models 304 0.640 ms req_id=c606ba90-82cd-43b7-8498-cd4522d1b388
+GET /model-center/models 304 0.657 ms req_id=2ca0acaa-b621-4dba-91b0-6d5be388bc6b
+GET /model-center/models 304 0.645 ms req_id=07cb0063-df1c-4c33-b180-fed17527333b
+🔌 WS Connected: Socket zRhVocEsMjj9I-xmAAAH (no session)
+🔌 Socket zRhVocEsMjj9I-xmAAAH explicitly joined session session-demo-mvp03
+🔌 WS Disconnected: Socket zRhVocEsMjj9I-xmAAAH
+GET /model-center/models 304 0.517 ms req_id=c5701b2b-978a-43cc-a61b-21e4dc6bfac6
+GET /model-center/models 304 0.609 ms req_id=1c84c0b1-ce97-44dc-b477-1cd4be245f82
+GET /model-center/models 304 0.411 ms req_id=88c2aa5f-1f15-49c4-a6a2-f662cd4fc380
+GET /model-center/models 304 0.667 ms req_id=98d65b25-597b-4fde-aa7c-5e3dadae109c
+🔌 WS Connected: Socket mcbA64lhmT8jJJdiAAAK (no session)
+🔌 Socket mcbA64lhmT8jJJdiAAAK explicitly joined session session-demo-mvp03
+[EventBus] TaskCreated capturado! Auto-executando task fac910fc-04cf-47d6-8cea-36ef6c1bcfdc...
+POST /gateway/message 200 2.374 ms req_id=9179d704-d4f2-4555-a034-d79004958641
+GET /gateway/tasks/fac910fc-04cf-47d6-8cea-36ef6c1bcfdc/status 200 0.418 ms req_id=c2ead9d0-68ee-43cd-8224-503d479aaa88
+GET /gateway/tasks/fac910fc-04cf-47d6-8cea-36ef6c1bcfdc/status 304 0.314 ms req_id=dc35d3af-25f3-4fba-95d5-f2458e124e50
+GET /gateway/tasks/fac910fc-04cf-47d6-8cea-36ef6c1bcfdc/status 304 0.328 ms req_id=595be69a-7068-4327-9825-fbbd662d3710
+GET /gateway/tasks/fac910fc-04cf-47d6-8cea-36ef6c1bcfdc/status 200 0.560 ms req_id=9771d704-b8d7-432d-9061-66e1659c7db8
+GET /gateway/sessions/session-demo-mvp03/timeline 200 1.727 ms req_id=3d356e3f-d9ff-42f7-aa0a-5ee4d61d2a89
+GET /gateway/sessions/session-demo-mvp03/timeline 304 1.007 ms req_id=46837598-2755-4d54-8875-caf8941be9d4
+GET /model-center/models 304 0.717 ms req_id=7cc60160-0a45-47de-b063-16bcc97a6832
+GET /model-center/models 304 0.434 ms req_id=b69812f3-69e8-4e99-a774-88f122751b40
+GET /model-center/models 304 0.318 ms req_id=077e0893-8112-4405-92c2-2a8dbefba617
+GET /model-center/router/decisions 200 0.827 ms req_id=18f78c4b-00f2-4acf-be9f-e70c140cd8d5
+GET /model-center/router/config 200 1.691 ms req_id=5a88e205-244c-41ae-859d-fcd8bdb7140a
+GET /model-center/router/decisions 304 0.548 ms req_id=7c1fa2ae-e878-482c-8040-3d9ac1d661ce
+GET /model-center/router/config 304 1.041 ms req_id=7cecd808-2a34-40ec-a239-b71ffbb4f44b
+POST /model-center/router/simulate 200 1.824 ms req_id=c7006257-f82b-49a1-bf3e-4789a3a9401b
+GET /model-center/router/decisions 200 0.700 ms req_id=4c9e4581-64ee-4ac9-a69a-dc906805fe52
+GET /model-center/models 304 0.415 ms req_id=f6fe27a3-f00f-4348-86de-8c1b05ebb061
+POST /model-center/router/simulate 400 0.597 ms req_id=2a4b11fd-3d0b-446d-a4e5-bf3f880e10bf
+GET /model-center/models 304 0.566 ms req_id=e21ab3ca-c9d8-4e43-8050-0916e59e7a3a
+GET /model-center/models 304 0.403 ms req_id=beee8e59-cf50-4cae-a681-2366e225e2fa
+GET /model-center/models 304 0.497 ms req_id=b04f2229-a9cf-43e6-8033-3ed7431581a8
+GET /model-center/models 304 0.477 ms req_id=23a0e9e4-4153-48c1-830b-0851fad99c19
+GET /model-center/models 304 0.361 ms req_id=85912174-34ca-4110-873c-6900bac156c9
+GET /model-center/models 304 0.942 ms req_id=060ff58f-21c9-43bd-9370-a1beff0a2779
+GET /model-center/models 304 0.550 ms req_id=7485c711-928c-4af3-a020-8bb2a1ff92ee
+GET /model-center/models 304 0.436 ms req_id=1ac189ce-431a-49aa-a1f1-3bd30d362708
+GET /model-center/models 304 0.367 ms req_id=5e63d7ba-2bfe-41f7-a7bf-07f1c17b5043
+GET /model-center/models 304 0.347 ms req_id=54bc80e4-39f6-4de1-9a12-f04b163032f6
+GET /model-center/models 304 0.372 ms req_id=8c5bcde0-8ad7-4c61-bd8d-3f54080df93c
+GET /model-center/models 304 1.161 ms req_id=0170ab03-43f4-43db-b08e-f7a6011167dc
+GET /model-center/models 304 3.576 ms req_id=75455c3a-e735-40b8-afc4-3caed09eb536
+GET /model-center/models 304 1.204 ms req_id=a655e893-32a5-4a04-8c5b-d2617aac6ac3
+GET /model-center/models 304 0.718 ms req_id=f8c76060-d451-4931-b774-703c95e0144e
+GET /model-center/models 304 0.553 ms req_id=219e12b3-1c29-42b6-8ee0-efb92b95a36a
+GET /model-center/models 304 0.421 ms req_id=748e4890-ad50-4016-a7a3-4d6104013477
+GET /model-center/models 304 0.434 ms req_id=f776786e-1c7c-4be4-9de3-5481e147f1dc
+GET /health 200 0.399 ms req_id=ee646f06-2260-4f0c-b294-2d9ac41b3d5e
+GET /gateway/tasks/nonexistent/status 404 0.554 ms req_id=b60ab711-2920-431f-bf42-555df9591d4e
+🔌 WS Connected: Socket 25Zfe6ryNgN9HhA9AAAM (no session)
+🔌 WS Disconnected: Socket 25Zfe6ryNgN9HhA9AAAM
+[EventBus] TaskCreated capturado! Auto-executando task 0e5e10cb-f6bc-4976-84a5-3edf6064c761...
+POST /gateway/message 200 3.725 ms req_id=4363cdf9-089d-4643-9fdf-9b7a75be128c
+GET /gateway/tasks/0e5e10cb-f6bc-4976-84a5-3edf6064c761/status 200 0.558 ms req_id=36419a42-1781-41b2-9152-bea9abe67c51
+GET /gateway/tasks/0e5e10cb-f6bc-4976-84a5-3edf6064c761/status 304 0.376 ms req_id=3c507674-0207-46a4-aa94-0d85f3569392
+GET /gateway/tasks/0e5e10cb-f6bc-4976-84a5-3edf6064c761/status 200 0.497 ms req_id=9c3378e1-80b3-4153-95ca-44665402c920
+GET /model-center/models 304 0.377 ms req_id=06f63767-b337-44ec-b0e6-3dffc5739299
+[EventBus] TaskCreated capturado! Auto-executando task 43c6f60b-d862-47ec-8684-1ff4a0deeb40...
+POST /gateway/message 200 1.793 ms req_id=82248b14-13bd-47f1-ba2b-9dd606fb83cf
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 200 0.359 ms req_id=1b45d2fd-17e1-4d0e-8b28-4e259b6805fe
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 304 0.395 ms req_id=d8217714-dbb4-419a-8955-f10575d55c99
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 304 0.300 ms req_id=4c3a036f-42ce-4b35-b5c9-b42f0334986c
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 304 0.232 ms req_id=9490714b-82e8-4c7c-a931-aa9192967031
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 304 0.268 ms req_id=16832966-2ae0-4684-b4b6-b40d83aa3688
+GET /model-center/models 304 0.540 ms req_id=41e52bc4-9446-4f32-9313-ab2ee0bbc141
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 304 0.204 ms req_id=c6d8ac16-a3ed-494f-8fa1-51b2aa80110e
+GET /gateway/tasks/43c6f60b-d862-47ec-8684-1ff4a0deeb40/status 200 0.201 ms req_id=778f76ea-605c-47e4-bc98-39eb7ac560cd
+GET /model-center/models 304 0.356 ms req_id=e068ff8d-3431-47e2-bf0d-8d6d13f08632
+GET /model-center/models 304 0.470 ms req_id=54c1a32e-3d5e-4b90-b3f7-ad6d2278e33f
+GET /model-center/models 304 0.500 ms req_id=e491dc89-d732-40f6-8fe6-4aa3c7864efc

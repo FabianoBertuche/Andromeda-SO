@@ -1,4 +1,6 @@
-import { AgentRegistry, Capability, ExecutionResult, ExecutionStrategy, IProviderAdapter, Provider, Task } from "@andromeda/core";
+import { AgentRegistry, ExecutionResult, ExecutionStrategy, IProviderAdapter, Provider, Task } from "@andromeda/core";
+import { CognitiveRoutingSignalService } from "../../modules/cognitive/application/CognitiveRoutingSignalService";
+import { cognitiveRoutingSignalService } from "../../modules/cognitive/dependencies";
 import { routeTaskUseCase } from "../../modules/model-center/dependencies";
 import { OllamaProviderAdapter } from "../adapters/providers/OllamaProviderAdapter";
 import { globalModelRepository, globalProviderRepository } from "../repositories/GlobalRepositories";
@@ -6,8 +8,12 @@ import { globalModelRepository, globalProviderRepository } from "../repositories
 export class LLMExecutionStrategy implements ExecutionStrategy {
     private readonly ollamaAdapter: IProviderAdapter;
 
-    constructor(private readonly agentRegistry: AgentRegistry) {
-        this.ollamaAdapter = new OllamaProviderAdapter();
+    constructor(
+        private readonly agentRegistry: AgentRegistry,
+        private readonly routingSignalService: CognitiveRoutingSignalService = cognitiveRoutingSignalService,
+        providerAdapter?: IProviderAdapter,
+    ) {
+        this.ollamaAdapter = providerAdapter || new OllamaProviderAdapter();
     }
 
     async execute(task: Task): Promise<ExecutionResult> {
@@ -94,7 +100,14 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
 
     private async tryRouteTask(task: Task): Promise<{ modelName: string; provider: Provider } | null> {
         try {
-            const routing = this.inferRouting(task.getRawRequest());
+            const routing = await this.routingSignalService.resolve(task);
+            console.info("[routing.signal.selected]", {
+                taskId: task.getId(),
+                source: routing.source,
+                activityType: routing.activityType,
+                warnings: routing.warnings,
+            });
+
             const decision = await routeTaskUseCase.execute({
                 taskId: task.getId(),
                 activityType: routing.activityType,
@@ -111,40 +124,13 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
                 modelName: model.getExternalModelId(),
                 provider,
             };
-        } catch {
+        } catch (error) {
+            console.warn("[routing.model-center.fallback]", {
+                taskId: task.getId(),
+                error: error instanceof Error ? error.message : "unknown_error",
+            });
             return null;
         }
-    }
-
-    private inferRouting(rawRequest: string): { activityType: string; requiredCapabilities: Capability[] } {
-        const normalized = rawRequest.toLowerCase();
-
-        if (/(debug|stack trace|erro|fix bug|corrigir)/i.test(normalized)) {
-            return { activityType: "coding.debug", requiredCapabilities: [Capability.CODING] };
-        }
-        if (/(arquitetura|architecture|refactor|design system)/i.test(normalized)) {
-            return { activityType: "coding.architecture", requiredCapabilities: [Capability.ARCHITECTURE] };
-        }
-        if (/(traduz|translate|translation)/i.test(normalized)) {
-            return { activityType: "translation", requiredCapabilities: [Capability.CHAT] };
-        }
-        if (/(resum|summary|summarize)/i.test(normalized)) {
-            return { activityType: "chat.summarization", requiredCapabilities: [Capability.SUMMARIZATION] };
-        }
-        if (/(rag|retrieval|embedding|vector)/i.test(normalized)) {
-            return { activityType: "rag.retrieval", requiredCapabilities: [Capability.RAG] };
-        }
-        if (/(imagem|image|vision|foto|screenshot)/i.test(normalized)) {
-            return { activityType: "vision.general", requiredCapabilities: [Capability.VISION] };
-        }
-        if (/(audio|speech|transcri|stt|tts)/i.test(normalized)) {
-            return { activityType: "audio.stt", requiredCapabilities: [Capability.AUDIO] };
-        }
-        if (/(código|code|function|typescript|python|javascript)/i.test(normalized)) {
-            return { activityType: "coding.generate", requiredCapabilities: [Capability.CODING] };
-        }
-
-        return { activityType: "chat.general", requiredCapabilities: [Capability.CHAT] };
     }
 
     private async ensureDefaultProvider(): Promise<Provider> {
