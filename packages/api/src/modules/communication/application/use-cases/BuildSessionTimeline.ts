@@ -14,36 +14,56 @@ export class BuildSessionTimeline {
 
         const entries: TimelineEntry[] = [];
 
-        // Add message entries
+        // Mensagens do Chat
         for (const msg of messages) {
             entries.push({
-                type: "message.received",
+                type: "message",
                 timestamp: msg.metadata.timestamp || new Date().toISOString(),
-                description: `Mensagem recebida: ${msg.content.text?.substring(0, 50)}...`,
-                metadata: { messageId: msg.id, channel: msg.channel }
+                summary: msg.role === 'user' ? `Mensagem do usuário: "${msg.content.text?.substring(0, 40)}..."` : `Resposta do assistente`,
+                details: {
+                    messageId: msg.id,
+                    channel: msg.channel,
+                    model: msg.metadata.modelId,
+                    content: msg.content.text
+                }
             });
         }
 
-        // Add task entries
+        // Fluxo de Tarefas e Kernel
         for (const task of tasks) {
+            const meta = task.getMetadata();
+
             entries.push({
-                type: "task.created",
+                type: "task_created",
                 timestamp: task.getCreatedAt().toISOString(),
-                description: `Task criada: ${task.getId()}`,
-                metadata: { taskId: task.getId(), status: task.getStatus() }
+                summary: `Tarefa iniciada via ${meta.sourceChannel || 'sistema'}`,
+                details: {
+                    taskId: task.getId(),
+                    status: task.getStatus(),
+                    input: task.getRawRequest(),
+                    modelId: meta.modelId
+                }
             });
 
             if (task.getStatus() === "completed" || task.getStatus() === "failed") {
+                const result = task.getResult();
                 entries.push({
-                    type: "task.finished",
+                    type: "task_result",
                     timestamp: task.getUpdatedAt().toISOString(),
-                    description: `Task ${task.getStatus()}: ${task.getId()}`,
-                    metadata: { taskId: task.getId(), status: task.getStatus(), result: task.getResult() }
+                    summary: task.getStatus() === "completed"
+                        ? `Tarefa concluída com sucesso (Modelo: ${result?.model || 'Desconhecido'})`
+                        : `Tarefa falhou: ${result?.error || 'Erro desconhecido'}`,
+                    details: {
+                        taskId: task.getId(),
+                        status: task.getStatus(),
+                        result,
+                        executionTime: task.getUpdatedAt().getTime() - task.getCreatedAt().getTime()
+                    }
                 });
             }
         }
 
-        // Sort by timestamp
+        // Ordenar por timestamp
         entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
         return {

@@ -73,6 +73,7 @@ export interface UnifiedMessageProps {
             sizeBytes?: number;
         }>;
         context?: Record<string, unknown>;
+        modelId?: string;
     };
 }
 

@@ -3,8 +3,8 @@ import { DomainEvent } from "@andromeda/core";
 export interface TimelineEntry {
     type: string;
     timestamp: string;
-    description: string;
-    metadata: Record<string, any>;
+    summary: string;
+    details: Record<string, any>;
 }
 
 export interface SessionTimelineView {

@@ -10,6 +10,9 @@ import taskRoutes from "./presentation/routes/taskRoutes";
 import skillRoutes from "./presentation/routes/skillRoutes";
 import agentRoutes from "./presentation/routes/agentRoutes";
 import communicationRoutes from "./modules/communication/interfaces/http/communication.routes";
+console.log("Importing modelCenterRoutes...");
+import modelCenterRoutes from "./modules/model-center/interfaces/http/modelCenter.routes";
+console.log("modelCenterRoutes imported!");
 
 const app = express();
 
@@ -34,6 +37,7 @@ app.use("/tasks", taskRoutes);
 app.use("/skills", skillRoutes);
 app.use("/agents", agentRoutes);
 app.use("/gateway", communicationRoutes);
+app.use("/model-center", modelCenterRoutes);
 
 app.use("/console", express.static(path.join(__dirname, "modules/communication/interfaces/http/public")));
 

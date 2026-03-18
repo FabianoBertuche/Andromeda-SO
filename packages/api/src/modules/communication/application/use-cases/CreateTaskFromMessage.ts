@@ -21,6 +21,7 @@ export class CreateTaskFromMessage {
                 correlationId: message.metadata.correlationId,
                 originMessageId: message.id,
                 requestId: message.metadata.requestId,
+                modelId: message.metadata.modelId,
             },
         });
 

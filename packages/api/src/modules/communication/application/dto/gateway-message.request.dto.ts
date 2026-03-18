@@ -27,5 +27,6 @@ export interface GatewayMessageRequestDto {
             version?: string;
         };
         context?: Record<string, unknown>;
+        modelId?: string;
     };
 }
