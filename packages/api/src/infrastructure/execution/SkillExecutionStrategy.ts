@@ -1,9 +1,10 @@
-import { Task, ExecutionStrategy, ExecutionResult, SkillRegistry, ExecuteSkill } from "@andromeda/core";
+import { Task, ExecutionStrategy, ExecutionResult, SkillRegistry } from "@andromeda/core";
+import { SandboxedSkillExecutor } from "../skills/SandboxedSkillExecutor";
 
 export class SkillExecutionStrategy implements ExecutionStrategy {
     constructor(
         private readonly skillRegistry: SkillRegistry,
-        private readonly executeSkillUseCase: ExecuteSkill
+        private readonly executeSkillUseCase: SandboxedSkillExecutor
     ) { }
 
     async execute(task: Task): Promise<ExecutionResult> {
@@ -20,7 +21,10 @@ export class SkillExecutionStrategy implements ExecutionStrategy {
             // No futuro, isso seria feito por um parser ou LLM Structurer
             const input = task.getMetadata()?.input || {};
 
-            const result = await this.executeSkillUseCase.execute(skill, input);
+            const result = await this.executeSkillUseCase.execute(skill, input, {
+                taskId: task.getId(),
+                metadata: task.getMetadata(),
+            });
 
             return {
                 success: true,

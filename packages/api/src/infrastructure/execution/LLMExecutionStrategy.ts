@@ -3,6 +3,8 @@ import { CognitiveRoutingSignalService } from "../../modules/cognitive/applicati
 import { cognitiveRoutingSignalService } from "../../modules/cognitive/dependencies";
 import { AgentRuntimeOrchestrator } from "../../modules/agent-management/application/AgentRuntimeOrchestrator";
 import { agentRuntimeOrchestrator } from "../../modules/agent-management/dependencies";
+import { MemoryService } from "../../modules/memory/application/MemoryService";
+import { memoryService } from "../../modules/memory/dependencies";
 import { routeTaskUseCase } from "../../modules/model-center/dependencies";
 import { OllamaProviderAdapter } from "../adapters/providers/OllamaProviderAdapter";
 import { globalModelRepository, globalProviderRepository } from "../repositories/GlobalRepositories";
@@ -15,6 +17,7 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
         private readonly routingSignalService: CognitiveRoutingSignalService = cognitiveRoutingSignalService,
         providerAdapter?: IProviderAdapter,
         private readonly runtimeOrchestrator: AgentRuntimeOrchestrator = agentRuntimeOrchestrator,
+        private readonly memoryLayer: MemoryService = memoryService,
     ) {
         this.ollamaAdapter = providerAdapter || new OllamaProviderAdapter();
     }
@@ -52,20 +55,29 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
                 responseText: response.message?.content || response.response || "Sem resposta do modelo.",
                 modelName,
             });
+            const resultData = {
+                content: finalized.content,
+                model: modelName,
+                agent: finalized.agent,
+                audit: finalized.audit,
+                behaviorSnapshot: prepared.assembly.behaviorSnapshot,
+                usage: response.usage || {
+                    prompt_tokens: response.prompt_eval_count,
+                    completion_tokens: response.eval_count,
+                },
+            };
+            task.setResult(resultData);
+            task.setAuditParecer(finalized.audit);
+            await this.memoryLayer.registerExecutionMemory(task).catch((error) => {
+                console.warn("[memory.execution.record.failed]", {
+                    taskId: task.getId(),
+                    error: error instanceof Error ? error.message : "unknown_error",
+                });
+            });
 
             return {
                 success: true,
-                data: {
-                    content: finalized.content,
-                    model: modelName,
-                    agent: finalized.agent,
-                    audit: finalized.audit,
-                    behaviorSnapshot: prepared.assembly.behaviorSnapshot,
-                    usage: response.usage || {
-                        prompt_tokens: response.prompt_eval_count,
-                        completion_tokens: response.eval_count,
-                    }
-                },
+                data: resultData,
                 strategyUsed: this.getIdentifier(),
             };
         } catch (error: any) {

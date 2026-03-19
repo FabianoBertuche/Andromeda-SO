@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from './runtime-config';
+
 export interface AgentSummary {
   id: string;
   name: string;
@@ -144,20 +146,182 @@ export interface AgentChatResponse {
   };
 }
 
+export type SandboxMode = 'none' | 'process' | 'container' | 'remote';
+export type NetworkMode = 'off' | 'restricted' | 'tool_only' | 'full';
+export type OutputType = 'text' | 'json' | 'file' | 'binary';
+export type RetentionMode = 'none' | 'request' | 'session' | 'task' | 'persistent';
+export type RiskLevel = 'low' | 'moderate' | 'high' | 'critical';
+
+export interface SandboxProfile {
+  id: string;
+  name: string;
+  description: string;
+  version: number;
+  isSystem: boolean;
+  mode: SandboxMode;
+  riskLevel: RiskLevel;
+  config: SandboxConfig;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SandboxConfig {
+  enabled: boolean;
+  mode: SandboxMode;
+  filesystem: {
+    readOnlyRoot: boolean;
+    workingDirectory: string;
+    allowedReadPaths: string[];
+    allowedWritePaths: string[];
+    tempDirectory: string;
+    persistArtifacts: boolean;
+    maxArtifactSizeMb?: number;
+    maxTotalArtifactSizeMb?: number;
+  };
+  network: {
+    mode: NetworkMode;
+    allowedDomains?: string[];
+    allowedIps?: string[];
+    allowedPorts?: number[];
+    blockPrivateNetworks: boolean;
+    allowDns: boolean;
+    httpOnly: boolean;
+  };
+  resources: {
+    timeoutSeconds: number;
+    cpuLimit: number;
+    memoryMb: number;
+    diskMb: number;
+    maxProcesses: number;
+    maxThreads: number;
+    maxStdoutKb: number;
+    maxStderrKb: number;
+  };
+  execution: {
+    allowShell: boolean;
+    allowedBinaries: string[];
+    blockedBinaries: string[];
+    allowedInterpreters: string[];
+    allowSubprocessSpawn: boolean;
+    allowPackageInstall: boolean;
+  };
+  environment: {
+    runtime: string;
+    runtimeVersion: string;
+    envVars: Record<string, string>;
+    inheritHostEnv: boolean;
+    secretInjection: boolean;
+    timezone: string;
+    locale: string;
+  };
+  security: {
+    runAsNonRoot: boolean;
+    noNewPrivileges: boolean;
+    disableDeviceAccess: boolean;
+    disablePrivilegedMode: boolean;
+    disableHostNamespaces: boolean;
+  };
+  ioPolicy: {
+    maxInputSizeKb: number;
+    maxOutputSizeKb: number;
+    allowedOutputTypes: OutputType[];
+    stripSensitiveOutput: boolean;
+    contentScan: boolean;
+    retention: RetentionMode;
+  };
+  audit: {
+    enabled: boolean;
+    captureCommand: boolean;
+    captureStdout: boolean;
+    captureStderr: boolean;
+    captureExitCode: boolean;
+    captureArtifacts: boolean;
+    captureTiming: boolean;
+    captureHashes: boolean;
+    capturePolicySnapshot: boolean;
+    captureNetworkEvents: boolean;
+  };
+  approvals: {
+    requireApprovalForExec: boolean;
+    requireApprovalForWriteOutsideWorkspace: boolean;
+    requireApprovalForNetwork: boolean;
+    requireApprovalForLargeArtifacts: boolean;
+  };
+}
+
+export interface AgentSandboxConfig {
+  agentId: string;
+  enabled: boolean;
+  profileId: string | null;
+  overrides: Partial<SandboxConfig>;
+  enforcement: {
+    mandatoryForCapabilities: string[];
+    fallbackBehavior: 'deny' | 'allow';
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SandboxValidationResult {
+  valid: boolean;
+  issues: Array<{ field: string; message: string; severity: 'error' | 'warning' }>;
+}
+
+export interface SandboxDryRunResult {
+  allowed: boolean;
+  requiresApproval: boolean;
+  riskLevel: RiskLevel;
+  validation: SandboxValidationResult;
+  effectivePolicy: SandboxConfig;
+  reasons: string[];
+}
+
+export interface SandboxExecutionItem {
+  id: string;
+  agentId: string;
+  taskId?: string | null;
+  skillId?: string | null;
+  capability: string;
+  status: string;
+  mode: SandboxMode;
+  command: string[];
+  policySnapshot: SandboxConfig;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  durationMs?: number | null;
+  exitCode?: number | null;
+  errorMessage?: string | null;
+  stdout?: string;
+  stderr?: string;
+}
+
+export interface ApprovalRequestItem {
+  id: string;
+  agentId: string;
+  taskId?: string | null;
+  executionId?: string | null;
+  reason: string;
+  requestedAction: Record<string, unknown>;
+  status: 'pending' | 'approved' | 'rejected';
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+}
+
 export async function listAgents(): Promise<AgentSummary[]> {
-  const response = await fetch('/agents');
+  const response = await fetch(`${getApiBaseUrl()}/agents`);
   ensureOk(response, 'Falha ao listar agentes.');
   return response.json() as Promise<AgentSummary[]>;
 }
 
 export async function getAgentProfile(id: string): Promise<AgentProfileDocument> {
-  const response = await fetch(`/agents/${id}/profile`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile`);
   ensureOk(response, 'Falha ao carregar o perfil do agente.');
   return response.json() as Promise<AgentProfileDocument>;
 }
 
 export async function updateAgentProfile(id: string, payload: Partial<AgentProfileDocument>): Promise<AgentProfileDocument> {
-  const response = await fetch(`/agents/${id}/profile`, {
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -169,13 +333,13 @@ export async function updateAgentProfile(id: string, payload: Partial<AgentProfi
 }
 
 export async function getAgentProfileHistory(id: string): Promise<AgentProfileHistoryEntry[]> {
-  const response = await fetch(`/agents/${id}/profile/history`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile/history`);
   ensureOk(response, 'Falha ao carregar o historico do perfil.');
   return response.json() as Promise<AgentProfileHistoryEntry[]>;
 }
 
 export async function restoreAgentProfileVersion(id: string, version: string): Promise<AgentProfileDocument> {
-  const response = await fetch(`/agents/${id}/profile/restore/${version}`, {
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile/restore/${version}`, {
     method: 'POST',
   });
   ensureOk(response, 'Falha ao restaurar a versao do perfil.');
@@ -183,13 +347,13 @@ export async function restoreAgentProfileVersion(id: string, version: string): P
 }
 
 export async function getAgentBehavior(id: string): Promise<AgentBehaviorConfig> {
-  const response = await fetch(`/agents/${id}/behavior`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/behavior`);
   ensureOk(response, 'Falha ao carregar os parametros comportamentais.');
   return response.json() as Promise<AgentBehaviorConfig>;
 }
 
 export async function updateAgentBehavior(id: string, payload: Partial<AgentBehaviorConfig>): Promise<AgentBehaviorConfig> {
-  const response = await fetch(`/agents/${id}/behavior`, {
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/behavior`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -201,13 +365,13 @@ export async function updateAgentBehavior(id: string, payload: Partial<AgentBeha
 }
 
 export async function getAgentSafeguards(id: string): Promise<AgentSafeguardConfig> {
-  const response = await fetch(`/agents/${id}/safeguards`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/safeguards`);
   ensureOk(response, 'Falha ao carregar as safeguards.');
   return response.json() as Promise<AgentSafeguardConfig>;
 }
 
 export async function updateAgentSafeguards(id: string, payload: Partial<AgentSafeguardConfig>): Promise<AgentSafeguardConfig> {
-  const response = await fetch(`/agents/${id}/safeguards`, {
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/safeguards`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -219,19 +383,19 @@ export async function updateAgentSafeguards(id: string, payload: Partial<AgentSa
 }
 
 export async function getAgentConformance(id: string): Promise<AgentConformanceView> {
-  const response = await fetch(`/agents/${id}/conformance`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/conformance`);
   ensureOk(response, 'Falha ao carregar a conformidade do agente.');
   return response.json() as Promise<AgentConformanceView>;
 }
 
 export async function getAgentHistory(id: string): Promise<AgentHistoryItem[]> {
-  const response = await fetch(`/agents/${id}/history`);
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/history`);
   ensureOk(response, 'Falha ao carregar o historico do agente.');
   return response.json() as Promise<AgentHistoryItem[]>;
 }
 
 export async function chatWithAgent(id: string, payload: { prompt: string; sessionId?: string; modelId?: string; interactionMode?: string; }): Promise<AgentChatResponse> {
-  const response = await fetch(`/agents/${id}/chat`, {
+  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -240,6 +404,90 @@ export async function chatWithAgent(id: string, payload: { prompt: string; sessi
   });
   ensureOk(response, 'Falha ao conversar com o agente.');
   return response.json() as Promise<AgentChatResponse>;
+}
+
+export async function listSandboxProfiles(): Promise<SandboxProfile[]> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/profiles`);
+  ensureOk(response, 'Falha ao listar os perfis de sandbox.');
+  return response.json() as Promise<SandboxProfile[]>;
+}
+
+export async function getAgentSandbox(id: string): Promise<AgentSandboxConfig> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`);
+  ensureOk(response, 'Falha ao carregar a configuracao de sandbox do agente.');
+  return response.json() as Promise<AgentSandboxConfig>;
+}
+
+export async function updateAgentSandbox(id: string, payload: Partial<AgentSandboxConfig>): Promise<AgentSandboxConfig> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  ensureOk(response, 'Falha ao salvar a configuracao de sandbox.');
+  return response.json() as Promise<AgentSandboxConfig>;
+}
+
+export async function validateSandboxConfig(payload: SandboxConfig): Promise<SandboxValidationResult> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/validate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  ensureOk(response, 'Falha ao validar a configuracao de sandbox.');
+  return response.json() as Promise<SandboxValidationResult>;
+}
+
+export async function dryRunSandbox(payload: {
+  agentId: string;
+  capability: string;
+  command: string[];
+  requestedPaths?: string[];
+  taskId?: string;
+  skillId?: string;
+  skillRequirements?: Partial<SandboxConfig>;
+  temporaryOverrides?: Partial<SandboxConfig>;
+}): Promise<SandboxDryRunResult> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/dry-run`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  ensureOk(response, 'Falha ao executar dry-run de sandbox.');
+  return response.json() as Promise<SandboxDryRunResult>;
+}
+
+export async function listSandboxExecutions(): Promise<SandboxExecutionItem[]> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/executions`);
+  ensureOk(response, 'Falha ao listar execucoes de sandbox.');
+  return response.json() as Promise<SandboxExecutionItem[]>;
+}
+
+export async function startSandboxExecution(payload: {
+  agentId: string;
+  capability: string;
+  command: string[];
+  taskId?: string;
+  skillId?: string;
+  requestedPaths?: string[];
+  skillRequirements?: Partial<SandboxConfig>;
+  temporaryOverrides?: Partial<SandboxConfig>;
+}): Promise<{ execution: SandboxExecutionItem; approvalRequest?: ApprovalRequestItem }> {
+  const response = await fetch(`${getApiBaseUrl()}/sandbox/executions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  ensureOk(response, 'Falha ao iniciar a execucao de sandbox.');
+  return response.json() as Promise<{ execution: SandboxExecutionItem; approvalRequest?: ApprovalRequestItem }>;
 }
 
 function ensureOk(response: Response, fallbackMessage: string) {

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from './runtime-config';
+
 export interface GatewayTaskResponse {
     task?: {
         id: string;
@@ -41,7 +43,7 @@ export function getGatewayAuthHeaders(): HeadersInit {
 }
 
 export async function createGatewayTask(payload: unknown): Promise<GatewayTaskResponse> {
-    const response = await fetch('/gateway/message', {
+    const response = await fetch(`${getApiBaseUrl()}/gateway/message`, {
         method: 'POST',
         headers: getGatewayAuthHeaders(),
         body: JSON.stringify(payload),
@@ -57,7 +59,7 @@ export async function createGatewayTask(payload: unknown): Promise<GatewayTaskRe
 
 export async function pollGatewayTask(taskId: string, attempts = 25, delayMs = 800): Promise<GatewayTaskStatus> {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
-        const response = await fetch(`/gateway/tasks/${taskId}/status`);
+        const response = await fetch(`${getApiBaseUrl()}/gateway/tasks/${taskId}/status`);
         if (!response.ok) {
             throw new Error('Falha ao consultar status da task.');
         }

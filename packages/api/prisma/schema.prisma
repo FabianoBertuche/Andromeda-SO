@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SandboxMode {
+  none
+  process
+  container
+  remote
+}
+
+enum RiskLevel {
+  low
+  moderate
+  high
+  critical
+}
+
+enum SandboxExecutionStatus {
+  queued
+  awaiting_approval
+  provisioning
+  running
+  completed
+  failed
+  timed_out
+  blocked_by_policy
+  cancelled
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MemoryType {
+  session
+  episodic
+  semantic
+}
+
+enum MemoryScopeType {
+  session
+  task
+  agent
+  project
+  user
+  team
+}
+
+enum MemoryStatus {
+  active
+  archived
+  invalidated
+  deleted
+}
+
+enum MemoryRetentionMode {
+  ttl
+  session
+  task
+  persistent
+}
+
+model SandboxProfile {
+  id          String      @id
+  name        String
+  description String
+  version     Int
+  isSystem    Boolean
+  mode        SandboxMode
+  riskLevel   RiskLevel
+  config      Json
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  agentConfigs AgentSandboxConfig[]
+
+  @@map("sandbox_profiles")
+}
+
+model AgentSandboxConfig {
+  agentId      String   @id
+  enabled      Boolean
+  profileId    String?
+  overrides    Json
+  enforcement  Json
+  createdAt    DateTime
+  updatedAt    DateTime
+
+  profile SandboxProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@map("agent_sandbox_configs")
+}
+
+model SandboxExecution {
+  id             String                 @id
+  agentId        String
+  taskId         String?
+  skillId        String?
+  capability     String
+  status         SandboxExecutionStatus
+  mode           SandboxMode
+  command        Json
+  policySnapshot Json
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  durationMs     Int?
+  exitCode       Int?
+  resourceUsage  Json?
+  errorMessage   String?
+  stdout         String?
+  stderr         String?
+
+  artifacts SandboxArtifact[]
+  approvals ApprovalRequest[]
+
+  @@index([agentId])
+  @@index([taskId])
+  @@map("sandbox_executions")
+}
+
+model SandboxArtifact {
+  id            String   @id
+  executionId   String
+  name          String
+  path          String
+  sizeBytes     Int
+  sha256        String
+  mimeType      String?
+  retainedUntil DateTime?
+  metadata      Json?
+
+  execution SandboxExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@map("sandbox_artifacts")
+}
+
+model ApprovalRequest {
+  id               String          @id
+  agentId          String
+  taskId           String?
+  executionId      String?
+  reason           String
+  requestedAction  Json
+  status           ApprovalStatus
+  approvedBy       String?
+  approvedAt       DateTime?
+  rejectedAt       DateTime?
+
+  execution SandboxExecution? @relation(fields: [executionId], references: [id], onDelete: SetNull)
+
+  @@index([agentId])
+  @@index([taskId])
+  @@index([executionId])
+  @@map("approval_requests")
+}
+
+model MemoryEntry {
+  id              String               @id
+  type            MemoryType
+  scopeType       MemoryScopeType
+  scopeId         String
+  agentId         String?
+  taskId          String?
+  sessionId       String?
+  projectId       String?
+  userId          String?
+  teamId          String?
+  title           String
+  content         String
+  summary         String?
+  tags            Json
+  source          String
+  sourceEventId   String?
+  createdAt       DateTime
+  updatedAt       DateTime
+  expiresAt       DateTime?
+  isPinned        Boolean
+  status          MemoryStatus
+  importanceScore Float
+  metadata        Json
+
+  links            MemoryLink[]
+  retrievalRecords MemoryRetrievalRecord[]
+
+  @@index([type])
+  @@index([scopeType, scopeId])
+  @@index([agentId])
+  @@index([taskId])
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([status, isPinned])
+  @@map("memory_entries")
+}
+
+model MemoryLink {
+  id               String       @id
+  memoryEntryId    String
+  linkedEntityType  String
+  linkedEntityId    String
+  relationType      String
+  createdAt         DateTime
+
+  memoryEntry MemoryEntry @relation(fields: [memoryEntryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryEntryId])
+  @@index([linkedEntityType, linkedEntityId])
+  @@map("memory_links")
+}
+
+model MemoryRetrievalRecord {
+  id                    String   @id
+  taskId                String
+  agentId               String?
+  sessionId             String?
+  memoryEntryId         String
+  retrievalReason       String
+  retrievalScore        Float
+  usedInPromptAssembly   Boolean
+  usedAt                DateTime
+  createdAt             DateTime
+
+  memoryEntry MemoryEntry @relation(fields: [memoryEntryId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([agentId])
+  @@index([sessionId])
+  @@index([memoryEntryId])
+  @@map("memory_retrieval_records")
+}
+
+model MemoryPolicy {
+  id                 String                @id
+  memoryType         MemoryType
+  scopeType          MemoryScopeType
+  retentionMode      MemoryRetentionMode
+  ttlDays            Int?
+  maxEntries         Int?
+  allowAutoPromotion Boolean
+  allowManualPin     Boolean
+  allowSemanticExtraction Boolean
+  createdAt          DateTime
+  updatedAt          DateTime
+
+  @@unique([memoryType, scopeType])
+  @@map("memory_policies")
+}

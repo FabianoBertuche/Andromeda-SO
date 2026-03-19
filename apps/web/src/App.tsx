@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Clock, Cpu, Send, Terminal, User, Users } from 'lucide-react';
+import { Activity, Clock, Cpu, Database, Send, Terminal, User, Users } from 'lucide-react';
 import { AgentManagementView } from './components/agents/AgentManagementView';
+import { MemoryView } from './components/memory/MemoryView';
 import { TimelineView } from './components/Timeline/TimelineView';
 import { ModelCenterView } from './components/model-center/ModelCenterView';
 import { useWs } from './contexts/WsContext';
@@ -23,7 +24,7 @@ interface ChatMessage {
   conformance?: number;
 }
 
-type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents';
+type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory';
 
 function App() {
   const { isConnected, session, activeTask } = useWs();
@@ -137,6 +138,8 @@ function App() {
           context: {
             targetAgentId: selectedAgent?.id,
             targetAgentVersion: selectedAgent?.profileVersion,
+            targetTeamId: selectedAgent?.teamId,
+            personaProfileId: selectedAgent?.id,
             interactionMode: 'chat',
           },
         },
@@ -212,6 +215,12 @@ function App() {
                 Model Center
               </button>
             </li>
+            <li>
+              <button onClick={() => setActiveTab('memory')} className={navClass(activeTab === 'memory')}>
+                <Database className="w-5 h-5 mr-3" />
+                Memory
+              </button>
+            </li>
           </ul>
         </nav>
 
@@ -274,6 +283,10 @@ function App() {
           ) : activeTab === 'timeline' ? (
             <div className="flex-1 overflow-auto">
               <TimelineView />
+            </div>
+          ) : activeTab === 'memory' ? (
+            <div className="flex-1 overflow-auto">
+              <MemoryView sessionId={session?.sessionId} agentId={selectedAgent?.id || undefined} />
             </div>
           ) : (
             <div className="flex-1 overflow-auto">

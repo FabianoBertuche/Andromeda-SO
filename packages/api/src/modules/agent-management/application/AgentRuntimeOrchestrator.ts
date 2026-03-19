@@ -4,6 +4,7 @@ import { AgentPromptAssembler, AgentPromptAssembly } from "./AgentPromptAssemble
 import { AgentProfileService } from "./AgentProfileService";
 import { AgentSafeguardService } from "./AgentSafeguardService";
 import { BehaviorEvaluationService } from "./BehaviorEvaluationService";
+import { MemoryService } from "../../memory/application/MemoryService";
 
 export interface PreparedAgentExecution {
     profile: AgentProfile;
@@ -17,15 +18,30 @@ export class AgentRuntimeOrchestrator {
         private readonly promptAssembler = new AgentPromptAssembler(),
         private readonly safeguardService = new AgentSafeguardService(),
         private readonly behaviorEvaluationService = new BehaviorEvaluationService(),
+        private readonly memoryService?: MemoryService,
     ) { }
 
     async prepareExecution(task: Task): Promise<PreparedAgentExecution> {
         const metadata = task.getMetadata();
         const profile = await this.profileService.getActiveProfile(asOptionalString(metadata.targetAgentId));
+        const memoryContext = this.memoryService
+            ? await this.memoryService.attachMemoryToExecutionContext({
+                taskId: task.getId(),
+                agentId: asOptionalString(metadata.targetAgentId),
+                sessionId: asOptionalString(metadata.sessionId) || task.getSessionId(),
+                projectId: asOptionalString(metadata.targetProjectId),
+                userId: asOptionalString(metadata.userId),
+                teamId: asOptionalString(metadata.targetTeamId),
+                interactionMode: asOptionalString(metadata.interactionMode) || "chat",
+                prompt: task.getRawRequest(),
+                limit: 6,
+            })
+            : { entries: [], blocks: [] };
         const assembly = this.promptAssembler.build(profile, {
             userPrompt: task.getRawRequest(),
             sessionId: asOptionalString(metadata.sessionId) || task.getSessionId(),
             interactionMode: asOptionalString(metadata.interactionMode) || "chat",
+            memoryBlocks: memoryContext.blocks,
         });
         const precheck = this.safeguardService.evaluateBeforeExecution(profile, task.getRawRequest());
 

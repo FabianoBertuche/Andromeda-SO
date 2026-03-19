@@ -42,6 +42,7 @@ export class WebChannelAdapter implements ChannelAdapterPort {
                     platform: input.metadata?.client?.platform,
                     version: input.metadata?.client?.version,
                 },
+                context: input.metadata?.context,
                 modelId: input.metadata?.modelId,
             },
         });

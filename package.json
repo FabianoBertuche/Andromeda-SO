@@ -4,7 +4,9 @@
     "private": true,
     "description": "Andromeda OS MVP v0.1",
     "workspaces": [
-        "packages/*"
+        "packages/api",
+        "packages/core",
+        "apps/web"
     ],
     "scripts": {
         "test": "npm test --workspaces",

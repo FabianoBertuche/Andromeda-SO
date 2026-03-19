@@ -14,6 +14,14 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         },
+        '/sandbox': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        '/memory': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
         '/model-center': {
           target: apiTarget,
           changeOrigin: true,

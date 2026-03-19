@@ -5,6 +5,7 @@ export interface AgentPromptAssemblyInput {
     userPrompt: string;
     sessionId?: string;
     interactionMode?: string;
+    memoryBlocks?: string[];
 }
 
 export interface AgentPromptAssembly {
@@ -33,8 +34,9 @@ export class AgentPromptAssembler {
             ["## 3. Rules", profile.markdown.rules],
             ["## 4. Playbook", profile.markdown.playbook],
             ["## 5. Context", profile.markdown.context],
-            ["## 6. Persona Modulation", translatedPersona.map((line) => `- ${line}`).join("\n")],
-            ["## 7. Runtime Context", this.renderRuntimeContext(profile, input)],
+            ["## 6. Memory Layer", this.renderMemoryContext(input.memoryBlocks || [])],
+            ["## 7. Persona Modulation", translatedPersona.map((line) => `- ${line}`).join("\n")],
+            ["## 8. Runtime Context", this.renderRuntimeContext(profile, input)],
         ];
 
         return {
@@ -54,5 +56,13 @@ export class AgentPromptAssembler {
             `Interaction mode: ${input.interactionMode || "chat"}`,
             `Current user request: ${input.userPrompt}`,
         ].join("\n");
+    }
+
+    private renderMemoryContext(memoryBlocks: string[]): string {
+        if (memoryBlocks.length === 0) {
+            return "No retrieved memory available for this execution.";
+        }
+
+        return memoryBlocks.map((block) => `- ${block}`).join("\n\n");
     }
 }

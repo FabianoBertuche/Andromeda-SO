@@ -11,6 +11,7 @@ from app.security import verify_service_token
 from contracts.base import CognitiveMetrics, CognitiveRequest, CognitiveResponse, TraceContext
 from contracts.classification import TaskClassification
 from contracts.health import HealthResponse, ReadinessResponse
+from contracts.version import ContractsVersionResponse
 from services.planner.classifier import classify_query
 
 SERVICE_NAME = "cognitive-python"
@@ -53,6 +54,42 @@ async def readiness() -> ReadinessResponse:
             "planner": "ready",
             "contracts": "ready",
         },
+    )
+
+
+@app.get("/contracts/version", response_model=ContractsVersionResponse)
+async def contracts_version() -> ContractsVersionResponse:
+    """Returns the canonical contract versions exposed by the service."""
+
+    return ContractsVersionResponse(
+        service=SERVICE_NAME,
+        version=SERVICE_VERSION,
+        contracts={
+            "base": "1.0.0",
+            "classification": "1.0.0",
+            "health": "1.0.0",
+        },
+    )
+
+
+@app.post(
+    "/echo",
+    response_model=CognitiveResponse,
+    dependencies=[Depends(verify_service_token)],
+)
+async def echo(payload: CognitiveRequest) -> CognitiveResponse:
+    """Simple echo endpoint for transport validation."""
+
+    started_at = perf_counter()
+
+    return build_response(
+        payload=payload,
+        data={
+            "echo": payload.input,
+            "service": SERVICE_NAME,
+        },
+        model_used="echo-v1",
+        duration_ms=elapsed_ms(started_at),
     )
 
 

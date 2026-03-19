@@ -2,6 +2,8 @@ import { CreateTask, TaskRepository } from "@andromeda/core";
 import { v4 as uuidv4 } from "uuid";
 import { createDefaultExecuteTaskUseCase } from "../../../infrastructure/execution/createDefaultExecuteTaskUseCase";
 import { FileBackedAgentRegistry } from "../infrastructure/FileBackedAgentRegistry";
+import { MemoryService } from "../../memory/application/MemoryService";
+import { memoryService } from "../../memory/dependencies";
 
 export interface AgentConversationInput {
     agentId: string;
@@ -15,6 +17,7 @@ export class RuntimeAgentConversationService {
     constructor(
         private readonly taskRepository: TaskRepository,
         private readonly agentRegistry: FileBackedAgentRegistry,
+        private readonly memoryLayer: MemoryService = memoryService,
     ) { }
 
     async chat(input: AgentConversationInput) {
@@ -30,6 +33,26 @@ export class RuntimeAgentConversationService {
                 interactionMode: input.interactionMode || "chat",
                 modelId: input.modelId,
             },
+        });
+
+        await this.memoryLayer.registerSessionMessageMemory({
+            sessionId,
+            agentId: input.agentId,
+            taskId: task.getId(),
+            title: `Console request for ${input.agentId}`,
+            content: input.prompt.slice(0, 1200),
+            tags: ["console", input.interactionMode || "chat"],
+            sourceEventId: task.getId(),
+            metadata: {
+                modelId: input.modelId,
+                interactionMode: input.interactionMode || "chat",
+            },
+        }).catch((error) => {
+            console.warn("[memory.session.record.failed]", {
+                sessionId,
+                taskId: task.getId(),
+                error: error instanceof Error ? error.message : "unknown_error",
+            });
         });
 
         const executed = await executeTask.execute(task.getId());

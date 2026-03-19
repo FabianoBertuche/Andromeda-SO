@@ -1,8 +1,12 @@
 import { Request, Response } from "express";
-import { SkillRegistry, Skill, SkillType, ExecuteSkill } from "@andromeda/core";
+import { SkillRegistry, Skill, SkillType } from "@andromeda/core";
+import { SandboxedSkillExecutor } from "../../infrastructure/skills/SandboxedSkillExecutor";
 
 export class SkillController {
-    constructor(private readonly registry: SkillRegistry) { }
+    constructor(
+        private readonly registry: SkillRegistry,
+        private readonly executor: SandboxedSkillExecutor,
+    ) { }
 
     async register(req: Request, res: Response) {
         try {
@@ -32,8 +36,10 @@ export class SkillController {
 
             if (!skill) return res.status(404).json({ error: "Skill não encontrada" });
 
-            const useCase = new ExecuteSkill();
-            const result = await useCase.execute(skill, input || {});
+            const result = await this.executor.execute(skill, input || {}, {
+                taskId: req.body?.taskId,
+                metadata: req.body?.metadata || {},
+            });
 
             return res.json({ result });
         } catch (error: any) {
