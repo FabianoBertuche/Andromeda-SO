@@ -40,8 +40,18 @@ app.use(requestContextMiddleware);
 
 morgan.token("request-id", (_req, res) => (res.getHeader("X-Request-ID") as string | undefined) || "-");
 
-// ... (configurações helmet e cors mantidas)
-
+app.use(helmet());
+app.use(cors({
+    origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
+app.use(express.json());
 // Rotas V1
 const v1Router = express.Router();
 

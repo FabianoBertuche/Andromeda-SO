@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { IUserRepository } from '../../domain/ports';
 import { User, Role } from '../../domain/user';
 
-const prisma = new PrismaClient();
+const prisma = (globalThis.__andromedaPrisma || new PrismaClient());
 
 export class PrismaUserRepository implements IUserRepository {
     async findByEmail(email: string): Promise<User | null> {
@@ -31,3 +31,4 @@ export class PrismaUserRepository implements IUserRepository {
         return created as User;
     }
 }
+

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Book, FileText, Search, Settings, Vault } from 'lucide-react';
-import { CollectionsList, Collection } from './CollectionsList';
-import { DocumentManagement, Document } from './DocumentManagement';
+import { useState, useEffect } from 'react';
+import { Book, FileText, Search, Vault } from 'lucide-react';
+import { CollectionsList } from './CollectionsList';
+import type { Collection } from './CollectionsList';
+import { DocumentManagement } from './DocumentManagement';
+import type { Document } from './DocumentManagement';
 
 type KnowledgeTab = 'collections' | 'documents' | 'retrieval' | 'vaults';
 
@@ -12,7 +14,7 @@ export function KnowledgeView() {
     // Real state management
     const [collections, setCollections] = useState<Collection[]>([]);
     const [documents, setDocuments] = useState<Document[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [, setIsLoading] = useState(false);
 
     useEffect(() => {
         fetchCollections();

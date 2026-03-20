@@ -13,22 +13,27 @@ export default defineConfig(({ mode }) => {
         '/gateway': {
           target: apiTarget,
           changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/gateway/, '/v1/gateway'),
         },
         '/sandbox': {
           target: apiTarget,
           changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/sandbox/, '/v1/sandbox'),
         },
         '/memory': {
           target: apiTarget,
           changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/memory/, '/v1/memory'),
         },
         '/model-center': {
           target: apiTarget,
           changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/model-center/, '/v1/model-center'),
         },
         '/agents': {
           target: apiTarget,
           changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/agents/, '/v1/agents'),
         }
       }
     }

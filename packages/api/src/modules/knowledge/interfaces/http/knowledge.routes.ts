@@ -3,9 +3,9 @@ import { KnowledgeController } from "./KnowledgeController";
 import { CreateCollectionUseCase } from "../../application/use-cases/CreateCollectionUseCase";
 import { AddDocumentUseCase } from "../../application/use-cases/AddDocumentUseCase";
 import { PrismaKnowledgeRepository } from "../../infrastructure/persistence/PrismaKnowledgeRepository";
-import { PrismaClient } from "@prisma/client";
+import { getPrismaClient } from "../../../../infrastructure/database/prisma";
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 const knowledgeRepository = new PrismaKnowledgeRepository(prisma);
 const createCollectionUseCase = new CreateCollectionUseCase(knowledgeRepository);
 const addDocumentUseCase = new AddDocumentUseCase(knowledgeRepository);

@@ -16,7 +16,7 @@ interface DocumentManagementProps {
     onDelete: (id: string) => void;
 }
 
-export function DocumentManagement({ collectionId, documents, onUpload, onDelete }: DocumentManagementProps) {
+export function DocumentManagement({ documents, onUpload, onDelete }: DocumentManagementProps) {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDrop = (e: React.DragEvent) => {
@@ -42,8 +42,8 @@ export function DocumentManagement({ collectionId, documents, onUpload, onDelete
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 className={`relative overflow-hidden group py-12 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl transition-all duration-500 ${isDragging
-                        ? 'border-indigo-500 bg-indigo-500/10 scale-[0.99]'
-                        : 'border-slate-800 bg-slate-900/20 hover:border-slate-700'
+                    ? 'border-indigo-500 bg-indigo-500/10 scale-[0.99]'
+                    : 'border-slate-800 bg-slate-900/20 hover:border-slate-700'
                     }`}
             >
                 <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -100,8 +100,8 @@ export function DocumentManagement({ collectionId, documents, onUpload, onDelete
                                             {doc.status === 'pending' && <Clock className="w-3 h-3 text-slate-500" />}
                                             {doc.status === 'failed' && <AlertCircle className="w-3 h-3 text-red-500" />}
                                             <span className={`text-[11px] font-bold uppercase tracking-tighter ${doc.status === 'completed' ? 'text-emerald-500' :
-                                                    doc.status === 'processing' ? 'text-amber-500' :
-                                                        doc.status === 'failed' ? 'text-red-500' : 'text-slate-500'
+                                                doc.status === 'processing' ? 'text-amber-500' :
+                                                    doc.status === 'failed' ? 'text-red-500' : 'text-slate-500'
                                                 }`}>
                                                 {doc.status}
                                             </span>

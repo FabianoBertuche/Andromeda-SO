@@ -4,88 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-enum SandboxMode {
-  none
-  process
-  container
-  remote
-}
-
-enum RiskLevel {
-  low
-  moderate
-  high
-  critical
-}
-
-enum SandboxExecutionStatus {
-  queued
-  awaiting_approval
-  provisioning
-  running
-  completed
-  failed
-  timed_out
-  blocked_by_policy
-  cancelled
-}
-
-enum ApprovalStatus {
-  pending
-  approved
-  rejected
-}
-
-enum MemoryType {
-  session
-  episodic
-  semantic
-}
-
-enum MemoryScopeType {
-  session
-  task
-  agent
-  project
-  user
-  team
-}
-
-enum MemoryStatus {
-  active
-  archived
-  invalidated
-  deleted
-}
-
-enum MemoryRetentionMode {
-  ttl
-  session
-  task
-  persistent
-}
-
-enum KnowledgeScopeType {
-  agent
-  team
-  project
-  shared
-}
-
-enum KnowledgeSourceType {
-  upload
-  manual
-  vault
-}
-
-enum KnowledgeStatus {
-  pending
-  processing
-  completed
-  failed
-  archived
+  url      = env("DATABASE_URL")
 }
 
 model SandboxProfile {
@@ -94,8 +13,8 @@ model SandboxProfile {
   description String
   version     Int
   isSystem    Boolean
-  mode        SandboxMode
-  riskLevel   RiskLevel
+  mode        String
+  riskLevel   String
   config      Json
   tenantId    String      @default("default")
   createdAt   DateTime
@@ -129,8 +48,8 @@ model SandboxExecution {
   taskId         String?
   skillId        String?
   capability     String
-  status         SandboxExecutionStatus
-  mode           SandboxMode
+  status         String
+  mode           String
   command        Json
   policySnapshot Json
   startedAt      DateTime?
@@ -177,7 +96,7 @@ model ApprovalRequest {
   executionId      String?
   reason           String
   requestedAction  Json
-  status           ApprovalStatus
+  status           String
   approvedBy       String?
   approvedAt       DateTime?
   rejectedAt       DateTime?
@@ -192,8 +111,8 @@ model ApprovalRequest {
 
 model MemoryEntry {
   id              String               @id
-  type            MemoryType
-  scopeType       MemoryScopeType
+  type            String
+  scopeType       String
   scopeId         String
   agentId         String?
   taskId          String?
@@ -211,7 +130,7 @@ model MemoryEntry {
   updatedAt       DateTime
   expiresAt       DateTime?
   isPinned        Boolean
-  status          MemoryStatus
+  status          String
   importanceScore Float
   tenantId        String               @default("default")
   metadata        Json
@@ -274,9 +193,9 @@ model MemoryRetrievalRecord {
 
 model MemoryPolicy {
   id                 String                @id
-  memoryType         MemoryType
-  scopeType          MemoryScopeType
-  retentionMode      MemoryRetentionMode
+  memoryType         String
+  scopeType          String
+  retentionMode      String
   ttlDays            Int?
   maxEntries         Int?
   allowAutoPromotion Boolean
@@ -294,10 +213,10 @@ model KnowledgeCollection {
   id          String              @id @default(uuid())
   name        String
   description String?
-  scopeType   KnowledgeScopeType
+  scopeType   String
   scopeId     String
-  sourceType  KnowledgeSourceType
-  status      KnowledgeStatus
+  sourceType  String
+  status      String
   metadata    Json                @default("{}")
   tenantId    String              @default("default")
   createdAt   DateTime            @default(now())
@@ -313,12 +232,12 @@ model KnowledgeDocument {
   id           String              @id @default(uuid())
   collectionId String
   title        String
-  sourceType   KnowledgeSourceType
+  sourceType   String
   sourcePath   String?
   mimeType     String?
   rawText      String?
   checksum     String?
-  status       KnowledgeStatus
+  status       String
   metadata     Json                @default("{}")
   tenantId     String              @default("default")
   createdAt    DateTime            @default(now())
@@ -355,8 +274,8 @@ model RetrievalRecord {
   agentId             String?
   query               String
   filters             Json
-  selectedChunkIds    String[]
-  selectedDocumentIds String[]
+  selectedChunkIds    String
+  selectedDocumentIds String
   scoreSummary        Json
   durationMs          Int
   tenantId            String   @default("default")
@@ -377,8 +296,8 @@ model AgentKnowledgePolicy {
   vaultWriteEnabled         Boolean  @default(false)
   writeMode                 String   @default("disabled")
   approvalRequired          Boolean  @default(true)
-  allowedCollectionIds      String[]
-  allowedPaths              String[]
+  allowedCollectionIds      String
+  allowedPaths              String
   maxChunks                 Int      @default(5)
   maxContextTokens          Int      @default(2000)
   rerankEnabled             Boolean  @default(false)
@@ -392,41 +311,13 @@ model AgentKnowledgePolicy {
   @@map("agent_knowledge_policies")
 }
 
-enum CommunicationChannel {
-  web
-  telegram
-  discord
-  cli
-  mobile
-  system
-}
-
-enum MessageRole {
-  user
-  assistant
-  system
-}
-
-enum MessageContentType {
-  text
-  json
-  event
-  command
-}
-
-enum CommunicationSessionStatus {
-  active
-  idle
-  closed
-}
-
 model CommunicationSession {
   id                String                     @id @default(uuid())
-  channel           CommunicationChannel
+  channel           String
   externalSessionId String?
   internalUserId    String?
   externalUserId    String?
-  status            CommunicationSessionStatus @default(active)
+  status            String                     @default("active")
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
   lastMessageAt     DateTime?
@@ -444,8 +335,8 @@ model CommunicationSession {
 model CommunicationMessage {
   id        String             @id @default(uuid())
   sessionId String
-  channel   CommunicationChannel
-  role      MessageRole
+  channel   String
+  role      String
   content   Json
   sender    Json
   metadata  Json               @default("{}")
@@ -460,18 +351,11 @@ model CommunicationMessage {
   @@map("communication_messages")
 }
 
-enum Role {
-  owner
-  admin
-  operator
-  viewer
-}
-
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
   passwordHash String
-  role         Role      @default(viewer)
+  role         String    @default("viewer")
   tenantId     String    @default("default")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

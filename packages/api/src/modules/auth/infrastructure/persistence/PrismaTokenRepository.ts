@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { ITokenRepository } from '../../domain/ports';
 import { RefreshToken } from '../../domain/user';
 
-const prisma = new PrismaClient();
+const prisma = (globalThis.__andromedaPrisma || new PrismaClient());
 
 export class PrismaTokenRepository implements ITokenRepository {
     async saveRefreshToken(token: Partial<RefreshToken>): Promise<RefreshToken> {
@@ -37,3 +37,4 @@ export class PrismaTokenRepository implements ITokenRepository {
         });
     }
 }
+

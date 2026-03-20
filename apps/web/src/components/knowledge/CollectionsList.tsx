@@ -1,4 +1,3 @@
-import React from 'react';
 import { Book, Plus, ExternalLink } from 'lucide-react';
 
 export interface Collection {

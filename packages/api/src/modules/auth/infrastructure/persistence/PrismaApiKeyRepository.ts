@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { IApiKeyRepository } from '../../domain/ports';
 import { ApiKey, User } from '../../domain/user';
 
-const prisma = new PrismaClient();
+const prisma = (globalThis.__andromedaPrisma || new PrismaClient());
 
 export class PrismaApiKeyRepository implements IApiKeyRepository {
     async create(apiKey: Partial<ApiKey>): Promise<ApiKey> {
@@ -43,3 +43,4 @@ export class PrismaApiKeyRepository implements IApiKeyRepository {
         return keys as ApiKey[];
     }
 }
+

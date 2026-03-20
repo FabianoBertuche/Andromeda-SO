@@ -1,4 +1,9 @@
 import "dotenv/config";
+import { getPrismaClient } from "./infrastructure/database/prisma";
+
+// Pre-initialize safe Prisma singleton before other modules load
+globalThis.__andromedaPrisma = getPrismaClient();
+
 import { createServer } from "http";
 
 import { Server } from "socket.io";
