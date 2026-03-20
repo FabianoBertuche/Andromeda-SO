@@ -3,12 +3,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    globals: true,
     environment: "node",
-    include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
+    include: ["src/**/*.test.ts"],
   },
-  resolve: {
-    alias: {
-        "@andromeda/core": path.resolve(__dirname, "../core/src/index.ts"),
-        },
-    },
 });

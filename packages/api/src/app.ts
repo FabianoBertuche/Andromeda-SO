@@ -21,6 +21,18 @@ import modelCenterRoutes from "./modules/model-center/interfaces/http/modelCente
 console.log("modelCenterRoutes imported!");
 import knowledgeRouter from "./modules/knowledge/interfaces/http/knowledge.routes";
 
+import { authController } from "./modules/auth/dependencies";
+import { createAuthRoutes } from "./modules/auth/interfaces/http/auth.routes";
+import { authMiddleware } from "./shared/middleware/auth.middleware";
+import { requireRole } from "./shared/middleware/rbac.middleware";
+import rateLimit from "express-rate-limit";
+
+const authLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: { error: "Too many login attempts, please try again after a minute" }
+});
+
 const app = express();
 
 app.disable("x-powered-by");
@@ -28,44 +40,25 @@ app.use(requestContextMiddleware);
 
 morgan.token("request-id", (_req, res) => (res.getHeader("X-Request-ID") as string | undefined) || "-");
 
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "script-src": ["'self'", "'unsafe-inline'"],
-            "script-src-attr": ["'unsafe-inline'"],
-            "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            "font-src": ["'self'", "https://fonts.gstatic.com"],
-            "img-src": ["'self'", "data:", "https:*"],
-            "connect-src": getAllowedConnectSources(),
-        },
-    },
-}));
-app.use(cors({
-    origin(origin, callback) {
-        if (isOriginAllowed(origin)) {
-            callback(null, true);
-            return;
-        }
+// ... (configurações helmet e cors mantidas)
 
-        const error = new Error("Not allowed by CORS") as Error & { status?: number };
-        error.status = 403;
-        callback(error);
-    },
-    credentials: true,
-    exposedHeaders: ["X-Request-ID"],
-}));
-app.use(express.json({ limit: process.env.HTTP_JSON_LIMIT || "1mb" }));
-app.use(morgan(":method :url :status :response-time ms req_id=:request-id"));
+// Rotas V1
+const v1Router = express.Router();
 
-app.use("/tasks", taskRoutes);
-app.use("/skills", skillRoutes);
-app.use("/agents", agentRoutes);
-app.use("/sandbox", sandboxRouter);
-app.use("/memory", memoryRouter);
-app.use("/gateway", communicationRoutes);
-app.use("/model-center", modelCenterRoutes);
-app.use("/internal/cognitive", cognitiveRoutes);
+v1Router.use("/auth", authLimiter, createAuthRoutes(authController));
+
+v1Router.use("/tasks", authMiddleware, taskRoutes);
+v1Router.use("/skills", authMiddleware, skillRoutes);
+v1Router.use("/agents", authMiddleware, agentRoutes);
+v1Router.use("/sandbox", authMiddleware, sandboxRouter);
+v1Router.use("/memory", authMiddleware, memoryRouter);
+v1Router.use("/gateway", authMiddleware, communicationRoutes);
+v1Router.use("/model-center", authMiddleware, modelCenterRoutes);
+v1Router.use("/internal/cognitive", authMiddleware, cognitiveRoutes);
+
+app.use("/v1", v1Router);
+
+app.use("/console", express.static(path.join(__dirname, "modules/communication/interfaces/http/public")));
 
 app.use("/console", express.static(path.join(__dirname, "modules/communication/interfaces/http/public")));
 

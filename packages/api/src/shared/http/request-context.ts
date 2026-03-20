@@ -5,6 +5,12 @@ export const REQUEST_ID_HEADER = "X-Request-ID";
 
 export interface RequestWithContext extends Request {
     requestId?: string;
+    user?: {
+        id: string;
+        role: string;
+        tenantId: string;
+    };
+    tenantId?: string;
 }
 
 export function requestContextMiddleware(req: RequestWithContext, res: Response, next: NextFunction) {
