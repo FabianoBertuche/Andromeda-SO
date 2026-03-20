@@ -255,11 +255,11 @@ packages/api/src/modules/health/
 ```
 
 **Critério de aceite:**
-- [ ] GET /v1/health retorna 200 com todos os services up
-- [ ] Se cognitive-python down → status: 'degraded', sistema continua
-- [ ] Se DB down → status: 'down', sistema responde 503
-- [ ] Rota isenta de rate limiting e auth
-- [ ] Latência do health check < 500ms
+- [x] GET /v1/health retorna 200 com todos os services up
+- [x] Se cognitive-python down → status: 'degraded', sistema continua
+- [x] Se DB down → status: 'down', sistema responde 503
+- [x] Rota isenta de rate limiting e auth
+- [x] Latência do health check < 500ms
 
 ---
 
