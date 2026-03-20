@@ -21,9 +21,23 @@ export class RuntimeAgentConversationService {
     ) { }
 
     async chat(input: AgentConversationInput) {
+        const sessionId = input.sessionId || `agent-session-${uuidv4()}`;
+
+        // MAX_ITERATIONS_POLICY: Parar task após 50 iterações (interações) na mesma sessão
+        const sessionHistory = await this.memoryLayer.listMemory({ sessionId });
+        if (sessionHistory && sessionHistory.length >= 50) {
+            console.warn(`[RuntimeAgentConversationService] Sesion ${sessionId} hit MAX_ITERATIONS_POLICY`);
+            return {
+                taskId: `blocked-${uuidv4()}`,
+                status: "failed",
+                sessionId,
+                result: { error: "MAX_ITERATIONS_EXCEEDED", content: "Agent stopped due to loop protection (>= 50 iterations)." },
+                audit: { status: "blocked", actionTaken: "MAX_ITERATIONS_POLICY" },
+            };
+        }
+
         const createTask = new CreateTask(this.taskRepository);
         const executeTask = createDefaultExecuteTaskUseCase(this.taskRepository, this.agentRegistry);
-        const sessionId = input.sessionId || `agent-session-${uuidv4()}`;
 
         const task = await createTask.execute({
             rawRequest: input.prompt,

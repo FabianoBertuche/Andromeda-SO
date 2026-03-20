@@ -19,10 +19,13 @@ model SandboxProfile {
   tenantId    String      @default("default")
   createdAt   DateTime
   updatedAt   DateTime
+  deletedAt   DateTime?
+  archivedAt  DateTime?
 
   agentConfigs AgentSandboxConfig[]
 
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("sandbox_profiles")
 }
 
@@ -35,10 +38,13 @@ model AgentSandboxConfig {
   tenantId     String   @default("default")
   createdAt    DateTime
   updatedAt    DateTime
+  deletedAt    DateTime?
+  archivedAt   DateTime?
 
   profile SandboxProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("agent_sandbox_configs")
 }
 
@@ -62,6 +68,8 @@ model SandboxExecution {
   stderr         String?
 
   tenantId       String                 @default("default")
+  deletedAt      DateTime?
+  archivedAt     DateTime?
 
   artifacts SandboxArtifact[]
   approvals ApprovalRequest[]
@@ -69,6 +77,7 @@ model SandboxExecution {
   @@index([tenantId])
   @@index([agentId])
   @@index([taskId])
+  @@index([deletedAt])
   @@map("sandbox_executions")
 }
 
@@ -128,6 +137,8 @@ model MemoryEntry {
   sourceEventId   String?
   createdAt       DateTime
   updatedAt       DateTime
+  deletedAt       DateTime?
+  archivedAt      DateTime?
   expiresAt       DateTime?
   isPinned        Boolean
   status          String
@@ -148,6 +159,7 @@ model MemoryEntry {
   @@index([userId])
   @@index([teamId])
   @@index([status, isPinned])
+  @@index([deletedAt])
   @@map("memory_entries")
 }
 
@@ -204,6 +216,8 @@ model MemoryPolicy {
   tenantId           String                @default("default")
   createdAt          DateTime
   updatedAt          DateTime
+  deletedAt          DateTime?
+  archivedAt         DateTime?
 
   @@unique([tenantId, memoryType, scopeType])
   @@map("memory_policies")
@@ -221,10 +235,13 @@ model KnowledgeCollection {
   tenantId    String              @default("default")
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+  deletedAt   DateTime?
+  archivedAt  DateTime?
 
   documents KnowledgeDocument[]
 
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("knowledge_collections")
 }
 
@@ -242,11 +259,14 @@ model KnowledgeDocument {
   tenantId     String              @default("default")
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
+  archivedAt   DateTime?
 
   collection KnowledgeCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   chunks     KnowledgeChunk[]
 
   @@index([collectionId])
+  @@index([deletedAt])
   @@map("knowledge_documents")
 }
 
@@ -260,10 +280,13 @@ model KnowledgeChunk {
   metadata      Json              @default("{}")
   tenantId      String            @default("default")
   createdAt     DateTime          @default(now())
+  deletedAt     DateTime?
+  archivedAt    DateTime?
 
   document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
+  @@index([deletedAt])
   @@map("knowledge_chunks")
 }
 
@@ -320,6 +343,8 @@ model CommunicationSession {
   status            String                     @default("active")
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
+  deletedAt         DateTime?
+  archivedAt        DateTime?
   lastMessageAt     DateTime?
   context           Json                       @default("{}")
   metadata          Json                       @default("{}")
@@ -329,6 +354,7 @@ model CommunicationSession {
   messages CommunicationMessage[]
 
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("communication_sessions")
 }
 
@@ -342,8 +368,11 @@ model CommunicationMessage {
   metadata  Json               @default("{}")
   tenantId  String             @default("default")
   createdAt DateTime           @default(now())
+  deletedAt DateTime?
+  archivedAt DateTime?
 
   @@index([tenantId])
+  @@index([deletedAt])
 
   session CommunicationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

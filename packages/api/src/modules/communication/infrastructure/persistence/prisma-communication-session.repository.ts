@@ -53,8 +53,14 @@ export class PrismaCommunicationSessionRepository implements CommunicationSessio
 
         await this.prisma.communicationSession.upsert({
             where: { id: session.id },
-            create: data,
-            update: data
+            create: data as any,
+            update: data as any
+        });
+    }
+
+    async restore(id: string): Promise<void> {
+        await (this.prisma.communicationSession as any).restore({
+            where: { id }
         });
     }
 

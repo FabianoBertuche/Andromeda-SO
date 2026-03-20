@@ -40,9 +40,12 @@ export function createPrismaClient(): PrismaClient {
 }
 
 
-export function getPrismaClient(): PrismaClient {
+import { softDeleteExtension } from "../../shared/prisma/soft-delete.extension";
+
+export function getPrismaClient(): any {
     if (!globalThis.__andromedaPrisma) {
-        globalThis.__andromedaPrisma = createPrismaClient();
+        const client = createPrismaClient();
+        globalThis.__andromedaPrisma = client.$extends(softDeleteExtension) as any;
     }
 
     return globalThis.__andromedaPrisma;

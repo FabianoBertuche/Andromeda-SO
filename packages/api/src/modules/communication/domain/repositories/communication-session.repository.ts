@@ -7,4 +7,5 @@ export interface CommunicationSessionRepository {
         externalSessionId: string
     ): Promise<CommunicationSession | null>;
     save(session: CommunicationSession): Promise<void>;
+    restore(id: string): Promise<void>;
 }

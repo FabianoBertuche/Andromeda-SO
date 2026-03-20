@@ -1,5 +1,8 @@
 import { Capability, IProviderAdapter, ModelCatalogItemProps, Pricing, Provider, ProviderHealth } from "@andromeda/core";
 import { FileModelPricingRegistry } from "../../../modules/model-center/infrastructure/FileModelPricingRegistry";
+import { CircuitBreakerFactory } from "../../resilience/CircuitBreakerFactory";
+import { circuitBreakerRegistry } from "../../resilience/circuit-breaker.registry";
+import CircuitBreaker from "opossum";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -10,9 +13,10 @@ export class OllamaProviderAdapter implements IProviderAdapter {
 
     async healthCheck(provider: Provider): Promise<ProviderHealth> {
         try {
-            const response = await fetch(`${this.getBaseUrl(provider)}/api/version`, {
+            const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}/api/version`, {
                 headers: this.buildHeaders(provider),
-            });
+            }));
+
 
             if (response.ok) {
                 return { status: "ok" };
@@ -28,9 +32,10 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     }
 
     async listModels(provider: Provider): Promise<Partial<ModelCatalogItemProps>[]> {
-        const response = await fetch(`${this.getBaseUrl(provider)}/api/tags`, {
+        const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}/api/tags`, {
             headers: this.buildHeaders(provider),
-        });
+        }));
+
 
         if (!response.ok) {
             throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
@@ -93,9 +98,10 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     }
 
     async listRunningModels(provider: Provider): Promise<any[]> {
-        const response = await fetch(`${this.getBaseUrl(provider)}/api/ps`, {
+        const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}/api/ps`, {
             headers: this.buildHeaders(provider),
-        });
+        }));
+
 
         if (!response.ok) {
             throw new Error(`PS failed: ${response.status} ${response.statusText}`);
@@ -127,9 +133,10 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     }
 
     async getVersion(provider: Provider): Promise<string> {
-        const response = await fetch(`${this.getBaseUrl(provider)}/api/version`, {
+        const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}/api/version`, {
             headers: this.buildHeaders(provider),
-        });
+        }));
+
 
         if (!response.ok) {
             throw new Error(`Version check failed: ${response.status} ${response.statusText}`);
@@ -178,11 +185,12 @@ export class OllamaProviderAdapter implements IProviderAdapter {
 
     private async postJson(provider: Provider, path: string, body: JsonRecord): Promise<any> {
         const { method = "POST", ...payload } = body;
-        const response = await fetch(`${this.getBaseUrl(provider)}${path}`, {
+        const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}${path}`, {
             method: String(method),
             headers: this.buildHeaders(provider),
             body: JSON.stringify(payload),
-        });
+        }));
+
 
         if (!response.ok) {
             throw new Error(`${path} failed: ${response.status} ${response.statusText}`);
@@ -197,11 +205,12 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     }
 
     private async postStream(provider: Provider, path: string, body: JsonRecord, onProgress?: (p: any) => void): Promise<void> {
-        const response = await fetch(`${this.getBaseUrl(provider)}${path}`, {
+        const response = await this.getBreaker(provider).fire(() => fetch(`${this.getBaseUrl(provider)}${path}`, {
             method: "POST",
             headers: this.buildHeaders(provider),
             body: JSON.stringify(body),
-        });
+        }));
+
 
         if (!response.ok) {
             throw new Error(`Stream request failed: ${response.status} ${response.statusText}`);
@@ -296,4 +305,17 @@ export class OllamaProviderAdapter implements IProviderAdapter {
     private pickString(...values: unknown[]): string | undefined {
         return values.find(value => typeof value === "string" && value.trim().length > 0) as string | undefined;
     }
+
+    private getBreaker(provider: Provider): CircuitBreaker<[() => Promise<Response>], Response> {
+        const name = `provider-${provider.getId()}`;
+        let breaker = circuitBreakerRegistry.get(name);
+        if (!breaker) {
+            breaker = CircuitBreakerFactory.create<[() => Promise<Response>], Response>(name, async (action: () => Promise<Response>) => {
+                return action();
+            });
+            circuitBreakerRegistry.register(name, breaker);
+        }
+        return breaker as CircuitBreaker<[() => Promise<Response>], Response>;
+    }
 }
+

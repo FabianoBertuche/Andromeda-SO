@@ -19,7 +19,10 @@ import { CommunicationController } from "./communication.controller";
 import { ObservabilityController } from "./observability.controller";
 import { globalWsGateway } from "../websocket/communication.ws-gateway";
 
+import { RestoreSession } from "../../application/use-cases/RestoreSession";
+
 const router = Router();
+const restoreSession = new RestoreSession(globalSessionRepository);
 
 const webChannelAdapter = new WebChannelAdapter();
 const authAdapter = new StaticTokenChannelAuthAdapter();
@@ -69,6 +72,11 @@ const authMiddleware = createGatewayAuthMiddleware(authAdapter);
 router.post("/message", authMiddleware, (req, res) => controller.handleMessage(req, res));
 router.get("/sessions/:id", (req, res) => controller.getSessionById(req, res));
 router.get("/sessions/:id/messages", (req, res) => controller.getMessagesBySessionId(req, res));
+router.post("/sessions/:id/restore", (req, res) => {
+    restoreSession.execute(req.params.id)
+        .then(() => res.status(200).json({ success: true }))
+        .catch(err => res.status(500).json({ error: err.message }));
+});
 router.get("/sessions/:id/timeline", (req, res) => observabilityController.getSessionTimeline(req, res));
 router.get("/tasks/:taskId/status", (req, res) => controller.getTaskStatus(req, res));
 router.get("/tasks/:taskId/timeline", (req, res) => observabilityController.getTaskTimeline(req, res));
