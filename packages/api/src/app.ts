@@ -6,6 +6,9 @@ import morgan from "morgan";
 import { sendError } from "./shared/http/error-response";
 import { getAllowedConnectSources, isOriginAllowed } from "./shared/http/origin-config";
 import { requestContextMiddleware } from "./shared/http/request-context";
+import fs from "fs";
+import swaggerUi from "swagger-ui-express";
+import { apiVersionMiddleware } from "./shared/http/api-version.middleware";
 
 console.log("Initializing Andromeda OS Express App...");
 
@@ -25,13 +28,7 @@ import { authController } from "./modules/auth/dependencies";
 import { createAuthRoutes } from "./modules/auth/interfaces/http/auth.routes";
 import { authMiddleware } from "./shared/middleware/auth.middleware";
 import { requireRole } from "./shared/middleware/rbac.middleware";
-import rateLimit from "express-rate-limit";
-
-const authLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 5, // limit each IP to 5 requests per windowMs
-    message: { error: "Too many login attempts, please try again after a minute" }
-});
+import { globalRateLimiter, authRateLimiter } from "./shared/middleware/rate-limit.middleware";
 
 const app = express();
 
@@ -55,11 +52,17 @@ app.use(express.json());
 // Rotas V1
 const v1Router = express.Router();
 
-v1Router.use("/auth", authLimiter, createAuthRoutes(authController));
+v1Router.use(globalRateLimiter);
+v1Router.use(apiVersionMiddleware(1));
+const swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, "docs/swagger.json"), "utf8"));
+v1Router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+v1Router.use("/auth", authRateLimiter, createAuthRoutes(authController));
+
+import { backupRouter } from "./modules/backup/dependencies";
+import { dlqRouter } from "./modules/queue/dependencies";
+import { healthRouter } from "./modules/health/dependencies";
 import { tenantMiddleware } from "./shared/middleware/tenant.middleware";
-
-// ... (v1Router setup anterior)
 
 v1Router.use("/tasks", authMiddleware, tenantMiddleware, taskRoutes);
 v1Router.use("/skills", authMiddleware, tenantMiddleware, skillRoutes);
@@ -69,16 +72,13 @@ v1Router.use("/memory", authMiddleware, tenantMiddleware, memoryRouter);
 v1Router.use("/gateway", authMiddleware, tenantMiddleware, communicationRoutes);
 v1Router.use("/model-center", authMiddleware, tenantMiddleware, modelCenterRoutes);
 v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
+v1Router.use("/backup", authMiddleware, requireRole('owner'), backupRouter);
+v1Router.use("/dlq", authMiddleware, requireRole('admin'), dlqRouter);
+v1Router.use("/", healthRouter);
 
 app.use("/v1", v1Router);
 
 app.use("/console", express.static(path.join(__dirname, "modules/communication/interfaces/http/public")));
-
-app.use("/console", express.static(path.join(__dirname, "modules/communication/interfaces/http/public")));
-
-app.get("/health", (req, res) => {
-    res.json({ status: "ok" });
-});
 
 app.use((error: Error & { status?: number; statusCode?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (res.headersSent) {

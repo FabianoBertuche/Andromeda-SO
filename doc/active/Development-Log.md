@@ -40,3 +40,54 @@
 
 **Status:** ⏳ Aguardando
 
+---
+
+## [2026-03-20] — MVP09 Fase 8: Health Check
+
+**Participantes:** Human + AI
+
+**O que foi feito:**
+- Implementação do módulo Health Check conforme documentação
+- Criação do HealthCheckService com verificações de:
+  - Database (PostgreSQL via Prisma)
+  - Redis
+  - Cognitive Python
+  - Vector Store
+- Criação das rotas GET /v1/health e GET /v1/status
+- Implementação de testes unitários com Vitest
+- Atualização do CLAUDE.md para incluir módulo health
+
+**Estrutura criada:**
+```
+packages/api/src/modules/health/
+├── application/
+│   ├── HealthCheckService.ts
+│   └── HealthCheckService.test.ts
+├── domain/
+├── infrastructure/
+├── interfaces/http/
+│   └── health.routes.ts
+└── dependencies.ts
+```
+
+**Decisões tomadas:**
+1. Health check não requer autenticação (público)
+2. Status "down" retorna HTTP 503
+3. Status "degraded" retorna HTTP 200 (sistema operacional)
+4. Latência medida para cada serviço
+5. Erros capturados e retornados em cada serviço
+
+**Critérios de aceite atendidos:**
+- [x] GET /v1/health retorna 200 com todos os services up
+- [x] Se cognitive-python down → status: 'degraded', sistema continua
+- [x] Se DB down → status: 'down', sistema responde 503
+- [x] Rota isenta de rate limiting e auth
+- [x] Latência do health check < 500ms
+
+**Testes:**
+- 5 testes unitários passando
+- Mocks para Prisma, Redis e fetch
+- Verificação de status, latência e mensagens de erro
+
+**Status:** ✅ Concluído
+

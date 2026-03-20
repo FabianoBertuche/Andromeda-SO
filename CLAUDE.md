@@ -20,6 +20,7 @@
 - memory/          — Session, episodic, semantic
 - model-center/    — Providers, catalog, router, benchmark
 - sandbox/         — Políticas, execuções, aprovações
+- health/          — Health check e status do sistema
 
 ## Princípios Inegociáveis
 
