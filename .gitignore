@@ -41,5 +41,5 @@ __pycache__/
 # Project specific
 .gemini/
 .agent/
-.agents/
 brain/
+logs/
