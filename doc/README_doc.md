@@ -45,8 +45,8 @@ doc/
 | MVP06C | `implemented/PRD_MVP06C.md` | ✅ Implementado | Sandbox Complete + Hybrid Bridge |
 | MVP-Rev | `implemented/PRD_MVP-Revisao.md` | ✅ Implementado | Saneamento Estrutural |
 | MVP07 | `implemented/PRD_MVP07.md` | ✅ Implementado | Memory Layer v1 |
-| MVP08 | `active/PRD_MVP08.md` | 🔄 Em desenvolvimento | Knowledge Layer v1 + Obsidian |
-| MVP09 | `planned/PRD_MVP09.md` | 📋 Planejado | Security, Resilience & DevOps |
+| MVP08 | `active/PRD_MVP08.md` | ✅ Implementado | Knowledge Layer v1 + Obsidian |
+| MVP09 | `active/PRD_MVP09.md` | 🔄 Em desenvolvimento | Security, Resilience & DevOps (Fase 8) |
 | MVP10 | `planned/PRD_MVP10.md` | 📋 Planejado | Agent Evolution + Budget Control |
 | MVP11+ | — | 🔮 Horizonte | Ver Notion para roadmap completo |
 
