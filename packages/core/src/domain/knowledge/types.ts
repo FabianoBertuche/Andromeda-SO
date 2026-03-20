@@ -28,6 +28,7 @@ export interface KnowledgeCollection {
     sourceType: KnowledgeSourceType;
     status: KnowledgeStatus;
     metadata: Record<string, any>;
+    tenantId: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -43,6 +44,7 @@ export interface KnowledgeDocument {
     checksum?: string;
     status: KnowledgeStatus;
     metadata: Record<string, any>;
+    tenantId: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -55,6 +57,7 @@ export interface KnowledgeChunk {
     tokenEstimate?: number;
     embeddingRef?: string;
     metadata: Record<string, any>;
+    tenantId?: string;
     createdAt: Date;
 }
 
@@ -79,6 +82,7 @@ export interface AgentKnowledgePolicy {
     rerankEnabled: boolean;
     preferMemoryOverKnowledge: boolean;
     preferKnowledgeOverMemory: boolean;
+    tenantId: string;
     createdAt: Date;
     updatedAt: Date;
 }

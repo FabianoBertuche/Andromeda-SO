@@ -1,20 +1,20 @@
 import { PrismaClient } from "@prisma/client";
-import { IAgentKnowledgePolicyRepository } from "../../../../../core/src/domain/knowledge/IAgentKnowledgePolicyRepository";
-import { AgentKnowledgePolicy } from "../../../../../core/src/domain/knowledge/types";
+import { IAgentKnowledgePolicyRepository } from "../../../../../../core/src/domain/knowledge/IAgentKnowledgePolicyRepository";
+import { AgentKnowledgePolicy } from "../../../../../../core/src/domain/knowledge/types";
 
 export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePolicyRepository {
     constructor(private prisma: PrismaClient) { }
 
-    async getPolicyByAgent(agentId: string): Promise<AgentKnowledgePolicy | null> {
-        const policy = await this.prisma.agentKnowledgePolicy.findUnique({
-            where: { agentId },
+    async getPolicyByAgent(agentId: string, tenantId: string): Promise<AgentKnowledgePolicy | null> {
+        const policy = await this.prisma.agentKnowledgePolicy.findFirst({
+            where: { agentId, tenantId },
         });
         return policy ? this.mapToPolicy(policy) : null;
     }
 
-    async upsertPolicy(agentId: string, data: Partial<AgentKnowledgePolicy>): Promise<AgentKnowledgePolicy> {
+    async upsertPolicy(agentId: string, data: Partial<AgentKnowledgePolicy>, tenantId: string): Promise<AgentKnowledgePolicy> {
         const policy = await this.prisma.agentKnowledgePolicy.upsert({
-            where: { agentId },
+            where: { agentId }, // agentId ainda é único globalmente no schema atual, mas o tenantId garante o isolamento lógico
             update: {
                 knowledgeEnabled: data.knowledgeEnabled,
                 vaultReadEnabled: data.vaultReadEnabled,
@@ -31,6 +31,7 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
             },
             create: {
                 agentId,
+                tenantId,
                 knowledgeEnabled: data.knowledgeEnabled ?? false,
                 vaultReadEnabled: data.vaultReadEnabled ?? false,
                 vaultWriteEnabled: data.vaultWriteEnabled ?? false,
@@ -48,9 +49,9 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
         return this.mapToPolicy(policy);
     }
 
-    async deletePolicy(agentId: string): Promise<void> {
-        await this.prisma.agentKnowledgePolicy.delete({
-            where: { agentId },
+    async deletePolicy(agentId: string, tenantId: string): Promise<void> {
+        await this.prisma.agentKnowledgePolicy.deleteMany({
+            where: { agentId, tenantId },
         });
     }
 
@@ -70,6 +71,7 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
             rerankEnabled: p.rerankEnabled,
             preferMemoryOverKnowledge: p.preferMemoryOverKnowledge,
             preferKnowledgeOverMemory: p.preferKnowledgeOverMemory,
+            tenantId: p.tenantId,
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
         };

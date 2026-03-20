@@ -97,11 +97,13 @@ model SandboxProfile {
   mode        SandboxMode
   riskLevel   RiskLevel
   config      Json
+  tenantId    String      @default("default")
   createdAt   DateTime
   updatedAt   DateTime
 
   agentConfigs AgentSandboxConfig[]
 
+  @@index([tenantId])
   @@map("sandbox_profiles")
 }
 
@@ -111,11 +113,13 @@ model AgentSandboxConfig {
   profileId    String?
   overrides    Json
   enforcement  Json
+  tenantId     String   @default("default")
   createdAt    DateTime
   updatedAt    DateTime
 
   profile SandboxProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId])
   @@map("agent_sandbox_configs")
 }
 
@@ -138,9 +142,12 @@ model SandboxExecution {
   stdout         String?
   stderr         String?
 
+  tenantId       String                 @default("default")
+
   artifacts SandboxArtifact[]
   approvals ApprovalRequest[]
 
+  @@index([tenantId])
   @@index([agentId])
   @@index([taskId])
   @@map("sandbox_executions")
@@ -206,11 +213,13 @@ model MemoryEntry {
   isPinned        Boolean
   status          MemoryStatus
   importanceScore Float
+  tenantId        String               @default("default")
   metadata        Json
 
   links            MemoryLink[]
   retrievalRecords MemoryRetrievalRecord[]
 
+  @@index([tenantId])
   @@index([type])
   @@index([scopeType, scopeId])
   @@index([agentId])
@@ -229,11 +238,13 @@ model MemoryLink {
   linkedEntityType  String
   linkedEntityId    String
   relationType      String
+  tenantId          String       @default("default")
   createdAt         DateTime
 
   memoryEntry MemoryEntry @relation(fields: [memoryEntryId], references: [id], onDelete: Cascade)
 
   @@index([memoryEntryId])
+  @@index([tenantId])
   @@index([linkedEntityType, linkedEntityId])
   @@map("memory_links")
 }
@@ -248,11 +259,13 @@ model MemoryRetrievalRecord {
   retrievalScore        Float
   usedInPromptAssembly   Boolean
   usedAt                DateTime
+  tenantId              String   @default("default")
   createdAt             DateTime
 
   memoryEntry MemoryEntry @relation(fields: [memoryEntryId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
+  @@index([tenantId])
   @@index([agentId])
   @@index([sessionId])
   @@index([memoryEntryId])
@@ -269,10 +282,11 @@ model MemoryPolicy {
   allowAutoPromotion Boolean
   allowManualPin     Boolean
   allowSemanticExtraction Boolean
+  tenantId           String                @default("default")
   createdAt          DateTime
   updatedAt          DateTime
 
-  @@unique([memoryType, scopeType])
+  @@unique([tenantId, memoryType, scopeType])
   @@map("memory_policies")
 }
 
@@ -285,11 +299,13 @@ model KnowledgeCollection {
   sourceType  KnowledgeSourceType
   status      KnowledgeStatus
   metadata    Json                @default("{}")
+  tenantId    String              @default("default")
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
   documents KnowledgeDocument[]
 
+  @@index([tenantId])
   @@map("knowledge_collections")
 }
 
@@ -304,6 +320,7 @@ model KnowledgeDocument {
   checksum     String?
   status       KnowledgeStatus
   metadata     Json                @default("{}")
+  tenantId     String              @default("default")
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
@@ -322,6 +339,7 @@ model KnowledgeChunk {
   tokenEstimate Int?
   embeddingRef  String?
   metadata      Json              @default("{}")
+  tenantId      String            @default("default")
   createdAt     DateTime          @default(now())
 
   document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -341,7 +359,10 @@ model RetrievalRecord {
   selectedDocumentIds String[]
   scoreSummary        Json
   durationMs          Int
+  tenantId            String   @default("default")
   createdAt           DateTime @default(now())
+
+  @@index([tenantId])
 
   @@index([agentId])
   @@index([taskId])
@@ -363,9 +384,11 @@ model AgentKnowledgePolicy {
   rerankEnabled             Boolean  @default(false)
   preferMemoryOverKnowledge Boolean  @default(true)
   preferKnowledgeOverMemory Boolean  @default(false)
+  tenantId                  String   @default("default")
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
 
+  @@index([tenantId])
   @@map("agent_knowledge_policies")
 }
 
@@ -410,8 +433,11 @@ model CommunicationSession {
   context           Json                       @default("{}")
   metadata          Json                       @default("{}")
 
+  tenantId          String                     @default("default")
+
   messages CommunicationMessage[]
 
+  @@index([tenantId])
   @@map("communication_sessions")
 }
 
@@ -423,7 +449,10 @@ model CommunicationMessage {
   content   Json
   sender    Json
   metadata  Json               @default("{}")
+  tenantId  String             @default("default")
   createdAt DateTime           @default(now())
+
+  @@index([tenantId])
 
   session CommunicationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

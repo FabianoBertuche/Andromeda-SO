@@ -43,6 +43,7 @@ function toMemoryEntry(record: any): MemoryEntry {
         isPinned: record.isPinned,
         status: record.status,
         importanceScore: Number(record.importanceScore),
+        tenantId: record.tenantId,
         metadata: jsonObject(record.metadata),
     };
 }
@@ -58,6 +59,7 @@ function toMemoryPolicy(record: any): MemoryPolicy {
         allowAutoPromotion: record.allowAutoPromotion,
         allowManualPin: record.allowManualPin,
         allowSemanticExtraction: record.allowSemanticExtraction,
+        tenantId: record.tenantId,
         createdAt: new Date(record.createdAt),
         updatedAt: new Date(record.updatedAt),
     };
@@ -70,6 +72,7 @@ function toMemoryLink(record: any): MemoryLink {
         linkedEntityType: record.linkedEntityType,
         linkedEntityId: record.linkedEntityId,
         relationType: record.relationType,
+        tenantId: record.tenantId,
         createdAt: new Date(record.createdAt),
     };
 }
@@ -85,6 +88,7 @@ function toMemoryUsage(record: any): MemoryRetrievalRecord {
         retrievalScore: Number(record.retrievalScore),
         usedInPromptAssembly: record.usedInPromptAssembly,
         usedAt: new Date(record.usedAt),
+        tenantId: record.tenantId,
         createdAt: new Date(record.createdAt),
     };
 }
@@ -98,18 +102,18 @@ function applyStatusFilter(status?: MemoryStatus) {
 
 export interface MemoryRepositoryBundle {
     listEntries(filters?: MemoryListFilters): Promise<MemoryEntry[]>;
-    getEntry(id: string): Promise<MemoryEntry | null>;
+    getEntry(id: string, tenantId: string): Promise<MemoryEntry | null>;
     createEntry(entry: MemoryEntry): Promise<MemoryEntry>;
     updateEntry(id: string, patch: Partial<MemoryEntry>): Promise<MemoryEntry>;
-    deleteEntry(id: string): Promise<void>;
-    listLinks(memoryEntryId: string): Promise<MemoryLink[]>;
+    deleteEntry(id: string, tenantId: string): Promise<void>;
+    listLinks(memoryEntryId: string, tenantId: string): Promise<MemoryLink[]>;
     createLink(link: MemoryLink): Promise<MemoryLink>;
-    listUsage(memoryEntryId: string): Promise<MemoryRetrievalRecord[]>;
+    listUsage(memoryEntryId: string, tenantId: string): Promise<MemoryRetrievalRecord[]>;
     createUsage(record: MemoryRetrievalRecord): Promise<MemoryRetrievalRecord>;
-    listPolicies(): Promise<MemoryPolicy[]>;
-    getPolicy(id: string): Promise<MemoryPolicy | null>;
+    listPolicies(tenantId: string): Promise<MemoryPolicy[]>;
+    getPolicy(id: string, tenantId: string): Promise<MemoryPolicy | null>;
     upsertPolicy(policy: MemoryPolicy): Promise<MemoryPolicy>;
-    findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"]): Promise<MemoryPolicy | null>;
+    findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"], tenantId: string): Promise<MemoryPolicy | null>;
 }
 
 export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
@@ -127,6 +131,7 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
                 userId: filters.userId,
                 teamId: filters.teamId,
                 status: applyStatusFilter(filters.status),
+                tenantId: filters.tenantId,
                 isPinned: filters.pinnedOnly ? true : undefined,
             },
             orderBy: [
@@ -141,8 +146,8 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return mapped.slice(0, filters.limit || Number.MAX_SAFE_INTEGER);
     }
 
-    async getEntry(id: string): Promise<MemoryEntry | null> {
-        const record = await this.prisma.memoryEntry.findUnique({ where: { id } });
+    async getEntry(id: string, tenantId: string): Promise<MemoryEntry | null> {
+        const record = await this.prisma.memoryEntry.findFirst({ where: { id, tenantId } });
         return record ? toMemoryEntry(record) : null;
     }
 
@@ -162,7 +167,7 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
 
     async updateEntry(id: string, patch: Partial<MemoryEntry>): Promise<MemoryEntry> {
         const record = await this.prisma.memoryEntry.update({
-            where: { id },
+            where: { id, tenantId: patch.tenantId },
             data: {
                 ...patch,
                 tags: patch.tags ? patch.tags as Prisma.InputJsonValue : undefined,
@@ -174,12 +179,15 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return toMemoryEntry(record);
     }
 
-    async deleteEntry(id: string): Promise<void> {
-        await this.prisma.memoryEntry.delete({ where: { id } });
+    async deleteEntry(id: string, tenantId: string): Promise<void> {
+        await this.prisma.memoryEntry.deleteMany({ where: { id, tenantId } });
     }
 
-    async listLinks(memoryEntryId: string): Promise<MemoryLink[]> {
-        const links = await this.prisma.memoryLink.findMany({ where: { memoryEntryId }, orderBy: { createdAt: "desc" } });
+    async listLinks(memoryEntryId: string, tenantId: string): Promise<MemoryLink[]> {
+        const links = await this.prisma.memoryLink.findMany({ 
+            where: { memoryEntryId, tenantId }, 
+            orderBy: { createdAt: "desc" } 
+        });
         return links.map(toMemoryLink);
     }
 
@@ -193,8 +201,11 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return toMemoryLink(record);
     }
 
-    async listUsage(memoryEntryId: string): Promise<MemoryRetrievalRecord[]> {
-        const records = await this.prisma.memoryRetrievalRecord.findMany({ where: { memoryEntryId }, orderBy: { usedAt: "desc" } });
+    async listUsage(memoryEntryId: string, tenantId: string): Promise<MemoryRetrievalRecord[]> {
+        const records = await this.prisma.memoryRetrievalRecord.findMany({ 
+            where: { memoryEntryId, tenantId }, 
+            orderBy: { usedAt: "desc" } 
+        });
         return records.map(toMemoryUsage);
     }
 
@@ -209,13 +220,16 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return toMemoryUsage(created);
     }
 
-    async listPolicies(): Promise<MemoryPolicy[]> {
-        const policies = await this.prisma.memoryPolicy.findMany({ orderBy: [{ memoryType: "asc" }, { scopeType: "asc" }] });
+    async listPolicies(tenantId: string): Promise<MemoryPolicy[]> {
+        const policies = await this.prisma.memoryPolicy.findMany({ 
+            where: { tenantId },
+            orderBy: [{ memoryType: "asc" }, { scopeType: "asc" }] 
+        });
         return policies.map(toMemoryPolicy);
     }
 
-    async getPolicy(id: string): Promise<MemoryPolicy | null> {
-        const policy = await this.prisma.memoryPolicy.findUnique({ where: { id } });
+    async getPolicy(id: string, tenantId: string): Promise<MemoryPolicy | null> {
+        const policy = await this.prisma.memoryPolicy.findFirst({ where: { id, tenantId } });
         return policy ? toMemoryPolicy(policy) : null;
     }
 
@@ -224,6 +238,7 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
             where: { id: policy.id },
             create: {
                 ...policy,
+                tenantId: policy.tenantId,
                 createdAt: policy.createdAt,
                 updatedAt: policy.updatedAt,
             },
@@ -235,10 +250,10 @@ export class PrismaMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return toMemoryPolicy(record);
     }
 
-    async findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"]): Promise<MemoryPolicy | null> {
+    async findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"], tenantId: string): Promise<MemoryPolicy | null> {
         const policy = await this.prisma.memoryPolicy.findUnique({
             where: {
-                memoryType_scopeType: { memoryType, scopeType },
+                tenantId_memoryType_scopeType: { tenantId, memoryType, scopeType },
             },
         });
         return policy ? toMemoryPolicy(policy) : null;

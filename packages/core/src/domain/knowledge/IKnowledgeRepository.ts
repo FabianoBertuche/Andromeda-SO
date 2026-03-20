@@ -2,24 +2,24 @@ import { KnowledgeCollection, KnowledgeDocument, KnowledgeChunk, KnowledgeScopeT
 
 export interface IKnowledgeRepository {
     // Collections
-    createCollection(data: Partial<KnowledgeCollection>): Promise<KnowledgeCollection>;
-    getCollection(id: string): Promise<KnowledgeCollection | null>;
-    listCollections(filters: { scopeType?: KnowledgeScopeType, scopeId?: string }): Promise<KnowledgeCollection[]>;
-    updateCollection(id: string, data: Partial<KnowledgeCollection>): Promise<KnowledgeCollection>;
-    deleteCollection(id: string): Promise<void>;
+    createCollection(data: Partial<KnowledgeCollection>, tenantId: string): Promise<KnowledgeCollection>;
+    getCollection(id: string, tenantId: string): Promise<KnowledgeCollection | null>;
+    listCollections(tenantId: string, filters: { scopeType?: KnowledgeScopeType, scopeId?: string }): Promise<KnowledgeCollection[]>;
+    updateCollection(id: string, data: Partial<KnowledgeCollection>, tenantId: string): Promise<KnowledgeCollection>;
+    deleteCollection(id: string, tenantId: string): Promise<void>;
 
     // Documents
-    addDocument(collectionId: string, data: Partial<KnowledgeDocument>): Promise<KnowledgeDocument>;
-    getDocument(id: string): Promise<KnowledgeDocument | null>;
-    listDocuments(collectionId: string): Promise<KnowledgeDocument[]>;
-    updateDocument(id: string, data: Partial<KnowledgeDocument>): Promise<KnowledgeDocument>;
-    deleteDocument(id: string): Promise<void>;
+    addDocument(collectionId: string, data: Partial<KnowledgeDocument>, tenantId: string): Promise<KnowledgeDocument>;
+    getDocument(id: string, tenantId: string): Promise<KnowledgeDocument | null>;
+    listDocuments(collectionId: string, tenantId: string): Promise<KnowledgeDocument[]>;
+    updateDocument(id: string, data: Partial<KnowledgeDocument>, tenantId: string): Promise<KnowledgeDocument>;
+    deleteDocument(id: string, tenantId: string): Promise<void>;
 
     // Chunks
-    storeChunks(documentId: string, chunks: Partial<KnowledgeChunk>[]): Promise<KnowledgeChunk[]>;
-    getChunks(documentId: string): Promise<KnowledgeChunk[]>;
-    deleteChunks(documentId: string): Promise<void>;
+    storeChunks(documentId: string, chunks: Partial<KnowledgeChunk>[], tenantId: string): Promise<KnowledgeChunk[]>;
+    getChunks(documentId: string, tenantId: string): Promise<KnowledgeChunk[]>;
+    deleteChunks(documentId: string, tenantId: string): Promise<void>;
 
     // Search (Basic Metadata search)
-    searchDocuments(query: string, filters: any): Promise<KnowledgeDocument[]>;
+    searchDocuments(query: string, tenantId: string, filters: any): Promise<KnowledgeDocument[]>;
 }

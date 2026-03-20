@@ -13,6 +13,7 @@ export interface MemoryPolicy {
     allowAutoPromotion: boolean;
     allowManualPin: boolean;
     allowSemanticExtraction: boolean;
+    tenantId: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -40,6 +41,7 @@ export interface MemoryEntry {
     isPinned: boolean;
     status: MemoryStatus;
     importanceScore: number;
+    tenantId: string;
     metadata: Record<string, unknown>;
 }
 
@@ -49,6 +51,7 @@ export interface MemoryLink {
     linkedEntityType: string;
     linkedEntityId: string;
     relationType: string;
+    tenantId: string;
     createdAt: Date;
 }
 
@@ -62,6 +65,7 @@ export interface MemoryRetrievalRecord {
     retrievalScore: number;
     usedInPromptAssembly: boolean;
     usedAt: Date;
+    tenantId: string;
     createdAt: Date;
 }
 
@@ -75,6 +79,7 @@ export interface MemoryListFilters {
     userId?: string;
     teamId?: string;
     status?: MemoryStatus;
+    tenantId?: string;
     pinnedOnly?: boolean;
     q?: string;
     limit?: number;

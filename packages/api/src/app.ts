@@ -47,14 +47,18 @@ const v1Router = express.Router();
 
 v1Router.use("/auth", authLimiter, createAuthRoutes(authController));
 
-v1Router.use("/tasks", authMiddleware, taskRoutes);
-v1Router.use("/skills", authMiddleware, skillRoutes);
-v1Router.use("/agents", authMiddleware, agentRoutes);
-v1Router.use("/sandbox", authMiddleware, sandboxRouter);
-v1Router.use("/memory", authMiddleware, memoryRouter);
-v1Router.use("/gateway", authMiddleware, communicationRoutes);
-v1Router.use("/model-center", authMiddleware, modelCenterRoutes);
-v1Router.use("/internal/cognitive", authMiddleware, cognitiveRoutes);
+import { tenantMiddleware } from "./shared/middleware/tenant.middleware";
+
+// ... (v1Router setup anterior)
+
+v1Router.use("/tasks", authMiddleware, tenantMiddleware, taskRoutes);
+v1Router.use("/skills", authMiddleware, tenantMiddleware, skillRoutes);
+v1Router.use("/agents", authMiddleware, tenantMiddleware, agentRoutes);
+v1Router.use("/sandbox", authMiddleware, tenantMiddleware, sandboxRouter);
+v1Router.use("/memory", authMiddleware, tenantMiddleware, memoryRouter);
+v1Router.use("/gateway", authMiddleware, tenantMiddleware, communicationRoutes);
+v1Router.use("/model-center", authMiddleware, tenantMiddleware, modelCenterRoutes);
+v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
 
 app.use("/v1", v1Router);
 

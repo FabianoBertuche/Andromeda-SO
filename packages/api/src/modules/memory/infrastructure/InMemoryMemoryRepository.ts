@@ -23,20 +23,23 @@ export class InMemoryMemoryRepositoryBundle implements MemoryRepositoryBundle {
             .map((entry) => ({ ...entry, tags: [...entry.tags], metadata: { ...entry.metadata } }));
     }
 
-    async getEntry(id: string): Promise<MemoryEntry | null> {
+    async getEntry(id: string, tenantId: string): Promise<MemoryEntry | null> {
         const entry = this.entries.get(id);
-        return entry ? { ...entry, tags: [...entry.tags], metadata: { ...entry.metadata } } : null;
+        if (entry && entry.tenantId === tenantId) {
+            return { ...entry, tags: [...entry.tags], metadata: { ...entry.metadata } };
+        }
+        return null;
     }
 
     async createEntry(entry: MemoryEntry): Promise<MemoryEntry> {
         this.entries.set(entry.id, { ...entry, tags: [...entry.tags], metadata: { ...entry.metadata } });
-        return this.getEntry(entry.id) as Promise<MemoryEntry>;
+        return this.getEntry(entry.id, entry.tenantId) as Promise<MemoryEntry>;
     }
 
     async updateEntry(id: string, patch: Partial<MemoryEntry>): Promise<MemoryEntry> {
         const current = this.entries.get(id);
-        if (!current) {
-            throw new Error(`Memory entry ${id} not found`);
+        if (!current || (patch.tenantId && current.tenantId !== patch.tenantId)) {
+            throw new Error(`Memory entry ${id} not found or access denied`);
         }
         const next = {
             ...current,
@@ -45,17 +48,22 @@ export class InMemoryMemoryRepositoryBundle implements MemoryRepositoryBundle {
             metadata: patch.metadata ? { ...patch.metadata } : current.metadata,
         };
         this.entries.set(id, next);
-        return this.getEntry(id) as Promise<MemoryEntry>;
+        return this.getEntry(id, current.tenantId) as Promise<MemoryEntry>;
     }
 
-    async deleteEntry(id: string): Promise<void> {
-        this.entries.delete(id);
-        this.links.delete(id);
-        this.usage.delete(id);
+    async deleteEntry(id: string, tenantId: string): Promise<void> {
+        const entry = this.entries.get(id);
+        if (entry && entry.tenantId === tenantId) {
+            this.entries.delete(id);
+            this.links.delete(id);
+            this.usage.delete(id);
+        }
     }
 
-    async listLinks(memoryEntryId: string): Promise<MemoryLink[]> {
-        return (this.links.get(memoryEntryId) || []).map((link) => ({ ...link }));
+    async listLinks(memoryEntryId: string, tenantId: string): Promise<MemoryLink[]> {
+        return (this.links.get(memoryEntryId) || [])
+            .filter(link => link.tenantId === tenantId)
+            .map((link) => ({ ...link }));
     }
 
     async createLink(link: MemoryLink): Promise<MemoryLink> {
@@ -65,8 +73,10 @@ export class InMemoryMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return { ...link };
     }
 
-    async listUsage(memoryEntryId: string): Promise<MemoryRetrievalRecord[]> {
-        return (this.usage.get(memoryEntryId) || []).map((record) => ({ ...record }));
+    async listUsage(memoryEntryId: string, tenantId: string): Promise<MemoryRetrievalRecord[]> {
+        return (this.usage.get(memoryEntryId) || [])
+            .filter(record => record.tenantId === tenantId)
+            .map((record) => ({ ...record }));
     }
 
     async createUsage(record: MemoryRetrievalRecord): Promise<MemoryRetrievalRecord> {
@@ -76,13 +86,18 @@ export class InMemoryMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return { ...record };
     }
 
-    async listPolicies(): Promise<MemoryPolicy[]> {
-        return Array.from(this.policies.values()).map((policy) => ({ ...policy }));
+    async listPolicies(tenantId: string): Promise<MemoryPolicy[]> {
+        return Array.from(this.policies.values())
+            .filter(p => p.tenantId === tenantId)
+            .map((policy) => ({ ...policy }));
     }
 
-    async getPolicy(id: string): Promise<MemoryPolicy | null> {
+    async getPolicy(id: string, tenantId: string): Promise<MemoryPolicy | null> {
         const policy = this.policies.get(id);
-        return policy ? { ...policy } : null;
+        if (policy && policy.tenantId === tenantId) {
+            return { ...policy };
+        }
+        return null;
     }
 
     async upsertPolicy(policy: MemoryPolicy): Promise<MemoryPolicy> {
@@ -90,12 +105,15 @@ export class InMemoryMemoryRepositoryBundle implements MemoryRepositoryBundle {
         return { ...policy };
     }
 
-    async findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"]): Promise<MemoryPolicy | null> {
-        const policy = Array.from(this.policies.values()).find((item) => item.memoryType === memoryType && item.scopeType === scopeType);
+    async findPolicy(memoryType: MemoryPolicy["memoryType"], scopeType: MemoryPolicy["scopeType"], tenantId: string): Promise<MemoryPolicy | null> {
+        const policy = Array.from(this.policies.values()).find(
+            (item) => item.memoryType === memoryType && item.scopeType === scopeType && item.tenantId === tenantId
+        );
         return policy ? { ...policy } : null;
     }
 
     private matches(entry: MemoryEntry, filters: MemoryListFilters): boolean {
+        if (filters.tenantId && entry.tenantId !== filters.tenantId) return false;
         if (filters.type && entry.type !== filters.type) return false;
         if (filters.scopeType && entry.scopeType !== filters.scopeType) return false;
         if (filters.agentId && entry.agentId !== filters.agentId) return false;
