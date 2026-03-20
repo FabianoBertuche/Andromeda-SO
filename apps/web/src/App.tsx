@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Clock, Cpu, Database, Send, Terminal, User, Users } from 'lucide-react';
+import { Activity, Book, Clock, Cpu, Database, Send, Terminal, User, Users } from 'lucide-react';
 import { AgentManagementView } from './components/agents/AgentManagementView';
 import { MemoryView } from './components/memory/MemoryView';
+import { KnowledgeView } from './components/knowledge/KnowledgeView';
 import { TimelineView } from './components/Timeline/TimelineView';
 import { ModelCenterView } from './components/model-center/ModelCenterView';
 import { useWs } from './contexts/WsContext';
@@ -24,7 +25,7 @@ interface ChatMessage {
   conformance?: number;
 }
 
-type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory';
+type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' | 'knowledge';
 
 function App() {
   const { isConnected, session, activeTask } = useWs();
@@ -221,6 +222,12 @@ function App() {
                 Memory
               </button>
             </li>
+            <li>
+              <button onClick={() => setActiveTab('knowledge')} className={navClass(activeTab === 'knowledge')}>
+                <Book className="w-5 h-5 mr-3" />
+                Knowledge
+              </button>
+            </li>
           </ul>
         </nav>
 
@@ -287,6 +294,10 @@ function App() {
           ) : activeTab === 'memory' ? (
             <div className="flex-1 overflow-auto">
               <MemoryView sessionId={session?.sessionId} agentId={selectedAgent?.id || undefined} />
+            </div>
+          ) : activeTab === 'knowledge' ? (
+            <div className="flex-1 overflow-auto">
+              <KnowledgeView />
             </div>
           ) : (
             <div className="flex-1 overflow-auto">

@@ -19,6 +19,7 @@ import cognitiveRoutes from "./modules/cognitive/interfaces/http/cognitive.route
 console.log("Importing modelCenterRoutes...");
 import modelCenterRoutes from "./modules/model-center/interfaces/http/modelCenter.routes";
 console.log("modelCenterRoutes imported!");
+import knowledgeRouter from "./modules/knowledge/interfaces/http/knowledge.routes";
 
 const app = express();
 

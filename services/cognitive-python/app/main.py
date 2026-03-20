@@ -13,9 +13,19 @@ from contracts.classification import TaskClassification
 from contracts.health import HealthResponse, ReadinessResponse
 from contracts.version import ContractsVersionResponse
 from services.planner.classifier import classify_query
+from services.documents.parser import DocumentParser
+from services.documents.chunker import DocumentChunker
+from services.rag.embeddings import EmbeddingService
+from services.rag.vector_store import SimpleVectorStore
 
 SERVICE_NAME = "cognitive-python"
 SERVICE_VERSION = "0.1.0"
+
+# Instantiate services
+doc_parser = DocumentParser()
+doc_chunker = DocumentChunker()
+embedding_service = EmbeddingService()
+vector_store = SimpleVectorStore()
 
 app = FastAPI(
     title="Andromeda Cognitive Python",
@@ -112,6 +122,66 @@ async def integration_ping(payload: CognitiveRequest) -> CognitiveResponse:
             "service": SERVICE_NAME,
         },
         model_used="ping-v1",
+        duration_ms=elapsed_ms(started_at),
+    )
+
+
+@app.post(
+    "/v1/documents/parse",
+    response_model=CognitiveResponse,
+    dependencies=[Depends(verify_service_token)],
+)
+async def parse_document(payload: CognitiveRequest) -> CognitiveResponse:
+    started_at = perf_counter()
+    content = str(payload.input.get("content", "")).encode("utf-8")
+    mime_type = str(payload.input.get("mimeType", "text/plain"))
+    
+    text = await doc_parser.parse(content, mime_type)
+    
+    return build_response(
+        payload=payload,
+        data={"text": text},
+        model_used="parser-v1",
+        duration_ms=elapsed_ms(started_at),
+    )
+
+
+@app.post(
+    "/v1/documents/chunk",
+    response_model=CognitiveResponse,
+    dependencies=[Depends(verify_service_token)],
+)
+async def chunk_document(payload: CognitiveRequest) -> CognitiveResponse:
+    started_at = perf_counter()
+    text = str(payload.input.get("text", ""))
+    
+    chunks = doc_chunker.chunk(text)
+    
+    return build_response(
+        payload=payload,
+        data={"chunks": chunks},
+        model_used="chunker-v1",
+        duration_ms=elapsed_ms(started_at),
+    )
+
+
+@app.post(
+    "/v1/rag/retrieve",
+    response_model=CognitiveResponse,
+    dependencies=[Depends(verify_service_token)],
+)
+async def retrieve_knowledge(payload: CognitiveRequest) -> CognitiveResponse:
+    started_at = perf_counter()
+    query = str(payload.input.get("query", ""))
+    top_k = int(payload.input.get("topK", 5))
+    
+    query_embedding = await embedding_service.generate_query_embedding(query)
+    results = vector_store.search(query_embedding, top_k=top_k)
+    
+    return build_response(
+        payload=payload,
+        data={"results": results},
+        model_used="rag-retriever-v1",
         duration_ms=elapsed_ms(started_at),
     )
 

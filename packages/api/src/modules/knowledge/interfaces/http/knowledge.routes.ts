@@ -1,0 +1,29 @@
+import { Router } from "express";
+import { KnowledgeController } from "./KnowledgeController";
+import { CreateCollectionUseCase } from "../../application/use-cases/CreateCollectionUseCase";
+import { AddDocumentUseCase } from "../../application/use-cases/AddDocumentUseCase";
+import { PrismaKnowledgeRepository } from "../../infrastructure/persistence/PrismaKnowledgeRepository";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+const knowledgeRepository = new PrismaKnowledgeRepository(prisma);
+const createCollectionUseCase = new CreateCollectionUseCase(knowledgeRepository);
+const addDocumentUseCase = new AddDocumentUseCase(knowledgeRepository);
+
+const controller = new KnowledgeController(
+    knowledgeRepository,
+    createCollectionUseCase,
+    addDocumentUseCase
+);
+
+const router = Router();
+
+// Collections
+router.post("/collections", (req, res) => void controller.createCollection(req, res));
+router.get("/collections", (req, res) => void controller.listCollections(req, res));
+
+// Documents
+router.post("/collections/:collectionId/documents", (req, res) => void controller.addDocument(req, res));
+router.get("/collections/:collectionId/documents", (req, res) => void controller.listDocuments(req, res));
+
+export default router;

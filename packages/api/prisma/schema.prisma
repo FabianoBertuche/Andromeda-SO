@@ -67,6 +67,27 @@ enum MemoryRetentionMode {
   persistent
 }
 
+enum KnowledgeScopeType {
+  agent
+  team
+  project
+  shared
+}
+
+enum KnowledgeSourceType {
+  upload
+  manual
+  vault
+}
+
+enum KnowledgeStatus {
+  pending
+  processing
+  completed
+  failed
+  archived
+}
+
 model SandboxProfile {
   id          String      @id
   name        String
@@ -253,4 +274,159 @@ model MemoryPolicy {
 
   @@unique([memoryType, scopeType])
   @@map("memory_policies")
+}
+
+model KnowledgeCollection {
+  id          String              @id @default(uuid())
+  name        String
+  description String?
+  scopeType   KnowledgeScopeType
+  scopeId     String
+  sourceType  KnowledgeSourceType
+  status      KnowledgeStatus
+  metadata    Json                @default("{}")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  documents KnowledgeDocument[]
+
+  @@map("knowledge_collections")
+}
+
+model KnowledgeDocument {
+  id           String              @id @default(uuid())
+  collectionId String
+  title        String
+  sourceType   KnowledgeSourceType
+  sourcePath   String?
+  mimeType     String?
+  rawText      String?
+  checksum     String?
+  status       KnowledgeStatus
+  metadata     Json                @default("{}")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  collection KnowledgeCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  chunks     KnowledgeChunk[]
+
+  @@index([collectionId])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id            String            @id @default(uuid())
+  documentId    String
+  ordinal       Int
+  content       String
+  tokenEstimate Int?
+  embeddingRef  String?
+  metadata      Json              @default("{}")
+  createdAt     DateTime          @default(now())
+
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("knowledge_chunks")
+}
+
+model RetrievalRecord {
+  id                  String   @id @default(uuid())
+  taskId              String?
+  sessionId           String?
+  agentId             String?
+  query               String
+  filters             Json
+  selectedChunkIds    String[]
+  selectedDocumentIds String[]
+  scoreSummary        Json
+  durationMs          Int
+  createdAt           DateTime @default(now())
+
+  @@index([agentId])
+  @@index([taskId])
+  @@map("retrieval_records")
+}
+
+model AgentKnowledgePolicy {
+  id                        String   @id @default(uuid())
+  agentId                   String   @unique
+  knowledgeEnabled          Boolean  @default(false)
+  vaultReadEnabled          Boolean  @default(false)
+  vaultWriteEnabled         Boolean  @default(false)
+  writeMode                 String   @default("disabled")
+  approvalRequired          Boolean  @default(true)
+  allowedCollectionIds      String[]
+  allowedPaths              String[]
+  maxChunks                 Int      @default(5)
+  maxContextTokens          Int      @default(2000)
+  rerankEnabled             Boolean  @default(false)
+  preferMemoryOverKnowledge Boolean  @default(true)
+  preferKnowledgeOverMemory Boolean  @default(false)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@map("agent_knowledge_policies")
+}
+
+enum CommunicationChannel {
+  web
+  telegram
+  discord
+  cli
+  mobile
+  system
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+enum MessageContentType {
+  text
+  json
+  event
+  command
+}
+
+enum CommunicationSessionStatus {
+  active
+  idle
+  closed
+}
+
+model CommunicationSession {
+  id                String                     @id @default(uuid())
+  channel           CommunicationChannel
+  externalSessionId String?
+  internalUserId    String?
+  externalUserId    String?
+  status            CommunicationSessionStatus @default(active)
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  lastMessageAt     DateTime?
+  context           Json                       @default("{}")
+  metadata          Json                       @default("{}")
+
+  messages CommunicationMessage[]
+
+  @@map("communication_sessions")
+}
+
+model CommunicationMessage {
+  id        String             @id @default(uuid())
+  sessionId String
+  channel   CommunicationChannel
+  role      MessageRole
+  content   Json
+  sender    Json
+  metadata  Json               @default("{}")
+  createdAt DateTime           @default(now())
+
+  session CommunicationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("communication_messages")
 }

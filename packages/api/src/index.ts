@@ -1,4 +1,6 @@
+import "dotenv/config";
 import { createServer } from "http";
+
 import { Server } from "socket.io";
 import app from "./app";
 import { globalWsGateway } from "./modules/communication/interfaces/websocket/communication.ws-gateway";
