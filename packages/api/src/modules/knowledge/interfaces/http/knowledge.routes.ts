@@ -25,5 +25,6 @@ router.get("/collections", (req, res) => void controller.listCollections(req, re
 // Documents
 router.post("/collections/:collectionId/documents", (req, res) => void controller.addDocument(req, res));
 router.get("/collections/:collectionId/documents", (req, res) => void controller.listDocuments(req, res));
+router.delete("/documents/:documentId", (req, res) => void controller.deleteDocument(req, res));
 
 export default router;

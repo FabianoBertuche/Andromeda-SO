@@ -1,7 +1,8 @@
 import chokidar from 'chokidar';
 import path from 'path';
 import { AddDocumentUseCase } from '../../application/use-cases/AddDocumentUseCase';
-import { IKnowledgeRepository } from '../../../../../core/src/domain/knowledge/IKnowledgeRepository';
+import { IKnowledgeRepository } from '../../../../../../core/src/domain/knowledge/IKnowledgeRepository';
+import { KnowledgeSourceType } from '../../../../../../core/src/domain/knowledge/types';
 
 export interface WatcherConfig {
     vaultPath: string;
@@ -9,7 +10,7 @@ export interface WatcherConfig {
 }
 
 export class VaultWatcherService {
-    private watchers: Map<string, chokidar.FSWatcher> = new Map();
+    private watchers = new Map<string, Awaited<ReturnType<typeof chokidar.watch>>>();
 
     constructor(
         private knowledgeRepository: IKnowledgeRepository,
@@ -58,9 +59,11 @@ export class VaultWatcherService {
             await this.addDocumentUseCase.execute({
                 collectionId: config.collectionId,
                 title: fileName,
-                sourcePath: filePath, // New field needed in UseCase?
+                sourceType: KnowledgeSourceType.VAULT,
+                sourcePath: filePath,
                 mimeType: 'text/markdown',
-                content: '' // To be read by the service or usecase
+                rawText: '',
+                tenantId: 'default',
             });
         } catch (error) {
             console.error(`[VaultWatcher] Error syncing ${fileName}:`, error);

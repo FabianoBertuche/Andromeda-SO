@@ -1,5 +1,5 @@
-import { IKnowledgeRepository } from "../../../../../core/src/domain/knowledge/IKnowledgeRepository";
-import { KnowledgeDocument, KnowledgeSourceType, KnowledgeStatus } from "../../../../../core/src/domain/knowledge/types";
+import { IKnowledgeRepository } from "../../../../../../core/src/domain/knowledge/IKnowledgeRepository";
+import { KnowledgeDocument, KnowledgeSourceType, KnowledgeStatus } from "../../../../../../core/src/domain/knowledge/types";
 
 export interface AddDocumentDTO {
     collectionId: string;
@@ -9,6 +9,7 @@ export interface AddDocumentDTO {
     mimeType?: string;
     rawText?: string;
     metadata?: Record<string, any>;
+    tenantId: string;
 }
 
 export class AddDocumentUseCase {
@@ -26,7 +27,7 @@ export class AddDocumentUseCase {
             metadata: dto.metadata || {},
         };
 
-        const document = await this.knowledgeRepository.addDocument(dto.collectionId, documentData);
+        const document = await this.knowledgeRepository.addDocument(dto.collectionId, documentData, dto.tenantId);
 
         // Note: In a real flow, this would trigger an event or call a service for chunking
         // TriggerProcessingEvent(document.id);

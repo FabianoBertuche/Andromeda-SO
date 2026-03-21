@@ -1,5 +1,5 @@
-import { IKnowledgeRepository } from "../../../../../core/src/domain/knowledge/IKnowledgeRepository";
-import { RetrievalResult } from "../../../../../core/src/domain/knowledge/types";
+import { IKnowledgeRepository } from "../../../../../../core/src/domain/knowledge/IKnowledgeRepository";
+import { RetrievalResult } from "../../../../../../core/src/domain/knowledge/types";
 
 export interface RetrieveKnowledgeDTO {
     agentId: string;

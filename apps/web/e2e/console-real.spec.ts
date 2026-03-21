@@ -10,6 +10,7 @@ test.describe('Console - Integração Real com Backend', () => {
 
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('aside').first()).toBeVisible();
     await page.waitForTimeout(3000);
 
     const sidebar = page.locator('aside').first();
@@ -52,7 +53,7 @@ test.describe('Console - Integração Real com Backend', () => {
     const input = page.locator('input[type="text"]');
     const sendButton = page.locator('button[aria-label="Send"]');
 
-    await input.fill('Hello, respond with just OK');
+    await input.fill('Reply with just OK and no reasoning.');
     await expect(sendButton).toBeEnabled();
 
     const messagesBefore = await page.locator('.flex.justify-start, .flex.justify-end').count();
@@ -71,7 +72,8 @@ test.describe('Console - Integração Real com Backend', () => {
     const messagesAfter = await page.locator('.flex.justify-start, .flex.justify-end').count();
     expect(messagesAfter).toBeGreaterThan(messagesBefore);
 
-    await expect(page.locator('body')).toContainText('Timed out after 15000ms');
+    await expect(page.locator('body')).toContainText('OK');
+    await expect(page.locator('body')).not.toContainText('Timed out after');
   });
 
   test('deve exibir gateway online no sidebar', async ({ page }) => {

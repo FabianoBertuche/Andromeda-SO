@@ -34,6 +34,11 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/agents/, '/v1/agents'),
+        },
+        '/api/knowledge': {
+          target: apiTarget,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api\/knowledge/, '/v1/knowledge'),
         }
       }
     }

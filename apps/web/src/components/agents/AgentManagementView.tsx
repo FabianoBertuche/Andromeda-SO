@@ -127,59 +127,47 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
   useEffect(() => {
     if (!selectedAgentId) return;
-    void loadAgent(selectedAgentId);
+    setBehavior(null);
+    setSafeguards(null);
+    setProfileHistory([]);
+    setHistory([]);
+    setSandboxConfig(null);
+    setSandboxProfiles([]);
+    setSandboxExecutions([]);
+    setSandboxValidation(null);
+    setSandboxDryRun(null);
+    setSandboxOverridesText('{}');
+    setChatMessages([]);
+    void loadAgentShell(selectedAgentId);
   }, [selectedAgentId]);
 
-  async function loadAgent(agentId: string) {
+  useEffect(() => {
+    if (!selectedAgentId) return;
+    void loadAgentTab(selectedAgentId, activeTab);
+  }, [activeTab, selectedAgentId]);
+
+  async function safeLoad<T>(label: string, loader: Promise<T>, loadErrors: string[] = []): Promise<T | null> {
+    try {
+      return await loader;
+    } catch (nextError) {
+      console.error(`Erro ao carregar ${label} do agente:`, nextError);
+      loadErrors.push(label);
+      return null;
+    }
+  }
+
+  async function loadAgentShell(agentId: string) {
     setLoading(true);
     setError('');
     try {
       const loadErrors: string[] = [];
-      async function safeLoad<T>(label: string, loader: Promise<T>): Promise<T | null> {
-        try {
-          return await loader;
-        } catch (nextError) {
-          console.error(`Erro ao carregar ${label} do agente:`, nextError);
-          loadErrors.push(label);
-          return null;
-        }
-      }
-
-      const [
-        nextProfile,
-        nextBehavior,
-        nextSafeguards,
-        nextProfileHistory,
-        nextHistory,
-        nextConformance,
-        nextSandboxConfig,
-        nextSandboxProfiles,
-        nextSandboxExecutions,
-      ] = await Promise.all([
-        safeLoad('perfil', getAgentProfile(agentId)),
-        safeLoad('behavior', getAgentBehavior(agentId)),
-        safeLoad('safeguards', getAgentSafeguards(agentId)),
-        safeLoad('historico do perfil', getAgentProfileHistory(agentId)),
-        safeLoad('historico', getAgentHistory(agentId)),
-        safeLoad('conformance', getAgentConformance(agentId)),
-        safeLoad('sandbox', getAgentSandbox(agentId)),
-        safeLoad('sandbox profiles', listSandboxProfiles()),
-        safeLoad('sandbox executions', listSandboxExecutions()),
+      const [nextProfile, nextConformance] = await Promise.all([
+        safeLoad('perfil', getAgentProfile(agentId), loadErrors),
+        safeLoad('conformance', getAgentConformance(agentId), loadErrors),
       ]);
 
       setProfile(nextProfile);
-      setBehavior(nextBehavior);
-      setSafeguards(nextSafeguards);
-      setProfileHistory(nextProfileHistory || []);
-      setHistory(nextHistory || []);
       setConformance(nextConformance);
-      setSandboxConfig(nextSandboxConfig);
-      setSandboxProfiles(nextSandboxProfiles || []);
-      setSandboxExecutions((nextSandboxExecutions || []).filter((execution) => execution.agentId === agentId));
-      setSandboxOverridesText(JSON.stringify(nextSandboxConfig?.overrides || {}, null, 2));
-      setSandboxValidation(null);
-      setSandboxDryRun(null);
-      setChatMessages([]);
       if (loadErrors.length > 0) {
         setError(`Algumas seções do agente nao puderam ser carregadas: ${loadErrors.join(', ')}.`);
       }
@@ -191,13 +179,66 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     }
   }
 
+  async function loadAgentTab(agentId: string, tab: AgentTab) {
+    const loadErrors: string[] = [];
+
+    try {
+      if (tab === 'identity') {
+        const nextProfileHistory = await safeLoad('historico do perfil', getAgentProfileHistory(agentId), loadErrors);
+        if (nextProfileHistory) {
+          setProfileHistory(nextProfileHistory);
+        }
+      }
+
+      if (tab === 'behavior') {
+        const nextBehavior = await safeLoad('behavior', getAgentBehavior(agentId), loadErrors);
+        if (nextBehavior) {
+          setBehavior(nextBehavior);
+        }
+      }
+
+      if (tab === 'safeguards') {
+        const nextSafeguards = await safeLoad('safeguards', getAgentSafeguards(agentId), loadErrors);
+        if (nextSafeguards) {
+          setSafeguards(nextSafeguards);
+        }
+      }
+
+      if (tab === 'sandbox') {
+        const [nextSandboxConfig, nextSandboxProfiles, nextSandboxExecutions] = await Promise.all([
+          safeLoad('sandbox', getAgentSandbox(agentId), loadErrors),
+          safeLoad('sandbox profiles', listSandboxProfiles(), loadErrors),
+          safeLoad('sandbox executions', listSandboxExecutions(), loadErrors),
+        ]);
+
+        setSandboxConfig(nextSandboxConfig);
+        setSandboxProfiles(nextSandboxProfiles || []);
+        setSandboxExecutions((nextSandboxExecutions || []).filter((execution) => execution.agentId === agentId));
+        setSandboxOverridesText(JSON.stringify(nextSandboxConfig?.overrides || {}, null, 2));
+      }
+
+      if (tab === 'chat') {
+        const nextHistory = await safeLoad('historico', getAgentHistory(agentId), loadErrors);
+        setHistory(nextHistory || []);
+      }
+
+      if (loadErrors.length > 0) {
+        setError(`Algumas seções do agente nao puderam ser carregadas: ${loadErrors.join(', ')}.`);
+      }
+    } catch (nextError) {
+      console.error('Erro ao carregar detalhes do agente:', nextError);
+      setError('Nao foi possivel carregar os detalhes do agente.');
+    }
+  }
+
   async function saveIdentity() {
     if (!profile) return;
     setSaving(true);
     try {
       await updateAgentProfile(profile.id, { markdown: profile.markdown });
       await refreshAgents();
-      await loadAgent(profile.id);
+      await loadAgentShell(profile.id);
+      await loadAgentTab(profile.id, 'identity');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao salvar o texto do perfil.');
@@ -212,7 +253,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     try {
       await updateAgentBehavior(selectedAgentId, behavior);
       await refreshAgents();
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'behavior');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao salvar o comportamento.');
@@ -227,7 +269,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     try {
       await updateAgentSafeguards(selectedAgentId, safeguards);
       await refreshAgents();
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'safeguards');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao salvar as safeguards.');
@@ -248,7 +291,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
       });
       setSandboxConfig(updated);
       await refreshAgents();
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'sandbox');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao salvar a sandbox.');
@@ -307,7 +351,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
         parseSandboxOverrides(sandboxOverridesText),
       );
       await startSandboxExecution(payload);
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'sandbox');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao iniciar a execucao de sandbox.');
@@ -322,7 +367,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     try {
       await restoreAgentProfileVersion(selectedAgentId, version);
       await refreshAgents();
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'identity');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao restaurar a versao.');
@@ -351,7 +397,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
         },
       ]);
       await refreshAgents();
-      await loadAgent(selectedAgentId);
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'chat');
     } catch (nextError) {
       console.error(nextError);
       setError('Falha ao conversar com o agente.');

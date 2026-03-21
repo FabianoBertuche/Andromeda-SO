@@ -6,25 +6,25 @@ export const softDeleteExtension = Prisma.defineExtension({
         $allModels: {
             async findMany({ model, operation, args, query }) {
                 if (supportsSoftDelete(model)) {
-                    args.where = { ...args.where, deletedAt: null };
+                    args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
             async findFirst({ model, operation, args, query }) {
                 if (supportsSoftDelete(model)) {
-                    args.where = { ...args.where, deletedAt: null };
+                    args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
             async findUnique({ model, operation, args, query }) {
                 if (supportsSoftDelete(model)) {
-                    args.where = { ...args.where, deletedAt: null };
+                    args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
             async count({ model, operation, args, query }) {
                 if (supportsSoftDelete(model)) {
-                    args.where = { ...args.where, deletedAt: null };
+                    args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
@@ -55,8 +55,9 @@ export const softDeleteExtension = Prisma.defineExtension({
                 args: Prisma.Exact<A, Prisma.Args<T, 'update'>>
             ): Promise<Prisma.Result<T, A, 'update'>> {
                 const context = Prisma.getExtensionContext(this) as any;
+                const updateArgs = args as Record<string, unknown>;
                 return context.update({
-                    ...args,
+                    ...updateArgs,
                     data: { deletedAt: null },
                 });
             },

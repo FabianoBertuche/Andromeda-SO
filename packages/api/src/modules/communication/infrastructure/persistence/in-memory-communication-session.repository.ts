@@ -23,4 +23,17 @@ export class InMemoryCommunicationSessionRepository implements CommunicationSess
     async save(session: CommunicationSession): Promise<void> {
         this.sessions.set(session.id, session);
     }
+
+    async restore(id: string): Promise<void> {
+        const session = this.sessions.get(id);
+        if (!session) {
+            return;
+        }
+
+        this.sessions.set(id, new CommunicationSession({
+            ...session.toJSON(),
+            status: "active",
+            updatedAt: new Date(),
+        }));
+    }
 }

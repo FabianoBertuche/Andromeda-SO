@@ -1,6 +1,10 @@
 import CircuitBreaker from "opossum";
 import { setupCircuitBreakerEvents } from "./circuit-breaker.events";
 
+const defaultTimeout = Number(
+    process.env.LLM_PROVIDER_TIMEOUT_MS || (process.env.NODE_ENV === "development" ? 180000 : 15000)
+);
+
 export interface CircuitBreakerConfig {
     timeout?: number;
     errorThresholdPercentage?: number;
@@ -14,7 +18,7 @@ export class CircuitBreakerFactory {
         config?: CircuitBreakerConfig
     ): CircuitBreaker<T, R> {
         const options = {
-            timeout: config?.timeout || 15000, // 15 segs de timeout default para requests LLM
+            timeout: config?.timeout ?? defaultTimeout,
             errorThresholdPercentage: config?.errorThresholdPercentage || 50, // 50% de falha abre o circuito
             resetTimeout: config?.resetTimeout || 30000, // Tenta novamente após 30 secs
             name,

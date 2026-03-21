@@ -21,8 +21,8 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
                 vaultWriteEnabled: data.vaultWriteEnabled,
                 writeMode: data.writeMode,
                 approvalRequired: data.approvalRequired,
-                allowedCollectionIds: data.allowedCollectionIds,
-                allowedPaths: data.allowedPaths,
+                allowedCollectionIds: serializeList(data.allowedCollectionIds),
+                allowedPaths: serializeList(data.allowedPaths),
                 maxChunks: data.maxChunks,
                 maxContextTokens: data.maxContextTokens,
                 rerankEnabled: data.rerankEnabled,
@@ -37,8 +37,8 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
                 vaultWriteEnabled: data.vaultWriteEnabled ?? false,
                 writeMode: data.writeMode ?? 'disabled',
                 approvalRequired: data.approvalRequired ?? true,
-                allowedCollectionIds: data.allowedCollectionIds ?? [],
-                allowedPaths: data.allowedPaths ?? [],
+                allowedCollectionIds: serializeList(data.allowedCollectionIds ?? []) || "[]",
+                allowedPaths: serializeList(data.allowedPaths ?? []) || "[]",
                 maxChunks: data.maxChunks ?? 5,
                 maxContextTokens: data.maxContextTokens ?? 2000,
                 rerankEnabled: data.rerankEnabled ?? false,
@@ -64,8 +64,8 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
             vaultWriteEnabled: p.vaultWriteEnabled,
             writeMode: p.writeMode as any,
             approvalRequired: p.approvalRequired,
-            allowedCollectionIds: p.allowedCollectionIds,
-            allowedPaths: p.allowedPaths,
+            allowedCollectionIds: deserializeList(p.allowedCollectionIds),
+            allowedPaths: deserializeList(p.allowedPaths),
             maxChunks: p.maxChunks,
             maxContextTokens: p.maxContextTokens,
             rerankEnabled: p.rerankEnabled,
@@ -75,5 +75,26 @@ export class PrismaAgentKnowledgePolicyRepository implements IAgentKnowledgePoli
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
         };
+    }
+}
+
+function serializeList(value?: string[]): string | undefined {
+    if (!value) {
+        return undefined;
+    }
+
+    return JSON.stringify(value);
+}
+
+function deserializeList(value: string): string[] {
+    if (!value) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    } catch {
+        return value.split(",").map((item) => item.trim()).filter(Boolean);
     }
 }

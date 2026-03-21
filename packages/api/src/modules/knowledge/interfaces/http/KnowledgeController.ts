@@ -1,7 +1,8 @@
-import { Request, Response } from "express";
-import { CreateCollectionUseCase } from "../application/use-cases/CreateCollectionUseCase";
-import { AddDocumentUseCase } from "../application/use-cases/AddDocumentUseCase";
-import { IKnowledgeRepository } from "../../../../../core/src/domain/knowledge/IKnowledgeRepository";
+import { Response } from "express";
+import { CreateCollectionUseCase } from "../../application/use-cases/CreateCollectionUseCase";
+import { AddDocumentUseCase } from "../../application/use-cases/AddDocumentUseCase";
+import { IKnowledgeRepository } from "../../../../../../core/src/domain/knowledge/IKnowledgeRepository";
+import { RequestWithContext } from "../../../../shared/http/request-context";
 
 export class KnowledgeController {
     constructor(
@@ -10,19 +11,34 @@ export class KnowledgeController {
         private addDocumentUseCase: AddDocumentUseCase
     ) { }
 
-    async createCollection(req: Request, res: Response): Promise<void> {
+    async createCollection(req: RequestWithContext, res: Response): Promise<void> {
         try {
-            const result = await this.createCollectionUseCase.execute(req.body);
+            const tenantId = req.tenantId || req.user?.tenantId;
+            if (!tenantId) {
+                res.status(403).json({ error: "Tenant context required" });
+                return;
+            }
+
+            const result = await this.createCollectionUseCase.execute({
+                ...req.body,
+                tenantId,
+            });
             res.status(201).json(result);
         } catch (error: any) {
             res.status(400).json({ error: error.message });
         }
     }
 
-    async listCollections(req: Request, res: Response): Promise<void> {
+    async listCollections(req: RequestWithContext, res: Response): Promise<void> {
         try {
+            const tenantId = req.tenantId || req.user?.tenantId;
+            if (!tenantId) {
+                res.status(403).json({ error: "Tenant context required" });
+                return;
+            }
+
             const { scopeType, scopeId } = req.query;
-            const result = await this.knowledgeRepository.listCollections({
+            const result = await this.knowledgeRepository.listCollections(tenantId, {
                 scopeType: scopeType as any,
                 scopeId: scopeId as string,
             });
@@ -32,12 +48,19 @@ export class KnowledgeController {
         }
     }
 
-    async addDocument(req: Request, res: Response): Promise<void> {
+    async addDocument(req: RequestWithContext, res: Response): Promise<void> {
         try {
+            const tenantId = req.tenantId || req.user?.tenantId;
+            if (!tenantId) {
+                res.status(403).json({ error: "Tenant context required" });
+                return;
+            }
+
             const { collectionId } = req.params;
             const result = await this.addDocumentUseCase.execute({
                 ...req.body,
                 collectionId,
+                tenantId,
             });
             res.status(201).json(result);
         } catch (error: any) {
@@ -45,11 +68,32 @@ export class KnowledgeController {
         }
     }
 
-    async listDocuments(req: Request, res: Response): Promise<void> {
+    async listDocuments(req: RequestWithContext, res: Response): Promise<void> {
         try {
+            const tenantId = req.tenantId || req.user?.tenantId;
+            if (!tenantId) {
+                res.status(403).json({ error: "Tenant context required" });
+                return;
+            }
+
             const { collectionId } = req.params;
-            const result = await this.knowledgeRepository.listDocuments(collectionId);
+            const result = await this.knowledgeRepository.listDocuments(collectionId, tenantId);
             res.json(result);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    async deleteDocument(req: RequestWithContext, res: Response): Promise<void> {
+        try {
+            const tenantId = req.tenantId || req.user?.tenantId;
+            if (!tenantId) {
+                res.status(403).json({ error: "Tenant context required" });
+                return;
+            }
+
+            await this.knowledgeRepository.deleteDocument(req.params.documentId, tenantId);
+            res.status(204).send();
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }

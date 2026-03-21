@@ -2,16 +2,42 @@
 
 Date: 2026-03-20
 
-## Current status
+## Final status
 
 - Frontend is available at `http://127.0.0.1:5173`
 - API is available at `http://127.0.0.1:5000`
-- Basic frontend -> backend communication works
-- Gateway status in UI can show `Gateway Online`
-- Agents and model catalog load from backend
-- Chat task creation works, but task execution times out
-- Knowledge screen is not wired to backend correctly
-- Agent detail screens hit rate limiting and return `429`
+- API build passes in `packages/api`
+- Full frontend E2E passes in `apps/web`
+- Gateway status shows `Gateway Online`
+- Agents, models, memory, timelines, and knowledge load from backend
+- Chat task creation and execution both work
+- Knowledge routing/proxy is fixed
+- Agent detail loading no longer triggers the previous `429` burst on initial load
+
+## Resolution summary
+
+- wired `Knowledge` between Vite proxy, API router, controller, and frontend view
+- changed gateway model execution to use `think: false`, which removed the long local-model stall
+- raised the provider timeout for dev and made it configurable
+- reduced initial request burst in the `Agents` UI by lazy-loading tab data
+- fixed API TypeScript build issues in memory, communication, knowledge policy persistence, and Prisma extension glue
+- stabilized E2E selectors and endpoint assumptions to match the real app
+
+## Final validation
+
+- API build command passed:
+
+```bash
+npm run build
+```
+
+- Full frontend E2E passed:
+
+```bash
+npx playwright test --trace=off --reporter=line
+```
+
+- Final E2E result: `35 passed`
 
 ## What was verified
 

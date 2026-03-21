@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { MemoryPolicy } from "./memory";
 
+const DEFAULT_TENANT_ID = "default";
+
 export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
     return [
         {
@@ -13,6 +15,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: false,
             allowManualPin: false,
             allowSemanticExtraction: false,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -26,6 +29,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: true,
             allowManualPin: true,
             allowSemanticExtraction: true,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -39,6 +43,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: true,
             allowManualPin: true,
             allowSemanticExtraction: true,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -52,6 +57,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: false,
             allowManualPin: true,
             allowSemanticExtraction: false,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -65,6 +71,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: false,
             allowManualPin: true,
             allowSemanticExtraction: false,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -78,6 +85,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: false,
             allowManualPin: true,
             allowSemanticExtraction: false,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },
@@ -91,6 +99,7 @@ export function createDefaultMemoryPolicies(now = new Date()): MemoryPolicy[] {
             allowAutoPromotion: false,
             allowManualPin: true,
             allowSemanticExtraction: false,
+            tenantId: DEFAULT_TENANT_ID,
             createdAt: now,
             updatedAt: now,
         },

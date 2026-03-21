@@ -1,5 +1,5 @@
-import { IKnowledgeRepository } from "../../../../../core/src/domain/knowledge/IKnowledgeRepository";
-import { KnowledgeCollection, KnowledgeScopeType, KnowledgeSourceType, KnowledgeStatus } from "../../../../../core/src/domain/knowledge/types";
+import { IKnowledgeRepository } from "../../../../../../core/src/domain/knowledge/IKnowledgeRepository";
+import { KnowledgeCollection, KnowledgeScopeType, KnowledgeSourceType, KnowledgeStatus } from "../../../../../../core/src/domain/knowledge/types";
 
 export interface CreateCollectionDTO {
     name: string;
@@ -8,6 +8,7 @@ export interface CreateCollectionDTO {
     scopeId: string;
     sourceType: KnowledgeSourceType;
     metadata?: Record<string, any>;
+    tenantId: string;
 }
 
 export class CreateCollectionUseCase {
@@ -24,6 +25,6 @@ export class CreateCollectionUseCase {
             metadata: dto.metadata || {},
         };
 
-        return await this.knowledgeRepository.createCollection(collectionData);
+        return await this.knowledgeRepository.createCollection(collectionData, dto.tenantId);
     }
 }

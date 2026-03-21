@@ -13,7 +13,7 @@ test.describe('Andromeda OS - Interface Principal', () => {
   });
 
   test('deve exibir sidebar com navegação', async ({ page }) => {
-    const sidebar = page.locator('aside');
+    const sidebar = page.locator('aside').first();
     await expect(sidebar).toBeVisible();
 
     await expect(page.getByRole('button', { name: 'Console' })).toBeVisible();
@@ -27,7 +27,7 @@ test.describe('Andromeda OS - Interface Principal', () => {
   test('deve exibir gateway online quando backend conectado', async ({ page }) => {
     const agents = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS });
 
-    const sidebar = page.locator('aside');
+    const sidebar = page.locator('aside').first();
     await expect(sidebar).toContainText(/Gateway/);
 
     if (agents.ok()) {

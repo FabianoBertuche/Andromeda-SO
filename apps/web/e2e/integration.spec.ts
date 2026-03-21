@@ -14,25 +14,20 @@ test.describe('Agents - Integração Real', () => {
   });
 
   test('deve navegar para Agents e exibir lista real', async ({ page }) => {
-    // Verificar via API que existem agentes
     const response = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS });
     expect(response.ok()).toBe(true);
     const agents = await response.json();
     expect(agents.length).toBeGreaterThan(0);
 
-    // Navegar para Agents
-    await page.getByRole('button', { name: 'Agents' }).click();
+    await page.locator('aside').first().getByRole('button', { name: 'Agents', exact: true }).click();
     await page.waitForTimeout(2000);
 
-    const agentsButton = page.getByRole('button', { name: 'Agents' });
+    const agentsButton = page.locator('aside').first().getByRole('button', { name: 'Agents', exact: true });
     await expect(agentsButton).toHaveClass(/bg-indigo-500\/10/);
-
-    // Verificar que a view de agentes mostra conteúdo real (não vazio)
     await expect(page.locator('body')).toContainText('Andromeda Kernel');
   });
 
   test('deve selecionar agente real e refletir no console', async ({ page }) => {
-    // Buscar agentes reais via API
     const response = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS });
     const agents = await response.json();
     expect(agents.length).toBeGreaterThan(0);
@@ -43,7 +38,6 @@ test.describe('Agents - Integração Real', () => {
     const options = await agentSelect.locator('option').count();
     expect(options).toBeGreaterThan(0);
 
-    // Selecionar primeiro agente disponível
     await agentSelect.selectOption({ index: 0 });
     await page.waitForTimeout(500);
 
@@ -69,7 +63,7 @@ test.describe('Navegação - Integração', () => {
     ];
 
     for (const tab of tabs) {
-      const button = page.getByRole('button', { name: tab.name, exact: true });
+      const button = page.locator('aside').first().getByRole('button', { name: tab.name, exact: true });
       await button.click();
       await page.waitForTimeout(2000);
 
@@ -79,12 +73,12 @@ test.describe('Navegação - Integração', () => {
   });
 
   test('deve manter aba ativa ao navegar', async ({ page }) => {
-    const agentsButton = page.getByRole('button', { name: 'Agents', exact: true });
+    const agentsButton = page.locator('aside').first().getByRole('button', { name: 'Agents', exact: true });
     await agentsButton.click();
     await page.waitForTimeout(1000);
     await expect(agentsButton).toHaveClass(/bg-indigo-500\/10/);
 
-    const consoleButton = page.getByRole('button', { name: 'Console', exact: true });
+    const consoleButton = page.locator('aside').first().getByRole('button', { name: 'Console', exact: true });
     await consoleButton.click();
     await page.waitForTimeout(1000);
     await expect(consoleButton).toHaveClass(/bg-indigo-500\/10/);
@@ -131,13 +125,15 @@ test.describe('Knowledge - Integração Real', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('deve expor que Knowledge ainda nao esta ligado ao backend', async ({ page }) => {
-    await page.getByRole('button', { name: 'Knowledge' }).click();
+  test('deve carregar Knowledge com dados reais do backend', async ({ page }) => {
+    const collections = await page.request.get(`${API_BASE}/v1/knowledge/collections`, { headers: AUTH_HEADERS });
+    expect(collections.ok()).toBe(true);
+
+    await page.locator('aside').first().getByRole('button', { name: 'Knowledge', exact: true }).click();
     await page.waitForTimeout(3000);
 
     await expect(page.locator('body')).toContainText('Knowledge Layer');
     await expect(page.locator('body')).toContainText('Knowledge Collections');
-    const collectionsResponse = await page.request.get(`${API_BASE}/api/knowledge/collections`).catch(() => null);
-    expect(collectionsResponse?.ok()).not.toBe(true);
+    await expect(page.locator('body')).toContainText('E2E Collection');
   });
 });

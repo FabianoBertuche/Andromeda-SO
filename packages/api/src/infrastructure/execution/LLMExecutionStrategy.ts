@@ -48,6 +48,7 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
                     { role: "user", content: task.getRawRequest() },
                 ],
                 stream: false,
+                think: false,
             });
             const finalized = this.runtimeOrchestrator.finalizeExecution({
                 task,

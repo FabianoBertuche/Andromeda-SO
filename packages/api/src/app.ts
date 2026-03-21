@@ -71,6 +71,7 @@ v1Router.use("/sandbox", authMiddleware, tenantMiddleware, sandboxRouter);
 v1Router.use("/memory", authMiddleware, tenantMiddleware, memoryRouter);
 v1Router.use("/gateway", authMiddleware, tenantMiddleware, communicationRoutes);
 v1Router.use("/model-center", authMiddleware, tenantMiddleware, modelCenterRoutes);
+v1Router.use("/knowledge", authMiddleware, tenantMiddleware, knowledgeRouter);
 v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
 v1Router.use("/backup", authMiddleware, requireRole('owner'), backupRouter);
 v1Router.use("/dlq", authMiddleware, requireRole('admin'), dlqRouter);

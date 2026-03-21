@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://127.0.0.1:5000';
+const AUTH_HEADERS = { Authorization: 'Bearer andromeda_dev_web_token' };
 
 test.describe('Console - Funcionalidades', () => {
   test.beforeEach(async ({ page }) => {
@@ -49,11 +50,11 @@ test.describe('Console - Funcionalidades', () => {
   });
 
   test('deve refletir status real do gateway', async ({ page }) => {
-    const health = await page.request.get(`${API_BASE}/v1/health`).catch(() => null);
+    const agents = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS }).catch(() => null);
 
-    const sidebar = page.locator('aside');
+    const sidebar = page.locator('aside').first();
 
-    if (health && health.ok()) {
+    if (agents && agents.ok()) {
       await expect(sidebar).toContainText('Gateway Online');
     } else {
       await expect(sidebar).toContainText('Gateway Offline');

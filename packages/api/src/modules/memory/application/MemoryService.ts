@@ -13,11 +13,13 @@ import {
 } from "../domain/memory";
 import { MemoryRepositoryBundle } from "../infrastructure/MemoryRepository";
 
+const DEFAULT_TENANT_ID = "default";
+
 export class MemoryService {
     constructor(private readonly repositories: MemoryRepositoryBundle) { }
 
     async ensureDefaultPolicies(): Promise<void> {
-        const existing = await this.repositories.listPolicies();
+        const existing = await this.repositories.listPolicies(DEFAULT_TENANT_ID);
         if (existing.length > 0) {
             return;
         }
@@ -28,29 +30,32 @@ export class MemoryService {
     }
 
     async listMemory(filters: MemoryListFilters = {}): Promise<MemoryEntry[]> {
-        return this.repositories.listEntries(filters);
+        return this.repositories.listEntries({
+            ...filters,
+            tenantId: filters.tenantId || DEFAULT_TENANT_ID,
+        });
     }
 
     async getMemory(id: string): Promise<MemoryEntry | null> {
-        return this.repositories.getEntry(id);
+        return this.repositories.getEntry(id, DEFAULT_TENANT_ID);
     }
 
     async getMemoryLinks(id: string) {
-        return this.repositories.listLinks(id);
+        return this.repositories.listLinks(id, DEFAULT_TENANT_ID);
     }
 
     async getMemoryUsage(id: string) {
-        return this.repositories.listUsage(id);
+        return this.repositories.listUsage(id, DEFAULT_TENANT_ID);
     }
 
     async listPolicies(): Promise<MemoryPolicy[]> {
         await this.ensureDefaultPolicies();
-        return this.repositories.listPolicies();
+        return this.repositories.listPolicies(DEFAULT_TENANT_ID);
     }
 
     async getPolicy(id: string): Promise<MemoryPolicy | null> {
         await this.ensureDefaultPolicies();
-        return this.repositories.getPolicy(id);
+        return this.repositories.getPolicy(id, DEFAULT_TENANT_ID);
     }
 
     async upsertPolicy(policy: MemoryPolicy): Promise<MemoryPolicy> {
@@ -122,7 +127,7 @@ export class MemoryService {
     }
 
     async deleteMemoryEntry(id: string): Promise<void> {
-        await this.repositories.deleteEntry(id);
+        await this.repositories.deleteEntry(id, DEFAULT_TENANT_ID);
         globalEventBus.publish(new MemoryDeleted(id));
     }
 
@@ -132,6 +137,7 @@ export class MemoryService {
             status: "active",
             pinnedOnly: false,
             limit: 200,
+            tenantId: DEFAULT_TENANT_ID,
         });
 
         const scored = candidates
@@ -173,6 +179,7 @@ export class MemoryService {
                 retrievalScore: this.scoreEntry(entry, criteria),
                 usedInPromptAssembly: true,
                 usedAt,
+                tenantId: entry.tenantId,
                 createdAt: usedAt,
             });
             globalEventBus.publish(new MemoryRetrieved(criteria.taskId, criteria.agentId, criteria.sessionId, entry.id, this.scoreEntry(entry, criteria)));
@@ -292,12 +299,13 @@ export class MemoryService {
             isPinned: input.isPinned ?? false,
             status: input.status || "active",
             importanceScore: input.importanceScore ?? 50,
+            tenantId: input.tenantId || DEFAULT_TENANT_ID,
             metadata: input.metadata || {},
         };
     }
 
     private async requireEntry(id: string): Promise<MemoryEntry> {
-        const entry = await this.repositories.getEntry(id);
+        const entry = await this.repositories.getEntry(id, DEFAULT_TENANT_ID);
         if (!entry) {
             throw new Error(`Memory entry ${id} not found`);
         }

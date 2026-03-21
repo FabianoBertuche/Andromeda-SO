@@ -122,6 +122,7 @@ export interface MemoryRegistrationInput {
     isPinned?: boolean;
     status?: MemoryStatus;
     importanceScore?: number;
+    tenantId?: string;
     metadata?: Record<string, unknown>;
 }
 
