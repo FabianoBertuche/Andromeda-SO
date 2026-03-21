@@ -1,0 +1,100 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - heading "Andromeda OS" [level=1] [ref=e8]
+    - navigation [ref=e9]:
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - button "Console" [ref=e12]:
+            - img [ref=e13]
+            - text: Console
+        - listitem [ref=e15]:
+          - button "Agents" [ref=e16]:
+            - img [ref=e17]
+            - text: Agents
+        - listitem [ref=e22]:
+          - button "Timelines" [ref=e23]:
+            - img [ref=e24]
+            - text: Timelines
+        - listitem [ref=e27]:
+          - button "Model Center" [ref=e28]:
+            - img [ref=e29]
+            - text: Model Center
+        - listitem [ref=e32]:
+          - button "Memory" [ref=e33]:
+            - img [ref=e34]
+            - text: Memory
+        - listitem [ref=e38]:
+          - button "Knowledge" [ref=e39]:
+            - img [ref=e40]
+            - text: Knowledge
+    - generic [ref=e42]:
+      - generic [ref=e43]: Gateway Online
+      - generic [ref=e45]:
+        - generic [ref=e46]: Active Agent
+        - generic [ref=e47]: Andromeda Kernel
+        - generic [ref=e48]: v1.0.0
+  - main [ref=e49]:
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - generic [ref=e52]: "Session:"
+        - generic [ref=e53]: session-demo-mvp03
+        - generic [ref=e54]: Andromeda Kernel
+      - img [ref=e56]
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - heading "Andromeda Command Console" [level=2] [ref=e63]
+        - paragraph [ref=e64]: Live chat with Andromeda Kernel
+      - generic [ref=e65]:
+        - generic [ref=e67]:
+          - paragraph [ref=e68]: Hello, respond with just OK
+          - generic [ref=e69]: 5:11:30 PM
+        - button "Mostrar status da execucao" [ref=e71]:
+          - img [ref=e72]
+          - text: Mostrar status da execucao
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - generic [ref=e77]: "Target Agent:"
+        - combobox [ref=e78]:
+          - option "Andromeda Kernel" [selected]
+          - option "Assurance Auditor"
+          - option "Concept Catalyst"
+          - option "Execution Specialist"
+        - generic [ref=e79]: "Target Model:"
+        - combobox [ref=e80]:
+          - option "Automatic (Router)"
+          - option "qwen3.5:latest" [selected]
+          - option "minimax-m2.7:cloud"
+          - option "rnj-1:8b-cloud"
+          - option "minimax-m2.1:cloud"
+          - option "deepseek-v3.2:cloud"
+          - option "glm-4.6:cloud"
+          - option "minimax-m2:cloud"
+          - option "glm-4.7:cloud"
+          - option "cogito-2.1:671b-cloud"
+          - option "gemini-3-flash-preview:cloud"
+          - option "devstral-2:123b-cloud"
+          - option "nemotron-3-nano:30b-cloud"
+          - option "kimi-k2.5:cloud"
+          - option "qwen3-next:80b-cloud"
+          - option "glm-5:cloud"
+          - option "minimax-m2.5:cloud"
+          - option "ministral-3:14b-cloud"
+          - option "ministral-3:8b-cloud"
+          - option "ministral-3:3b-cloud"
+          - option "devstral-small-2:24b-cloud"
+          - option "qwen3-vl:235b-instruct-cloud"
+          - option "qwen3-vl:235b-cloud"
+          - option "qwen3-coder-next:cloud"
+          - option "nemotron-3-super:cloud"
+          - option "qwen3.5:397b-cloud"
+          - option "qwen3.5:cloud"
+      - generic [ref=e83]:
+        - textbox "Talk to Andromeda Kernel..." [ref=e84]
+        - button "Send" [disabled] [ref=e85]:
+          - img [ref=e86]
+```
