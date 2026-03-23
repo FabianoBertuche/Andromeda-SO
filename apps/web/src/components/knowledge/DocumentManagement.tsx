@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Upload, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 export interface Document {
     id: string;
@@ -18,6 +19,7 @@ interface DocumentManagementProps {
 
 export function DocumentManagement({ documents, onUpload, onDelete }: DocumentManagementProps) {
     const [isDragging, setIsDragging] = useState(false);
+    const tooltip = useTooltipText();
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
@@ -41,6 +43,7 @@ export function DocumentManagement({ documents, onUpload, onDelete }: DocumentMa
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
+                title={tooltip('knowledge.upload')}
                 className={`relative overflow-hidden group py-12 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl transition-all duration-500 ${isDragging
                     ? 'border-indigo-500 bg-indigo-500/10 scale-[0.99]'
                     : 'border-slate-800 bg-slate-900/20 hover:border-slate-700'
@@ -60,6 +63,7 @@ export function DocumentManagement({ documents, onUpload, onDelete }: DocumentMa
                 <input
                     type="file"
                     multiple
+                    title={tooltip('knowledge.upload')}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                     onChange={(e) => e.target.files && onUpload(e.target.files)}
                 />
@@ -116,6 +120,7 @@ export function DocumentManagement({ documents, onUpload, onDelete }: DocumentMa
                                     <td className="px-6 py-4 text-right">
                                         <button
                                             onClick={() => onDelete(doc.id)}
+                                            title={tooltip('knowledge.deleteDocument')}
                                             className="p-2 text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                                         >
                                             <Trash2 className="w-4 h-4" />

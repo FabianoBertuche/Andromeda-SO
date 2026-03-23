@@ -5,6 +5,7 @@ import type { Collection } from './CollectionsList';
 import { DocumentManagement } from './DocumentManagement';
 import type { Document } from './DocumentManagement';
 import { apiFetch } from '../../lib/api-auth';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 type KnowledgeTab = 'collections' | 'documents' | 'retrieval' | 'vaults';
 
@@ -26,6 +27,7 @@ type ApiDocument = {
 const KNOWLEDGE_BASE = '/api/knowledge';
 
 export function KnowledgeView() {
+    const tooltip = useTooltipText();
     const [activeTab, setActiveTab] = useState<KnowledgeTab>('collections');
     const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
     const [collections, setCollections] = useState<Collection[]>([]);
@@ -182,6 +184,7 @@ export function KnowledgeView() {
                     <nav className="space-y-1">
                         <button
                             onClick={() => setActiveTab('collections')}
+                            title={tooltip('knowledge.nav.collections')}
                             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${activeTab === 'collections' ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-white/5'}`}
                         >
                             <Book className="w-4 h-4" />
@@ -189,6 +192,7 @@ export function KnowledgeView() {
                         </button>
                         <button
                             onClick={() => setActiveTab('documents')}
+                            title={tooltip('knowledge.nav.documents')}
                             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${activeTab === 'documents' ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-white/5'}`}
                         >
                             <FileText className="w-4 h-4" />
@@ -196,6 +200,7 @@ export function KnowledgeView() {
                         </button>
                         <button
                             onClick={() => setActiveTab('retrieval')}
+                            title={tooltip('knowledge.nav.retrieval')}
                             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${activeTab === 'retrieval' ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-white/5'}`}
                         >
                             <Search className="w-4 h-4" />
@@ -203,6 +208,7 @@ export function KnowledgeView() {
                         </button>
                         <button
                             onClick={() => setActiveTab('vaults')}
+                            title={tooltip('knowledge.nav.vaults')}
                             className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${activeTab === 'vaults' ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-400 hover:bg-white/5'}`}
                         >
                             <Vault className="w-4 h-4" />

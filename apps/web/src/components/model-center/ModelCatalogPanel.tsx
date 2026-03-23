@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createGatewayTask, pollGatewayTask } from '../../lib/gateway';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 interface CatalogModel {
     id: string;
@@ -20,6 +21,7 @@ interface CatalogModel {
 const scoreOrder = ['overall', 'coding', 'chat', 'structured_output', 'reasoning', 'vision'];
 
 export const ModelCatalogPanel: React.FC = () => {
+    const tooltip = useTooltipText();
     const [models, setModels] = useState<CatalogModel[]>([]);
     const [loading, setLoading] = useState(true);
     const [playgroundModel, setPlaygroundModel] = useState<CatalogModel | null>(null);
@@ -164,6 +166,7 @@ export const ModelCatalogPanel: React.FC = () => {
                         <textarea
                             value={testPrompt}
                             onChange={event => setTestPrompt(event.target.value)}
+                            title={tooltip('modelCenter.catalog.playgroundPrompt')}
                             className="w-full h-32 bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-200 focus:border-indigo-500 outline-none transition-all mb-2"
                         />
 
@@ -182,12 +185,14 @@ export const ModelCatalogPanel: React.FC = () => {
                                     setPlaygroundModel(null);
                                     setTestResult('');
                                 }}
+                                title={tooltip('modelCenter.catalog.cancel')}
                                 className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleTest}
+                                title={tooltip('modelCenter.catalog.runTest')}
                                 className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-lg shadow-indigo-500/20"
                             >
                                 Enviar Teste
@@ -205,13 +210,14 @@ export const ModelCatalogPanel: React.FC = () => {
                     <button
                         onClick={fetchModels}
                         className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
-                        title="Atualizar"
+                        title={tooltip('modelCenter.catalog.refresh')}
                     >
                         🔄
                     </button>
                     <button
                         onClick={handlePull}
                         disabled={loading}
+                        title={tooltip('modelCenter.catalog.pull')}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
                     >
                         📥 Pull Model
@@ -270,21 +276,21 @@ export const ModelCatalogPanel: React.FC = () => {
                                                 setTestResult('');
                                             }}
                                             className="p-1.5 hover:bg-indigo-500/20 rounded border border-slate-700 hover:border-indigo-500/50 text-indigo-400 transition-colors"
-                                            title="Testar Chat"
+                                            title={tooltip('modelCenter.catalog.chat')}
                                         >
                                             💬
                                         </button>
                                         <button
                                             onClick={() => handleShowInfo(model.id)}
                                             className="p-1.5 hover:bg-slate-700 rounded border border-slate-700 text-slate-400 hover:text-white transition-colors"
-                                            title="Info"
+                                            title={tooltip('modelCenter.catalog.info')}
                                         >
                                             ℹ️
                                         </button>
                                         <button
                                             onClick={() => handleDelete(model.providerId, model.externalModelId)}
                                             className="p-1.5 hover:bg-red-500/20 rounded border border-slate-700 hover:border-red-500/50 text-slate-400 hover:text-red-400 transition-colors"
-                                            title="Remover"
+                                            title={tooltip('modelCenter.catalog.remove')}
                                         >
                                             🗑️
                                         </button>

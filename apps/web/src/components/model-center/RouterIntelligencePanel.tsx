@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 interface RouterWeights {
     quality: number;
@@ -188,6 +189,7 @@ const activityGroups: ActivityGroup[] = [
 ];
 
 export const RouterIntelligencePanel: React.FC = () => {
+    const tooltip = useTooltipText();
     const [simulating, setSimulating] = useState(false);
     const [savingConfig, setSavingConfig] = useState(false);
     const [activity, setActivity] = useState('coding.generate');
@@ -320,6 +322,7 @@ export const RouterIntelligencePanel: React.FC = () => {
                                 <select
                                     value={activity}
                                     onChange={(event) => setActivity(event.target.value)}
+                                    title={tooltip('modelCenter.router.activity')}
                                     className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-indigo-500"
                                 >
                                     {activityGroups.map(group => (
@@ -337,6 +340,7 @@ export const RouterIntelligencePanel: React.FC = () => {
                                 <input
                                     value={maxCost}
                                     onChange={(event) => setMaxCost(event.target.value)}
+                                    title={tooltip('modelCenter.router.maxCost')}
                                     placeholder="0.03"
                                     className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-indigo-500"
                                 />
@@ -345,6 +349,7 @@ export const RouterIntelligencePanel: React.FC = () => {
                             <button
                                 onClick={handleSimulate}
                                 disabled={simulating}
+                                title={tooltip('modelCenter.router.simulate')}
                                 className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50"
                             >
                                 {simulating ? 'Processando...' : 'Simular Decisão'}
@@ -369,6 +374,7 @@ export const RouterIntelligencePanel: React.FC = () => {
                             <button
                                 onClick={handleSaveConfig}
                                 disabled={savingConfig}
+                                title={tooltip('modelCenter.router.save')}
                                 className="px-3 py-2 text-xs bg-slate-900 hover:bg-slate-700 border border-slate-600 text-white rounded-lg disabled:opacity-50"
                             >
                                 {savingConfig ? 'Salvando...' : 'Salvar'}
@@ -390,6 +396,7 @@ export const RouterIntelligencePanel: React.FC = () => {
                                         step="0.05"
                                         value={weights[key]}
                                         onChange={(event) => updateWeight(key, event.target.value)}
+                                        title={tooltip('modelCenter.router.weight')}
                                         className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-indigo-500"
                                     />
                                 </label>

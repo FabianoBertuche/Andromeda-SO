@@ -36,6 +36,7 @@ import type {
   SandboxProfile,
   SandboxValidationResult,
 } from '../../lib/agents';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 type AgentTab = 'identity' | 'behavior' | 'safeguards' | 'sandbox' | 'chat';
 type MarkdownKey = keyof AgentMarkdownSections;
@@ -79,6 +80,7 @@ interface Props {
 }
 
 export function AgentManagementView({ agents, selectedAgentId, sessionId, onSelectAgent, onUseInConsole, refreshAgents }: Props) {
+  const tooltip = useTooltipText();
   const [activeTab, setActiveTab] = useState<AgentTab>('identity');
   const [activeMarkdown, setActiveMarkdown] = useState<MarkdownKey>('identity');
   const [profile, setProfile] = useState<AgentProfileDocument | null>(null);
@@ -419,6 +421,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
               key={agent.id}
               type="button"
               onClick={() => onSelectAgent(agent.id)}
+              title={tooltip('agents.card.select')}
               className={`w-full rounded-2xl border p-4 text-left transition ${
                 agent.id === selectedAgentId ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
               }`}
@@ -452,6 +455,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                 type="button"
                 onClick={() => onUseInConsole(selectedAgent.id)}
                 disabled={!profile}
+                title={tooltip('agents.useInConsole')}
                 className="rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/20"
               >
                 Use in Console
@@ -465,11 +469,11 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              <TabButton active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} icon={<MessageSquare className="h-4 w-4" />} label="Identity" />
-              <TabButton active={activeTab === 'behavior'} onClick={() => setActiveTab('behavior')} icon={<SlidersHorizontal className="h-4 w-4" />} label="Behavior" />
-              <TabButton active={activeTab === 'safeguards'} onClick={() => setActiveTab('safeguards')} icon={<Shield className="h-4 w-4" />} label="Safeguards" />
-              <TabButton active={activeTab === 'sandbox'} onClick={() => setActiveTab('sandbox')} icon={<Shield className="h-4 w-4" />} label="Sandbox" />
-              <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={<Bot className="h-4 w-4" />} label="Chat" />
+              <TabButton active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} icon={<MessageSquare className="h-4 w-4" />} label="Identity" title={tooltip('agents.tab.identity')} />
+              <TabButton active={activeTab === 'behavior'} onClick={() => setActiveTab('behavior')} icon={<SlidersHorizontal className="h-4 w-4" />} label="Behavior" title={tooltip('agents.tab.behavior')} />
+              <TabButton active={activeTab === 'safeguards'} onClick={() => setActiveTab('safeguards')} icon={<Shield className="h-4 w-4" />} label="Safeguards" title={tooltip('agents.tab.safeguards')} />
+              <TabButton active={activeTab === 'sandbox'} onClick={() => setActiveTab('sandbox')} icon={<Shield className="h-4 w-4" />} label="Sandbox" title={tooltip('agents.tab.sandbox')} />
+              <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={<Bot className="h-4 w-4" />} label="Chat" title={tooltip('agents.tab.chat')} />
             </div>
 
             {error && <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
@@ -484,6 +488,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         key={tab}
                         type="button"
                         onClick={() => setActiveMarkdown(tab)}
+                        title={tooltip('agents.identity.markdownTab')}
                         className={`rounded-full px-3 py-1 text-xs transition ${activeMarkdown === tab ? 'bg-white text-slate-950' : 'border border-slate-700 text-slate-300'}`}
                       >
                         {tab}
@@ -493,6 +498,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void saveIdentity()}
                       disabled={saving}
+                      title={tooltip('agents.identity.saveText')}
                       className="ml-auto inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
@@ -514,6 +520,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           : current,
                       )
                     }
+                    title={tooltip('agents.identity.editor')}
                     className="min-h-[420px] w-full rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-100 outline-none"
                   />
                 </div>
@@ -536,6 +543,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                               type="button"
                               onClick={() => void restoreVersion(entry.version)}
                               disabled={saving || entry.version === profile.version}
+                              title={tooltip('agents.identity.restore')}
                               className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
                             >
                               Restore
@@ -558,7 +566,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
               <div className="mt-6 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   {behaviorKeys.map((item) => (
-                    <label key={item.key} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                    <label key={item.key} title={tooltip('agents.behavior.slider')} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                       <div className="mb-2 flex items-center justify-between">
                         <span>{item.label}</span>
                         <span className="font-mono text-indigo-300">{behavior[item.key]}</span>
@@ -588,6 +596,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     type="button"
                     onClick={() => void saveBehavior()}
                     disabled={saving}
+                    title={tooltip('agents.behavior.save')}
                     className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
                   >
                     <Save className="h-4 w-4" />
@@ -605,7 +614,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
             {!loading && activeTab === 'safeguards' && safeguards && (
               <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
                 <div className="space-y-4">
-                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                  <label title={tooltip('agents.safeguards.mode')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                     <div className="mb-2">Mode</div>
                     <select
                       value={safeguards.mode}
@@ -623,7 +632,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       <option value="flexible">Flexible</option>
                     </select>
                   </label>
-                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                  <label title={tooltip('agents.safeguards.minConformance')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                     <div className="mb-2 flex items-center justify-between">
                       <span>Minimum Conformance</span>
                       <span className="font-mono text-indigo-300">{safeguards.minOverallConformance}</span>
@@ -643,7 +652,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       className="w-full accent-indigo-400"
                     />
                   </label>
-                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                  <label title={tooltip('agents.safeguards.correctiveAction')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                     <div className="mb-2">Corrective Action</div>
                     <select
                       value={safeguards.correctiveAction}
@@ -663,7 +672,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </select>
                   </label>
                   {safeguardToggles.map((toggle) => (
-                    <label key={toggle.key} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+                    <label key={toggle.key} title={tooltip('agents.safeguards.toggle')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
                       <span>{toggle.label}</span>
                       <input
                         type="checkbox"
@@ -684,6 +693,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void saveSafeguards()}
                       disabled={saving}
+                      title={tooltip('agents.safeguards.save')}
                       className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
@@ -1198,6 +1208,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         type="text"
                         value={sandboxCapability}
                         onChange={(event) => setSandboxCapability(event.target.value)}
+                        title={tooltip('agents.sandbox.test.capability')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       />
                     </label>
@@ -1207,6 +1218,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         type="text"
                         value={sandboxCommand}
                         onChange={(event) => setSandboxCommand(event.target.value)}
+                        title={tooltip('agents.sandbox.test.command')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       />
                     </label>
@@ -1221,6 +1233,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                               : current,
                           )
                         }
+                        title={tooltip('agents.sandbox.test.preset')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       >
                         <option value="">None</option>
@@ -1231,7 +1244,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         ))}
                       </select>
                     </label>
-                    <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+                    <label title={tooltip('agents.sandbox.test.enabled')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
                       <span>Enabled</span>
                       <input
                         type="checkbox"
@@ -1261,6 +1274,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                               : current,
                           )
                         }
+                        title={tooltip('agents.sandbox.test.fallback')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       >
                         <option value="deny">Deny</option>
@@ -1289,6 +1303,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           )
                         }
                         placeholder="exec, process, write"
+                        title={tooltip('agents.sandbox.test.mandatoryCapabilities')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       />
                     </label>
@@ -1299,6 +1314,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     <textarea
                       value={sandboxOverridesText}
                       onChange={(event) => setSandboxOverridesText(event.target.value)}
+                      title={tooltip('agents.sandbox.test.overridesJson')}
                       className="min-h-[220px] w-full rounded-xl border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100 outline-none"
                     />
                   </label>
@@ -1308,6 +1324,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void validateSandboxConfigNow()}
                       disabled={saving}
+                      title={tooltip('agents.sandbox.validate')}
                       className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-200 disabled:opacity-50"
                     >
                       Validate
@@ -1316,6 +1333,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void runSandboxDryRun()}
                       disabled={saving}
+                      title={tooltip('agents.sandbox.dryRun')}
                       className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
                     >
                       Dry-run
@@ -1324,6 +1342,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void saveSandboxConfig()}
                       disabled={saving}
+                      title={tooltip('agents.sandbox.save')}
                       className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
@@ -1333,6 +1352,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       type="button"
                       onClick={() => void runSandboxExecution()}
                       disabled={saving}
+                      title={tooltip('agents.sandbox.runTest')}
                       className="inline-flex items-center gap-2 rounded-full border border-emerald-400/60 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100 disabled:opacity-50"
                     >
                       Run Test
@@ -1464,6 +1484,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     <textarea
                       value={chatInput}
                       onChange={(event) => setChatInput(event.target.value)}
+                      title={tooltip('agents.chat.input')}
                       placeholder="Send a request directly to this agent..."
                       className="min-h-[120px] w-full rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-100 outline-none"
                     />
@@ -1471,6 +1492,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       <button
                         type="submit"
                         disabled={!chatInput.trim()}
+                        title={tooltip('agents.chat.send')}
                         className="rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-40"
                       >
                         Send to Agent
@@ -1515,11 +1537,12 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function TabButton({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
+function TabButton({ active, icon, label, onClick, title }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void; title?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
         active ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-100' : 'border-slate-700 text-slate-300'
       }`}
@@ -1531,8 +1554,11 @@ function TabButton({ active, icon, label, onClick }: { active: boolean; icon: Re
 }
 
 function SandboxEditorCard({ title, children }: { title: string; children: React.ReactNode }) {
+  const tooltip = useTooltipText();
+  const tooltipKey = sandboxCardTooltipKeys[title] || 'agents.sandbox.field';
+
   return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+    <div title={tooltip(tooltipKey)} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
       <div className="mb-3 text-sm font-semibold text-slate-200">{title}</div>
       <div className="space-y-3">{children}</div>
     </div>
@@ -1540,8 +1566,10 @@ function SandboxEditorCard({ title, children }: { title: string; children: React
 }
 
 function SandboxToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  const tooltip = useTooltipText();
+
   return (
-    <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+    <label title={tooltip('agents.sandbox.field')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
       <span>{label}</span>
       <input
         type="checkbox"
@@ -1552,6 +1580,19 @@ function SandboxToggleRow({ label, checked, onChange }: { label: string; checked
     </label>
   );
 }
+
+const sandboxCardTooltipKeys: Record<string, string> = {
+  General: 'agents.sandbox.card.general',
+  Filesystem: 'agents.sandbox.card.filesystem',
+  Network: 'agents.sandbox.card.network',
+  Resources: 'agents.sandbox.card.resources',
+  Execution: 'agents.sandbox.card.execution',
+  Environment: 'agents.sandbox.card.environment',
+  Security: 'agents.sandbox.card.security',
+  'IO Policy': 'agents.sandbox.card.ioPolicy',
+  Audit: 'agents.sandbox.card.audit',
+  Approvals: 'agents.sandbox.card.approvals',
+};
 
 function parseSandboxOverrides(value: string): Record<string, unknown> {
   const trimmed = value.trim();

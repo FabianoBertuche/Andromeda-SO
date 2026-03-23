@@ -1,4 +1,5 @@
 import { Book, Plus, ExternalLink } from 'lucide-react';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 export interface Collection {
     id: string;
@@ -15,6 +16,7 @@ interface CollectionsListProps {
 }
 
 export function CollectionsList({ collections, onSelect, onCreate }: CollectionsListProps) {
+    const tooltip = useTooltipText();
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -24,6 +26,7 @@ export function CollectionsList({ collections, onSelect, onCreate }: Collections
                 </div>
                 <button
                     onClick={onCreate}
+                    title={tooltip('knowledge.createCollection')}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/20"
                 >
                     <Plus className="w-4 h-4" />
@@ -42,6 +45,7 @@ export function CollectionsList({ collections, onSelect, onCreate }: Collections
                     </p>
                     <button
                         onClick={onCreate}
+                        title={tooltip('knowledge.createCollection')}
                         className="mt-6 text-indigo-400 hover:text-indigo-300 text-sm font-medium flex items-center gap-2"
                     >
                         Create your first collection <ExternalLink className="w-3 h-3" />
@@ -53,6 +57,7 @@ export function CollectionsList({ collections, onSelect, onCreate }: Collections
                         <div
                             key={col.id}
                             onClick={() => onSelect(col.id)}
+                            title={tooltip('knowledge.collectionCard')}
                             className="group p-6 rounded-2xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/60 hover:border-indigo-500/50 transition-all cursor-pointer"
                         >
                             <div className="flex items-start justify-between mb-4">

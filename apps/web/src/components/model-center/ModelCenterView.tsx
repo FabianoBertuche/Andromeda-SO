@@ -3,11 +3,13 @@ import { ProvidersPanel } from './ProvidersPanel';
 import { ModelCatalogPanel } from './ModelCatalogPanel';
 import { RouterIntelligencePanel } from './RouterIntelligencePanel';
 import { BenchmarkLabPanel } from './BenchmarkLabPanel';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 type Tab = 'providers' | 'catalog' | 'router' | 'benchmark';
 
 export const ModelCenterView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('catalog');
+    const tooltip = useTooltipText();
 
     const tabs = [
         { id: 'providers', label: 'Providers', icon: '🖧' },
@@ -29,6 +31,7 @@ export const ModelCenterView: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as Tab)}
+                        title={tooltip(`modelCenter.tab.${tab.id}`)}
                         className={`flex items-center gap-2 px-5 py-3 font-medium text-sm rounded-t-lg transition-all border-b-2 
                             ${activeTab === tab.id
                                 ? 'text-white border-blue-500 bg-slate-800/50'

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, MessageSquare, Code, Play, CheckCircle, XCircle } from 'lucide-react';
 import { useWs } from '../../contexts/WsContext';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 export interface TimelineEntry {
   id: string;
@@ -12,6 +13,7 @@ export interface TimelineEntry {
 
 export const TimelineView: React.FC = () => {
   const { session, activeTask } = useWs();
+  const tooltip = useTooltipText();
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -99,6 +101,7 @@ export const TimelineView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setExpandedEntryId(expanded ? null : entry.id)}
+                      title={tooltip('timeline.toggleDetails')}
                       className="text-xs rounded border border-slate-700 px-2 py-1 text-slate-300 hover:border-indigo-400"
                     >
                       {expanded ? 'Recolher detalhes' : 'Mostrar detalhes'}

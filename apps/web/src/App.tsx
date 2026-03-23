@@ -6,6 +6,7 @@ import { KnowledgeView } from './components/knowledge/KnowledgeView';
 import { TimelineView } from './components/Timeline/TimelineView';
 import { ModelCenterView } from './components/model-center/ModelCenterView';
 import { useWs } from './contexts/WsContext';
+import { useI18n, useTooltipText } from './contexts/I18nContext';
 import { createGatewayTask, pollGatewayTask } from './lib/gateway';
 import { listAgents } from './lib/agents';
 import type { AgentSummary } from './lib/agents';
@@ -29,6 +30,8 @@ type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' |
 
 function App() {
   const { isConnected, session, activeTask } = useWs();
+  const { locale, setLocale } = useI18n();
+  const tooltip = useTooltipText();
   const [input, setInput] = useState('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('console');
   const [availableModels, setAvailableModels] = useState<AvailableModel[]>([]);
@@ -193,37 +196,37 @@ function App() {
         <nav className="flex-1 py-4">
           <ul className="space-y-1">
             <li>
-              <button onClick={() => setActiveTab('console')} className={navClass(activeTab === 'console')}>
+              <button onClick={() => setActiveTab('console')} className={navClass(activeTab === 'console')} title={tooltip('app.nav.console')}>
                 <Activity className="w-5 h-5 mr-3" />
                 Console
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('agents')} className={navClass(activeTab === 'agents')}>
+              <button onClick={() => setActiveTab('agents')} className={navClass(activeTab === 'agents')} title={tooltip('app.nav.agents')}>
                 <Users className="w-5 h-5 mr-3" />
                 Agents
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('timeline')} className={navClass(activeTab === 'timeline')}>
+              <button onClick={() => setActiveTab('timeline')} className={navClass(activeTab === 'timeline')} title={tooltip('app.nav.timeline')}>
                 <Clock className="w-5 h-5 mr-3" />
                 Timelines
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('model-center')} className={navClass(activeTab === 'model-center')}>
+              <button onClick={() => setActiveTab('model-center')} className={navClass(activeTab === 'model-center')} title={tooltip('app.nav.modelCenter')}>
                 <Cpu className="w-5 h-5 mr-3" />
                 Model Center
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('memory')} className={navClass(activeTab === 'memory')}>
+              <button onClick={() => setActiveTab('memory')} className={navClass(activeTab === 'memory')} title={tooltip('app.nav.memory')}>
                 <Database className="w-5 h-5 mr-3" />
                 Memory
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('knowledge')} className={navClass(activeTab === 'knowledge')}>
+              <button onClick={() => setActiveTab('knowledge')} className={navClass(activeTab === 'knowledge')} title={tooltip('app.nav.knowledge')}>
                 <Book className="w-5 h-5 mr-3" />
                 Knowledge
               </button>
@@ -259,7 +262,15 @@ function App() {
               </span>
             )}
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setLocale(locale === 'pt-BR' ? 'en' : 'pt-BR')}
+              title={tooltip('app.locale.switch')}
+              className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-300 transition hover:border-indigo-400 hover:text-white"
+            >
+              {locale === 'pt-BR' ? 'PT' : 'EN'}
+            </button>
             <User className="w-5 h-5 text-slate-500" />
           </div>
         </header>
@@ -314,6 +325,7 @@ function App() {
                 <select
                   value={selectedAgentId}
                   onChange={(event) => setSelectedAgentId(event.target.value)}
+                  title={tooltip('app.console.targetAgent')}
                   className="bg-slate-900 border border-slate-700 text-indigo-300 text-[10px] px-2 py-0.5 rounded outline-none focus:border-indigo-500 transition-colors"
                 >
                   {agents.map((agent) => (
@@ -325,9 +337,10 @@ function App() {
                 <select
                   value={selectedModel}
                   onChange={(event) => setSelectedModel(event.target.value)}
+                  title={tooltip('app.console.targetModel')}
                   className="bg-slate-900 border border-slate-700 text-indigo-400 text-[10px] px-2 py-0.5 rounded outline-none focus:border-indigo-500 transition-colors"
                 >
-                  <option value="">Automatic (Router)</option>
+                  <option value="" title={tooltip('app.console.targetModel.automatic')}>Automatic (Router)</option>
                   {availableModels.map((model) => (
                     <option key={model.id} value={model.id}>{model.displayName || model.externalModelId}</option>
                   ))}
@@ -347,12 +360,14 @@ function App() {
                     type="text"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
+                    title={tooltip('app.console.input')}
                     placeholder={selectedAgent ? `Talk to ${selectedAgent.name}...` : 'Initialize sequence or type a command...'}
                     className="flex-1 bg-transparent py-4 px-6 text-white outline-none placeholder-slate-500 focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={sending || !input.trim()}
+                    title={tooltip('app.console.send')}
                     className="p-4 mr-2 text-indigo-400 hover:text-white disabled:opacity-50 transition-colors bg-slate-800 hover:bg-indigo-600 rounded-md my-2"
                     aria-label="Send"
                   >
@@ -370,6 +385,7 @@ function App() {
 
 function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgent: AgentSummary | null; chatMessages: ChatMessage[]; activeTask: any }) {
   const [isExecutionPanelOpen, setIsExecutionPanelOpen] = useState(false);
+  const tooltip = useTooltipText();
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 h-full min-h-0">
@@ -410,6 +426,7 @@ function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgen
             <button
               type="button"
               onClick={() => setIsExecutionPanelOpen((current) => !current)}
+              title={tooltip('app.console.executionToggle')}
               className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-indigo-200 hover:border-indigo-400 hover:text-white transition"
             >
               <Activity className="w-3.5 h-3.5" />

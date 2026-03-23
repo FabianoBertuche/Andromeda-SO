@@ -14,6 +14,7 @@ import {
   type MemoryStatus,
   type MemoryType,
 } from '../../lib/memory';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 interface Props {
   sessionId?: string;
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function MemoryView({ sessionId, agentId, taskId }: Props) {
+  const tooltip = useTooltipText();
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
   const [policies, setPolicies] = useState<MemoryPolicy[]>([]);
   const [selectedId, setSelectedId] = useState('');
@@ -129,12 +131,14 @@ export function MemoryView({ sessionId, agentId, taskId }: Props) {
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
+            title={tooltip('memory.search')}
             placeholder="Buscar por título, conteúdo, tag ou fonte"
             className="min-w-[280px] rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
           />
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value as MemoryType | '')}
+            title={tooltip('memory.typeFilter')}
             className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200"
           >
             <option value="">Todos os tipos</option>
@@ -145,6 +149,7 @@ export function MemoryView({ sessionId, agentId, taskId }: Props) {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as MemoryStatus | '')}
+            title={tooltip('memory.statusFilter')}
             className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-200"
           >
             <option value="">Todos os status</option>
@@ -155,6 +160,7 @@ export function MemoryView({ sessionId, agentId, taskId }: Props) {
           </select>
           <button
             onClick={() => void refresh()}
+            title={tooltip('memory.refresh')}
             className="inline-flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-indigo-400"
           >
             <RefreshCw className="w-4 h-4" />
@@ -175,6 +181,7 @@ export function MemoryView({ sessionId, agentId, taskId }: Props) {
               <button
                 key={entry.id}
                 onClick={() => setSelectedId(entry.id)}
+                title={tooltip('memory.entry')}
                 className={`w-full text-left border-b border-slate-800 px-4 py-3 transition-colors ${selectedId === entry.id ? 'bg-indigo-500/10' : 'hover:bg-slate-800/50'}`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -205,13 +212,13 @@ export function MemoryView({ sessionId, agentId, taskId }: Props) {
               <h3 className="text-sm font-semibold text-slate-200">Detalhe</h3>
               {selectedEntry && (
                 <div className="flex gap-2">
-                  <button onClick={() => void handleAction(() => pinMemory(selectedEntry.id))} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-amber-400">
+                  <button onClick={() => void handleAction(() => pinMemory(selectedEntry.id))} title={tooltip('memory.pin')} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-amber-400">
                     Pin
                   </button>
-                  <button onClick={() => void handleAction(() => invalidateMemory(selectedEntry.id))} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-red-400">
+                  <button onClick={() => void handleAction(() => invalidateMemory(selectedEntry.id))} title={tooltip('memory.invalidate')} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-red-400">
                     Invalidate
                   </button>
-                  <button onClick={() => void handleAction(() => deleteMemory(selectedEntry.id))} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-red-400">
+                  <button onClick={() => void handleAction(() => deleteMemory(selectedEntry.id))} title={tooltip('memory.delete')} className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-red-400">
                     Delete
                   </button>
                 </div>

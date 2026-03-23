@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTooltipText } from '../../contexts/I18nContext';
 
 interface BenchmarkSuite {
     label: string;
@@ -20,6 +21,7 @@ const benchmarkSuites: BenchmarkSuite[] = [
 ];
 
 export const BenchmarkLabPanel: React.FC = () => {
+    const tooltip = useTooltipText();
     const [running, setRunning] = useState(false);
     const [models, setModels] = useState<any[]>([]);
     const [selectedModel, setSelectedModel] = useState('');
@@ -99,6 +101,7 @@ export const BenchmarkLabPanel: React.FC = () => {
                         <select
                             value={selectedModel}
                             onChange={(event) => setSelectedModel(event.target.value)}
+                            title={tooltip('modelCenter.benchmark.model')}
                             className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-orange-500"
                         >
                             {models.map(model => (
@@ -111,6 +114,7 @@ export const BenchmarkLabPanel: React.FC = () => {
                         <select
                             value={selectedSuite}
                             onChange={(event) => setSelectedSuite(event.target.value)}
+                            title={tooltip('modelCenter.benchmark.suite')}
                             className="w-full bg-slate-900 border border-slate-600 text-white rounded-lg p-2.5 outline-none focus:border-orange-500"
                         >
                             {benchmarkSuites.map(suite => (
@@ -121,6 +125,7 @@ export const BenchmarkLabPanel: React.FC = () => {
                     <button
                         onClick={handleRun}
                         disabled={running || !selectedModel}
+                        title={tooltip('modelCenter.benchmark.run')}
                         className="px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-medium rounded-lg shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50"
                     >
                         {running ? 'Executando...' : 'Rodar Benchmark'}
