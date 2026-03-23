@@ -5,6 +5,8 @@ node_modules/
 
 # Testing
 coverage/
+apps/web/playwright-report/
+apps/web/test-results/
 
 # Production
 dist/
@@ -45,3 +47,6 @@ brain/
 logs/
 
 chrome/
+audit-runner.sh
+audit.ps1
+start-dev.ps1
