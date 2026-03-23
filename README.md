@@ -119,20 +119,14 @@ Session Layer         Event Normalizer          Execution Engine
 ## 🚀 Como rodar (desenvolvimento)
 
 ```bash
-# 1. Instalar dependências
-npm install
+# 1. Verificar requisitos locais (node, npm, python e docker)
+npm run start:check
 
-# 2. Copiar variáveis de ambiente
-cp .env.example .env.development
+# 2. Subir tudo o que o projeto precisa
+npm run start:project
 
-# 3. Subir banco de dados
-npm run dev:infra
-
-# 4. Sincronizar schema do banco
-npm run db:sync
-
-# 5. Subir API + Web + Python
-npm run dev
+# ou execute direto pela raiz no Windows
+./start-project.cmd
 
 # API:    http://localhost:5000
 # Web:    http://localhost:5173
@@ -145,6 +139,16 @@ npm run audit:local
 # E2E principal de agentes
 npm run test:e2e:agents
 ```
+
+O comando `npm run start:project`:
+
+- valida `node`, `npm`, `python` e `docker`
+- confirma se o Docker daemon esta ativo
+- instala dependencias Node se `node_modules/` ainda nao existir
+- instala dependencias Python de `services/cognitive-python/requirements.txt` se estiverem faltando
+- sobe `postgres` e `redis`
+- sincroniza o schema do banco
+- inicia API, Web e Cognitive Python
 
 ---
 
@@ -181,4 +185,7 @@ npm run test:regression   # suite de regressão MVP01→MVP08
 
 ---
 
+Como usar:
+
+./start-project.cmd na raiz.
 _Última atualização: 2026-03-19 | MVP08 ✅ | MVP09 🔄_

@@ -36,7 +36,9 @@ import type {
   SandboxProfile,
   SandboxValidationResult,
 } from '../../lib/agents';
-import { useTooltipText } from '../../contexts/I18nContext';
+import { useI18n, useTooltipEntry, useTooltipText } from '../../contexts/I18nContext';
+import { RichTooltip, TooltipIcon } from '../ui/RichTooltip';
+import type { TooltipEntry } from '../../lib/tooltip-messages';
 
 type AgentTab = 'identity' | 'behavior' | 'safeguards' | 'sandbox' | 'chat';
 type MarkdownKey = keyof AgentMarkdownSections;
@@ -60,6 +62,24 @@ const behaviorKeys: Array<{ key: keyof AgentBehaviorConfig; label: string }> = [
   { key: 'evidenceRequirements', label: 'Evidence' },
 ];
 
+const behaviorTooltipKeys: Record<keyof AgentBehaviorConfig, string> = {
+  formality: 'agents.behavior.formality',
+  warmth: 'agents.behavior.warmth',
+  objectivity: 'agents.behavior.objectivity',
+  detailLevel: 'agents.behavior.detailLevel',
+  caution: 'agents.behavior.caution',
+  autonomy: 'agents.behavior.autonomy',
+  creativity: 'agents.behavior.creativity',
+  ambiguityTolerance: 'agents.behavior.ambiguityTolerance',
+  proactivity: 'agents.behavior.proactivity',
+  delegationTendency: 'agents.behavior.delegationTendency',
+  feedbackFrequency: 'agents.behavior.feedbackFrequency',
+  playbookStrictness: 'agents.behavior.playbookStrictness',
+  complianceStrictness: 'agents.behavior.complianceStrictness',
+  selfReviewIntensity: 'agents.behavior.selfReviewIntensity',
+  evidenceRequirements: 'agents.behavior.evidenceRequirements',
+};
+
 const safeguardToggles: Array<{ key: keyof AgentSafeguardConfig; label: string }> = [
   { key: 'requireAuditOnCriticalTasks', label: 'Require audit on critical tasks' },
   { key: 'alwaysProvideIntermediateFeedback', label: 'Always provide intermediate feedback' },
@@ -69,6 +89,27 @@ const safeguardToggles: Array<{ key: keyof AgentSafeguardConfig; label: string }
   { key: 'prioritizeSkillFirst', label: 'Prioritize skill-first routing' },
   { key: 'alwaysSuggestNextSteps', label: 'Always suggest next steps' },
 ];
+
+const safeguardTooltipKeys: Partial<Record<keyof AgentSafeguardConfig, string>> = {
+  mode: 'agents.safeguards.mode',
+  minOverallConformance: 'agents.safeguards.minConformance',
+  correctiveAction: 'agents.safeguards.correctiveAction',
+  requireAuditOnCriticalTasks: 'agents.safeguards.requireAuditOnCriticalTasks',
+  alwaysProvideIntermediateFeedback: 'agents.safeguards.alwaysProvideIntermediateFeedback',
+  preferSpecialistDelegation: 'agents.safeguards.preferSpecialistDelegation',
+  blockOutOfRoleResponses: 'agents.safeguards.blockOutOfRoleResponses',
+  runSelfReview: 'agents.safeguards.runSelfReview',
+  prioritizeSkillFirst: 'agents.safeguards.prioritizeSkillFirst',
+  alwaysSuggestNextSteps: 'agents.safeguards.alwaysSuggestNextSteps',
+};
+
+const markdownTooltipKeys: Record<MarkdownKey, string> = {
+  identity: 'agents.identity.section.identity',
+  soul: 'agents.identity.section.soul',
+  rules: 'agents.identity.section.rules',
+  playbook: 'agents.identity.section.playbook',
+  context: 'agents.identity.section.context',
+};
 
 interface Props {
   agents: AgentSummary[];
@@ -130,10 +171,36 @@ const sandboxFieldTooltipKeys: Record<string, string> = {
   'Max output (KB)': 'agents.sandbox.field.maxOutputKb',
   'Allowed output types': 'agents.sandbox.field.allowedOutputTypes',
   Retention: 'agents.sandbox.field.retention',
+  'Inherit host env': 'agents.sandbox.field.inheritHostEnv',
+  'Secret injection': 'agents.sandbox.field.secretInjection',
+  'Run as non-root': 'agents.sandbox.field.runAsNonRoot',
+  'No new privileges': 'agents.sandbox.field.noNewPrivileges',
+  'Disable privileged mode': 'agents.sandbox.field.disablePrivilegedMode',
+  'Disable host namespaces': 'agents.sandbox.field.disableHostNamespaces',
+  'Disable device access': 'agents.sandbox.field.disableDeviceAccess',
+  'Strip sensitive output': 'agents.sandbox.field.stripSensitiveOutput',
+  'Content scan': 'agents.sandbox.field.contentScan',
+  'Audit enabled': 'agents.sandbox.field.auditEnabled',
+  'Capture artifacts': 'agents.sandbox.field.captureArtifacts',
+  'Capture timing': 'agents.sandbox.field.captureTiming',
+  'Capture network events': 'agents.sandbox.field.captureNetworkEvents',
+  'Require approval for exec': 'agents.sandbox.field.requireApprovalForExec',
+  'Require approval outside workspace': 'agents.sandbox.field.requireApprovalOutsideWorkspace',
+  'Require approval for network': 'agents.sandbox.field.requireApprovalForNetwork',
+  'Require approval for large artifacts': 'agents.sandbox.field.requireApprovalForLargeArtifacts',
+  Capability: 'agents.sandbox.test.capability',
+  Command: 'agents.sandbox.test.command',
+  Preset: 'agents.sandbox.test.preset',
+  Enabled: 'agents.sandbox.test.enabled',
+  'Fallback behavior': 'agents.sandbox.test.fallback',
+  'Mandatory capabilities': 'agents.sandbox.test.mandatoryCapabilities',
+  'Overrides JSON': 'agents.sandbox.test.overridesJson',
 };
 
 export function AgentManagementView({ agents, selectedAgentId, sessionId, onSelectAgent, onUseInConsole, refreshAgents }: Props) {
   const tooltip = useTooltipText();
+  const tooltipEntry = useTooltipEntry();
+  const tooltipFor = (key: string) => tooltipEntry(key);
   const sandboxFieldTooltip = (label: string) => tooltip(sandboxFieldTooltipKeys[label] || 'agents.sandbox.field');
   const [activeTab, setActiveTab] = useState<AgentTab>('identity');
   const [activeMarkdown, setActiveMarkdown] = useState<MarkdownKey>('identity');
@@ -471,22 +538,22 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
         <div className="mb-4 text-xs uppercase tracking-[0.3em] text-slate-500">Agents</div>
         <div className="space-y-3">
           {agents.map((agent) => (
-            <button
-              key={agent.id}
-              type="button"
-              onClick={() => onSelectAgent(agent.id)}
-              title={tooltip('agents.card.select')}
-              className={`w-full rounded-2xl border p-4 text-left transition ${
-                agent.id === selectedAgentId ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
-              }`}
-            >
-              <div className="text-sm font-semibold text-white">{agent.name}</div>
-              <div className="mt-1 text-xs text-slate-400">{agent.role}</div>
-              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
-                <span>{agent.teamId}</span>
-                <span>{agent.profileVersion}</span>
-              </div>
-            </button>
+            <RichTooltip key={agent.id} entry={tooltipFor('agents.card.select')}>
+              <button
+                type="button"
+                onClick={() => onSelectAgent(agent.id)}
+                className={`w-full rounded-2xl border p-4 text-left transition ${
+                  agent.id === selectedAgentId ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
+                }`}
+              >
+                <div className="text-sm font-semibold text-white">{agent.name}</div>
+                <div className="mt-1 text-xs text-slate-400">{agent.role}</div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>{agent.teamId}</span>
+                  <span>{agent.profileVersion}</span>
+                </div>
+              </button>
+            </RichTooltip>
           ))}
         </div>
       </section>
@@ -505,15 +572,16 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   ))}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => onUseInConsole(selectedAgent.id)}
-                disabled={!profile}
-                title={tooltip('agents.useInConsole')}
-                className="rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/20"
-              >
-                Use in Console
-              </button>
+              <RichTooltip entry={tooltipFor('agents.useInConsole')}>
+                <button
+                  type="button"
+                  onClick={() => onUseInConsole(selectedAgent.id)}
+                  disabled={!profile}
+                  className="rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 transition hover:bg-indigo-500/20"
+                >
+                  Use in Console
+                </button>
+              </RichTooltip>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -523,11 +591,11 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              <TabButton active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} icon={<MessageSquare className="h-4 w-4" />} label="Identity" title={tooltip('agents.tab.identity')} />
-              <TabButton active={activeTab === 'behavior'} onClick={() => setActiveTab('behavior')} icon={<SlidersHorizontal className="h-4 w-4" />} label="Behavior" title={tooltip('agents.tab.behavior')} />
-              <TabButton active={activeTab === 'safeguards'} onClick={() => setActiveTab('safeguards')} icon={<Shield className="h-4 w-4" />} label="Safeguards" title={tooltip('agents.tab.safeguards')} />
-              <TabButton active={activeTab === 'sandbox'} onClick={() => setActiveTab('sandbox')} icon={<Shield className="h-4 w-4" />} label="Sandbox" title={tooltip('agents.tab.sandbox')} />
-              <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={<Bot className="h-4 w-4" />} label="Chat" title={tooltip('agents.tab.chat')} />
+              <TabButton active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} icon={<MessageSquare className="h-4 w-4" />} label="Identity" tooltipEntry={tooltipFor('agents.tab.identity')} />
+              <TabButton active={activeTab === 'behavior'} onClick={() => setActiveTab('behavior')} icon={<SlidersHorizontal className="h-4 w-4" />} label="Behavior" tooltipEntry={tooltipFor('agents.tab.behavior')} />
+              <TabButton active={activeTab === 'safeguards'} onClick={() => setActiveTab('safeguards')} icon={<Shield className="h-4 w-4" />} label="Safeguards" tooltipEntry={tooltipFor('agents.tab.safeguards')} />
+              <TabButton active={activeTab === 'sandbox'} onClick={() => setActiveTab('sandbox')} icon={<Shield className="h-4 w-4" />} label="Sandbox" tooltipEntry={tooltipFor('agents.tab.sandbox')} />
+              <TabButton active={activeTab === 'chat'} onClick={() => setActiveTab('chat')} icon={<Bot className="h-4 w-4" />} label="Chat" tooltipEntry={tooltipFor('agents.tab.chat')} />
             </div>
 
             {error && <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
@@ -538,27 +606,29 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     {markdownTabs.map((tab) => (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => setActiveMarkdown(tab)}
-                        title={tooltip('agents.identity.markdownTab')}
-                        className={`rounded-full px-3 py-1 text-xs transition ${activeMarkdown === tab ? 'bg-white text-slate-950' : 'border border-slate-700 text-slate-300'}`}
-                      >
-                        {tab}
-                      </button>
+                      <RichTooltip key={tab} entry={tooltipFor(markdownTooltipKeys[tab])}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMarkdown(tab)}
+                          className={`rounded-full px-3 py-1 text-xs transition ${activeMarkdown === tab ? 'bg-white text-slate-950' : 'border border-slate-700 text-slate-300'}`}
+                        >
+                          {tab}
+                        </button>
+                      </RichTooltip>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => void saveIdentity()}
-                      disabled={saving}
-                      title={tooltip('agents.identity.saveText')}
-                      className="ml-auto inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
-                    >
-                      <Save className="h-4 w-4" />
-                      Save Text
-                    </button>
+                    <RichTooltip entry={tooltipFor('agents.identity.saveText')}>
+                      <button
+                        type="button"
+                        onClick={() => void saveIdentity()}
+                        disabled={saving}
+                        className="ml-auto inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save Text
+                      </button>
+                    </RichTooltip>
                   </div>
+                  <FieldIntro tooltipKey={markdownTooltipKeys[activeMarkdown]} />
                   <textarea
                     value={profile.markdown[activeMarkdown]}
                     onChange={(event) =>
@@ -574,7 +644,6 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           : current,
                       )
                     }
-                    title={tooltip('agents.identity.editor')}
                     className="min-h-[420px] w-full rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-100 outline-none"
                   />
                 </div>
@@ -593,15 +662,16 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                               <div className="text-sm text-white">{entry.version}</div>
                               <div className="text-xs text-slate-500">{entry.summary}</div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => void restoreVersion(entry.version)}
-                              disabled={saving || entry.version === profile.version}
-                              title={tooltip('agents.identity.restore')}
-                              className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
-                            >
-                              Restore
-                            </button>
+                            <RichTooltip entry={tooltipFor('agents.identity.restore')}>
+                              <button
+                                type="button"
+                                onClick={() => void restoreVersion(entry.version)}
+                                disabled={saving || entry.version === profile.version}
+                                className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
+                              >
+                                Restore
+                              </button>
+                            </RichTooltip>
                           </div>
                         </div>
                       ))}
@@ -620,9 +690,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
               <div className="mt-6 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   {behaviorKeys.map((item) => (
-                    <label key={item.key} title={tooltip('agents.behavior.slider')} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                    <label key={item.key} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                       <div className="mb-2 flex items-center justify-between">
-                        <span>{item.label}</span>
+                        <FieldTitle label={item.label} tooltipKey={behaviorTooltipKeys[item.key]} />
                         <span className="font-mono text-indigo-300">{behavior[item.key]}</span>
                       </div>
                       <input
@@ -646,16 +716,17 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   ))}
                 </div>
                 <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => void saveBehavior()}
-                    disabled={saving}
-                    title={tooltip('agents.behavior.save')}
-                    className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
-                  >
-                    <Save className="h-4 w-4" />
-                    Save Behavior
-                  </button>
+                  <RichTooltip entry={tooltipFor('agents.behavior.save')}>
+                    <button
+                      type="button"
+                      onClick={() => void saveBehavior()}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Behavior
+                    </button>
+                  </RichTooltip>
                 </div>
               </div>
             )}
@@ -668,8 +739,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
             {!loading && activeTab === 'safeguards' && safeguards && (
               <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
                 <div className="space-y-4">
-                  <label title={tooltip('agents.safeguards.mode')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                    <div className="mb-2">Mode</div>
+                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                    <FieldTitle label="Mode" tooltipKey="agents.safeguards.mode" className="mb-2" />
                     <select
                       value={safeguards.mode}
                       onChange={(event) =>
@@ -686,9 +757,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       <option value="flexible">Flexible</option>
                     </select>
                   </label>
-                  <label title={tooltip('agents.safeguards.minConformance')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                     <div className="mb-2 flex items-center justify-between">
-                      <span>Minimum Conformance</span>
+                      <FieldTitle label="Minimum Conformance" tooltipKey="agents.safeguards.minConformance" />
                       <span className="font-mono text-indigo-300">{safeguards.minOverallConformance}</span>
                     </div>
                     <input
@@ -706,8 +777,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       className="w-full accent-indigo-400"
                     />
                   </label>
-                  <label title={tooltip('agents.safeguards.correctiveAction')} className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                    <div className="mb-2">Corrective Action</div>
+                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                    <FieldTitle label="Corrective Action" tooltipKey="agents.safeguards.correctiveAction" className="mb-2" />
                     <select
                       value={safeguards.correctiveAction}
                       onChange={(event) =>
@@ -726,8 +797,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </select>
                   </label>
                   {safeguardToggles.map((toggle) => (
-                    <label key={toggle.key} title={tooltip('agents.safeguards.toggle')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
-                      <span>{toggle.label}</span>
+                    <label key={toggle.key} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+                      <FieldTitle label={toggle.label} tooltipKey={safeguardTooltipKeys[toggle.key] || 'agents.safeguards.mode'} />
                       <input
                         type="checkbox"
                         checked={Boolean(safeguards[toggle.key])}
@@ -743,16 +814,17 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </label>
                   ))}
                   <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => void saveSafeguards()}
-                      disabled={saving}
-                      title={tooltip('agents.safeguards.save')}
-                      className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
-                    >
-                      <Save className="h-4 w-4" />
-                      Save Safeguards
-                    </button>
+                    <RichTooltip entry={tooltipFor('agents.safeguards.save')}>
+                      <button
+                        type="button"
+                        onClick={() => void saveSafeguards()}
+                        disabled={saving}
+                        className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-100 disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save Safeguards
+                      </button>
+                    </RichTooltip>
                   </div>
                 </div>
 
@@ -783,7 +855,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   <div className="grid gap-4 lg:grid-cols-2">
                     <SandboxEditorCard title="General">
                       <label title={sandboxFieldTooltip('Effective mode')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Effective mode</div>
+                        <SandboxFieldLabel label="Effective mode" />
                         <select
                           value={sandboxPolicyPreview?.mode || 'process'}
                           onChange={(event) => updateSandboxOverride(['mode'], event.target.value)}
@@ -796,7 +868,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         </select>
                       </label>
                       <label title={sandboxFieldTooltip('Persist artifacts')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Persist artifacts</span>
+                        <FieldTitle label="Persist artifacts" tooltipKey={sandboxFieldTooltipKeys['Persist artifacts']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.filesystem?.persistArtifacts)}
@@ -808,7 +880,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="Filesystem">
                       <label title={sandboxFieldTooltip('Working directory')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Working directory</div>
+                        <SandboxFieldLabel label="Working directory" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.filesystem?.workingDirectory || ''}
@@ -817,7 +889,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Read only root')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Read only root</span>
+                        <FieldTitle label="Read only root" tooltipKey={sandboxFieldTooltipKeys['Read only root']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.filesystem?.readOnlyRoot)}
@@ -826,7 +898,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed read paths')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed read paths</div>
+                        <SandboxFieldLabel label="Allowed read paths" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.filesystem?.allowedReadPaths || []).join(', ')}
@@ -835,7 +907,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed write paths')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed write paths</div>
+                        <SandboxFieldLabel label="Allowed write paths" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.filesystem?.allowedWritePaths || []).join(', ')}
@@ -844,7 +916,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Temp directory')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Temp directory</div>
+                        <SandboxFieldLabel label="Temp directory" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.filesystem?.tempDirectory || ''}
@@ -853,7 +925,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max artifact size (MB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max artifact size (MB)</div>
+                        <SandboxFieldLabel label="Max artifact size (MB)" />
                         <input
                           type="number"
                           min={1}
@@ -863,7 +935,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max total artifacts (MB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max total artifacts (MB)</div>
+                        <SandboxFieldLabel label="Max total artifacts (MB)" />
                         <input
                           type="number"
                           min={1}
@@ -876,7 +948,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="Network">
                       <label title={sandboxFieldTooltip('Network mode')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Mode</div>
+                        <SandboxFieldLabel label="Network mode" />
                         <select
                           value={sandboxPolicyPreview?.network?.mode || 'off'}
                           onChange={(event) => updateSandboxOverride(['network', 'mode'], event.target.value)}
@@ -889,7 +961,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         </select>
                       </label>
                       <label title={sandboxFieldTooltip('Block private networks')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Block private networks</span>
+                        <FieldTitle label="Block private networks" tooltipKey={sandboxFieldTooltipKeys['Block private networks']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.network?.blockPrivateNetworks)}
@@ -898,7 +970,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allow DNS')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Allow DNS</span>
+                        <FieldTitle label="Allow DNS" tooltipKey={sandboxFieldTooltipKeys['Allow DNS']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.network?.allowDns)}
@@ -907,7 +979,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('HTTP only')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>HTTP only</span>
+                        <FieldTitle label="HTTP only" tooltipKey={sandboxFieldTooltipKeys['HTTP only']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.network?.httpOnly)}
@@ -916,7 +988,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed domains')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed domains</div>
+                        <SandboxFieldLabel label="Allowed domains" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.network?.allowedDomains || []).join(', ')}
@@ -925,7 +997,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed ports')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed ports</div>
+                        <SandboxFieldLabel label="Allowed ports" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.network?.allowedPorts || []).join(', ')}
@@ -937,7 +1009,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="Resources">
                       <label title={sandboxFieldTooltip('Timeout (seconds)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Timeout (seconds)</div>
+                        <SandboxFieldLabel label="Timeout (seconds)" />
                         <input
                           type="number"
                           min={1}
@@ -947,7 +1019,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('CPU limit')} className="block text-sm text-slate-200">
-                        <div className="mb-2">CPU limit</div>
+                        <SandboxFieldLabel label="CPU limit" />
                         <input
                           type="number"
                           min={1}
@@ -957,7 +1029,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Memory (MB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Memory (MB)</div>
+                        <SandboxFieldLabel label="Memory (MB)" />
                         <input
                           type="number"
                           min={64}
@@ -967,7 +1039,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Disk (MB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Disk (MB)</div>
+                        <SandboxFieldLabel label="Disk (MB)" />
                         <input
                           type="number"
                           min={64}
@@ -977,7 +1049,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max processes')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max processes</div>
+                        <SandboxFieldLabel label="Max processes" />
                         <input
                           type="number"
                           min={1}
@@ -987,7 +1059,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max threads')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max threads</div>
+                        <SandboxFieldLabel label="Max threads" />
                         <input
                           type="number"
                           min={1}
@@ -997,7 +1069,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max stdout (KB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max stdout (KB)</div>
+                        <SandboxFieldLabel label="Max stdout (KB)" />
                         <input
                           type="number"
                           min={1}
@@ -1007,7 +1079,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max stderr (KB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max stderr (KB)</div>
+                        <SandboxFieldLabel label="Max stderr (KB)" />
                         <input
                           type="number"
                           min={1}
@@ -1020,7 +1092,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="Execution">
                       <label title={sandboxFieldTooltip('Allow shell')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Allow shell</span>
+                        <FieldTitle label="Allow shell" tooltipKey={sandboxFieldTooltipKeys['Allow shell']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.execution?.allowShell)}
@@ -1029,7 +1101,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allow subprocess')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Allow subprocess</span>
+                        <FieldTitle label="Allow subprocess" tooltipKey={sandboxFieldTooltipKeys['Allow subprocess']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.execution?.allowSubprocessSpawn)}
@@ -1038,7 +1110,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allow package install')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-                        <span>Allow package install</span>
+                        <FieldTitle label="Allow package install" tooltipKey={sandboxFieldTooltipKeys['Allow package install']} />
                         <input
                           type="checkbox"
                           checked={Boolean(sandboxPolicyPreview?.execution?.allowPackageInstall)}
@@ -1047,7 +1119,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed interpreters')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed interpreters</div>
+                        <SandboxFieldLabel label="Allowed interpreters" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.execution?.allowedInterpreters || []).join(', ')}
@@ -1056,7 +1128,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed binaries')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed binaries</div>
+                        <SandboxFieldLabel label="Allowed binaries" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.execution?.allowedBinaries || []).join(', ')}
@@ -1065,7 +1137,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Blocked binaries')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Blocked binaries</div>
+                        <SandboxFieldLabel label="Blocked binaries" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.execution?.blockedBinaries || []).join(', ')}
@@ -1077,7 +1149,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="Environment">
                       <label title={sandboxFieldTooltip('Runtime')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Runtime</div>
+                        <SandboxFieldLabel label="Runtime" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.environment?.runtime || ''}
@@ -1086,7 +1158,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Runtime version')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Runtime version</div>
+                        <SandboxFieldLabel label="Runtime version" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.environment?.runtimeVersion || ''}
@@ -1095,7 +1167,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Timezone')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Timezone</div>
+                        <SandboxFieldLabel label="Timezone" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.environment?.timezone || ''}
@@ -1104,7 +1176,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Locale')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Locale</div>
+                        <SandboxFieldLabel label="Locale" />
                         <input
                           type="text"
                           value={sandboxPolicyPreview?.environment?.locale || ''}
@@ -1154,7 +1226,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                     <SandboxEditorCard title="IO Policy">
                       <label title={sandboxFieldTooltip('Max input (KB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max input (KB)</div>
+                        <SandboxFieldLabel label="Max input (KB)" />
                         <input
                           type="number"
                           min={1}
@@ -1164,7 +1236,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Max output (KB)')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Max output (KB)</div>
+                        <SandboxFieldLabel label="Max output (KB)" />
                         <input
                           type="number"
                           min={1}
@@ -1174,7 +1246,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Allowed output types')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Allowed output types</div>
+                        <SandboxFieldLabel label="Allowed output types" />
                         <input
                           type="text"
                           value={(sandboxPolicyPreview?.ioPolicy?.allowedOutputTypes || []).join(', ')}
@@ -1183,7 +1255,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                         />
                       </label>
                       <label title={sandboxFieldTooltip('Retention')} className="block text-sm text-slate-200">
-                        <div className="mb-2">Retention</div>
+                        <SandboxFieldLabel label="Retention" />
                         <select
                           value={sandboxPolicyPreview?.ioPolicy?.retention || 'task'}
                           onChange={(event) => updateSandboxOverride(['ioPolicy', 'retention'], event.target.value)}
@@ -1257,29 +1329,32 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <div className="mb-2">Capability</div>
-                      <input
-                        type="text"
-                        value={sandboxCapability}
+                      <SandboxFieldLabel label="Capability" />
+                        <input
+                          type="text"
+                          aria-label="Capability"
+                          value={sandboxCapability}
                         onChange={(event) => setSandboxCapability(event.target.value)}
                         title={tooltip('agents.sandbox.test.capability')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       />
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <div className="mb-2">Command</div>
-                      <input
-                        type="text"
-                        value={sandboxCommand}
+                      <SandboxFieldLabel label="Command" />
+                        <input
+                          type="text"
+                          aria-label="Command"
+                          value={sandboxCommand}
                         onChange={(event) => setSandboxCommand(event.target.value)}
                         title={tooltip('agents.sandbox.test.command')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                       />
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <div className="mb-2">Preset</div>
-                      <select
-                        value={sandboxConfig.profileId || ''}
+                      <SandboxFieldLabel label="Preset" />
+                        <select
+                          aria-label="Preset"
+                          value={sandboxConfig.profileId || ''}
                         onChange={(event) =>
                           setSandboxConfig((current) =>
                             current
@@ -1299,7 +1374,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       </select>
                     </label>
                     <label title={tooltip('agents.sandbox.test.enabled')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
-                      <span>Enabled</span>
+                      <FieldTitle label="Enabled" tooltipKey={sandboxFieldTooltipKeys.Enabled} />
                       <input
                         type="checkbox"
                         checked={sandboxConfig.enabled}
@@ -1312,7 +1387,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       />
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <div className="mb-2">Fallback behavior</div>
+                      <SandboxFieldLabel label="Fallback behavior" />
                       <select
                         value={sandboxConfig.enforcement.fallbackBehavior}
                         onChange={(event) =>
@@ -1336,7 +1411,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       </select>
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <div className="mb-2">Mandatory capabilities</div>
+                      <SandboxFieldLabel label="Mandatory capabilities" />
                       <input
                         type="text"
                         value={sandboxConfig.enforcement.mandatoryForCapabilities.join(', ')}
@@ -1363,10 +1438,11 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </label>
                   </div>
 
-                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                    <div className="mb-2">Overrides JSON</div>
-                    <textarea
-                      value={sandboxOverridesText}
+                    <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                      <SandboxFieldLabel label="Overrides JSON" />
+                      <textarea
+                        aria-label="Overrides JSON"
+                        value={sandboxOverridesText}
                       onChange={(event) => setSandboxOverridesText(event.target.value)}
                       title={tooltip('agents.sandbox.test.overridesJson')}
                       className="min-h-[220px] w-full rounded-xl border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100 outline-none"
@@ -1591,40 +1667,75 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function TabButton({ active, icon, label, onClick, title }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void; title?: string }) {
+function TabButton({ active, icon, label, onClick, tooltipEntry }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void; tooltipEntry?: TooltipEntry }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-        active ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-100' : 'border-slate-700 text-slate-300'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <RichTooltip entry={tooltipEntry}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+          active ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-100' : 'border-slate-700 text-slate-300'
+        }`}
+      >
+        {icon}
+        {label}
+      </button>
+    </RichTooltip>
+  );
+}
+
+function FieldTitle({ label, tooltipKey, className = '' }: { label: string; tooltipKey: string; className?: string }) {
+  const tooltipEntry = useTooltipEntry();
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`.trim()}>
+      <span>{label}</span>
+      <TooltipIcon entry={tooltipEntry(tooltipKey)} />
+    </div>
+  );
+}
+
+function FieldIntro({ tooltipKey }: { tooltipKey: string }) {
+  const { locale } = useI18n();
+  const tooltipEntry = useTooltipEntry();
+  const entry = tooltipEntry(tooltipKey);
+
+  if (!entry) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-sm text-indigo-50">
+      <div className="font-semibold">{entry.label}</div>
+      {entry.details ? <div className="mt-2 leading-6 text-indigo-100/90">{entry.details}</div> : null}
+      {entry.whenToUse ? <div className="mt-2 text-xs uppercase tracking-[0.2em] text-indigo-200/70">{locale === 'pt-BR' ? 'Quando usar' : 'When to use'}</div> : null}
+      {entry.whenToUse ? <div className="mt-1 leading-6 text-indigo-100/90">{entry.whenToUse}</div> : null}
+      {entry.example ? <div className="mt-3 rounded-xl border border-indigo-400/20 bg-slate-950/30 px-3 py-2 text-xs text-indigo-100">{locale === 'pt-BR' ? 'Exemplo' : 'Example'}: {entry.example}</div> : null}
+    </div>
   );
 }
 
 function SandboxEditorCard({ title, children }: { title: string; children: React.ReactNode }) {
-  const tooltip = useTooltipText();
+  const tooltipEntry = useTooltipEntry();
   const tooltipKey = sandboxCardTooltipKeys[title] || 'agents.sandbox.field';
 
   return (
-    <div title={tooltip(tooltipKey)} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
-      <div className="mb-3 text-sm font-semibold text-slate-200">{title}</div>
+    <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-200">
+        <span>{title}</span>
+        <TooltipIcon entry={tooltipEntry(tooltipKey)} />
+      </div>
       <div className="space-y-3">{children}</div>
     </div>
   );
 }
 
 function SandboxToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  const tooltip = useTooltipText();
+  const tooltipKey = sandboxFieldTooltipKeys[label] || 'agents.sandbox.field';
 
   return (
-    <label title={tooltip('agents.sandbox.field')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
-      <span>{label}</span>
+    <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+      <FieldTitle label={label} tooltipKey={tooltipKey} />
       <input
         type="checkbox"
         checked={checked}
@@ -1633,6 +1744,10 @@ function SandboxToggleRow({ label, checked, onChange }: { label: string; checked
       />
     </label>
   );
+}
+
+function SandboxFieldLabel({ label, className = 'mb-2' }: { label: string; className?: string }) {
+  return <FieldTitle label={label} tooltipKey={sandboxFieldTooltipKeys[label] || 'agents.sandbox.field'} className={className} />;
 }
 
 function parseSandboxOverrides(value: string): Record<string, unknown> {

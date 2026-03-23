@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import net from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -126,6 +127,33 @@ function terminateChild(child) {
     return Promise.resolve();
 }
 
+function isPortOpenOnHost(port, host) {
+    return new Promise((resolvePromise) => {
+        const socket = new net.Socket();
+
+        const finish = (result) => {
+            socket.destroy();
+            resolvePromise(result);
+        };
+
+        socket.setTimeout(1000);
+        socket.once("connect", () => finish(true));
+        socket.once("timeout", () => finish(false));
+        socket.once("error", () => finish(false));
+        socket.connect(port, host);
+    });
+}
+
+async function isPortOpen(port) {
+    for (const host of ["127.0.0.1", "::1", "localhost"]) {
+        if (await isPortOpenOnHost(port, host)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 async function shutdown(exitCode = 0) {
     if (shuttingDown) {
         return;
@@ -144,16 +172,30 @@ try {
         await runCommand("docker infra", "docker", ["compose", "up", "-d", "postgres", "redis"]);
     }
 
-    await runCommand("prisma sync", "npm", ["run", "prisma:sync"], API_DIR);
+    await runCommand("prisma sync", "npm", ["run", "prisma:sync", "--", "--skip-generate"], API_DIR);
 
-    spawnProcess("api", "npm", ["run", "dev"], API_DIR);
-    spawnProcess("web", "npm", ["run", "dev"], WEB_DIR);
-    spawnProcess(
-        "cognitive-python",
-        "python",
-        ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8008", "--reload"],
-        PYTHON_DIR,
-    );
+    if (await isPortOpen(5000)) {
+        console.log("[dev] api already running on http://127.0.0.1:5000, skipping startup");
+    } else {
+        spawnProcess("api", "npm", ["run", "dev"], API_DIR);
+    }
+
+    if (await isPortOpen(5173)) {
+        console.log("[dev] web already running on http://127.0.0.1:5173, skipping startup");
+    } else {
+        spawnProcess("web", "npm", ["run", "dev"], WEB_DIR);
+    }
+
+    if (await isPortOpen(8008)) {
+        console.log("[dev] cognitive-python already running on http://127.0.0.1:8008, skipping startup");
+    } else {
+        spawnProcess(
+            "cognitive-python",
+            "python",
+            ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8008", "--reload"],
+            PYTHON_DIR,
+        );
+    }
 
     console.log("[dev] stack ready: API http://127.0.0.1:5000 | Web http://127.0.0.1:5173 | Python http://127.0.0.1:8008");
 } catch (error) {

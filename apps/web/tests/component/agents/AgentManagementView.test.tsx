@@ -309,7 +309,7 @@ describe('AgentManagementView sandbox tab', () => {
     const [capabilityInput, commandInput, overridesTextarea] = [
       screen.getByDisplayValue('exec'),
       screen.getByDisplayValue('node -v'),
-      screen.getByLabelText('Overrides JSON'),
+      screen.getByRole('textbox', { name: 'Overrides JSON' }),
     ];
 
     await user.clear(capabilityInput);

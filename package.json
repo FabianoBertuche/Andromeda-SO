@@ -9,6 +9,8 @@
         "apps/web"
     ],
     "scripts": {
+        "start:project": "node start-project.mjs",
+        "start:check": "node start-project.mjs --check",
         "dev:infra": "docker compose up -d postgres redis",
         "dev:apps": "node scripts/dev.mjs --skip-infra",
         "dev:api": "npm --prefix packages/api run dev",

@@ -55,6 +55,10 @@ export function useTooltipText() {
   return useI18n().tooltip;
 }
 
+export function useTooltipEntry() {
+  return useI18n().tooltipEntry;
+}
+
 function getTooltipEntry(locale: Locale, key: string): TooltipEntry | undefined {
   return tooltipMessages[locale][key] || tooltipMessages['pt-BR'][key];
 }
