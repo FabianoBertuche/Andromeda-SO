@@ -4,6 +4,7 @@ import { CollectionsList } from './CollectionsList';
 import type { Collection } from './CollectionsList';
 import { DocumentManagement } from './DocumentManagement';
 import type { Document } from './DocumentManagement';
+import { apiFetch } from '../../lib/api-auth';
 
 type KnowledgeTab = 'collections' | 'documents' | 'retrieval' | 'vaults';
 
@@ -257,7 +258,7 @@ export function KnowledgeView() {
 }
 
 async function requestJson<T = unknown>(input: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(input, init);
+    const response = await apiFetch(input, init);
     if (!response.ok) {
         const message = await response.text();
         throw new Error(message || `Request failed with status ${response.status}`);

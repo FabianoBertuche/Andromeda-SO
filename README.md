@@ -126,19 +126,24 @@ npm install
 cp .env.example .env.development
 
 # 3. Subir banco de dados
-docker compose up -d postgres redis
+npm run dev:infra
 
-# 4. Rodar migrations e seed
-npm run prisma:migrate
-npm run prisma:seed
+# 4. Sincronizar schema do banco
+npm run db:sync
 
-# 5. Subir todos os serviços
+# 5. Subir API + Web + Python
 npm run dev
 
-# API:    http://localhost:3000
-# Web:    http://localhost:3001
-# Python: http://localhost:8000
-# Docs:   http://localhost:3000/v1/docs
+# API:    http://localhost:5000
+# Web:    http://localhost:5173
+# Python: http://127.0.0.1:8008
+# Docs:   http://localhost:5000/v1/docs
+
+# Auditoria local da API (com stack em execucao)
+npm run audit:local
+
+# E2E principal de agentes
+npm run test:e2e:agents
 ```
 
 ---

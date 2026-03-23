@@ -7,7 +7,7 @@ vi.mock('@prisma/client');
 vi.mock('ioredis');
 vi.mock('../../cognitive/infrastructure/cognitive-service.config', () => ({
   loadCognitiveServiceConfig: () => ({
-    baseUrl: 'http://localhost:8000',
+    baseUrl: 'http://127.0.0.1:8008',
     timeoutMs: 1000,
     authToken: 'test-token',
   }),

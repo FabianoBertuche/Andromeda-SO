@@ -305,7 +305,7 @@ Before assigning agents, determine project type:
 
 ```bash
 # SINGLE COMMAND - Runs all checks in priority order:
-python .agent/scripts/verify_all.py . --url http://localhost:3000
+python .agent/scripts/verify_all.py . --url http://localhost:5000
 
 # Priority Order:
 # P0: Security Scan (vulnerabilities, secrets)
@@ -329,10 +329,10 @@ python .agent/skills/vulnerability-scanner/scripts/security_scan.py .
 python .agent/skills/frontend-design/scripts/ux_audit.py .
 
 # P3: Lighthouse (requires running server)
-python .agent/skills/performance-profiling/scripts/lighthouse_audit.py http://localhost:3000
+python .agent/skills/performance-profiling/scripts/lighthouse_audit.py http://localhost:5000
 
 # P4: Playwright E2E (requires running server)
-python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhost:3000 --screenshot
+python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhost:5000 --screenshot
 ```
 
 #### 3. Build Verification
@@ -348,7 +348,7 @@ npm run build
 npm run dev
 
 # Optional: Run Playwright tests if available
-python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhost:3000 --screenshot
+python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhost:5000 --screenshot
 ```
 
 #### 4. Rule Compliance (Manual Check)
@@ -403,4 +403,3 @@ python .agent/skills/webapp-testing/scripts/playwright_runner.py http://localhos
 | 10 | **Phase X** | Verification is ALWAYS final | Definition of done |
 
 ---
-

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from './runtime-config';
+import { apiFetch, withApiAuth } from './api-auth';
 
 export type MemoryType = 'session' | 'episodic' | 'semantic';
 export type MemoryScopeType = 'session' | 'task' | 'agent' | 'project' | 'user' | 'team';
@@ -70,7 +71,7 @@ export interface MemoryRetrieveRequest {
 }
 
 async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
+  const response = await apiFetch(input, init);
   if (!response.ok) {
     throw new Error(await response.text());
   }
@@ -138,5 +139,5 @@ export function promoteMemory(id: string, targetType: MemoryType = 'semantic') {
 }
 
 export function deleteMemory(id: string) {
-  return fetch(`${getApiBaseUrl()}/memory/${id}`, { method: 'DELETE' });
+  return fetch(`${getApiBaseUrl()}/memory/${id}`, withApiAuth({ method: 'DELETE' }));
 }

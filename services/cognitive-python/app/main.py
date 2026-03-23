@@ -67,6 +67,23 @@ async def readiness() -> ReadinessResponse:
     )
 
 
+@app.get("/vector-store/health")
+async def vector_store_health() -> dict[str, object]:
+    """Returns readiness details for the in-memory vector store."""
+
+    documents = len(vector_store.vectors)
+    chunks = sum(len(entries) for entries in vector_store.vectors.values())
+
+    return {
+        "status": "ok",
+        "service": "vector-store",
+        "backend": "in-memory",
+        "documents": documents,
+        "chunks": chunks,
+        "timestamp": utc_now(),
+    }
+
+
 @app.get("/contracts/version", response_model=ContractsVersionResponse)
 async def contracts_version() -> ContractsVersionResponse:
     """Returns the canonical contract versions exposed by the service."""

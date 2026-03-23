@@ -142,7 +142,7 @@ import { z } from 'zod'
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(5000),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
@@ -154,7 +154,7 @@ const envSchema = z.object({
   RATE_LIMIT_AUTH_MAX: z.coerce.number().default(5),
   BACKUP_DIR: z.string().default('./backups'),
   BACKUP_RETENTION_DAYS: z.coerce.number().default(7),
-  COGNITIVE_PYTHON_URL: z.string().url().default('http://localhost:8000'),
+  COGNITIVE_PYTHON_URL: z.string().url().default('http://127.0.0.1:8008'),
   COGNITIVE_PYTHON_TOKEN: z.string(),
 })
 

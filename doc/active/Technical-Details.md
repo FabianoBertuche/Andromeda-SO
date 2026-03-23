@@ -225,8 +225,8 @@ export const dlqQueue = new Queue('andromeda-dlq', { connection: redisConnection
 ```env
 # .env.development
 NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://user:pass@localhost:5432/andromeda_dev
+PORT=5000
+DATABASE_URL=postgresql://andromeda:andromeda@localhost:5433/andromeda_dev
 REDIS_URL=redis://localhost:6379
 
 # Auth
@@ -241,7 +241,7 @@ RATE_LIMIT_MAX=100
 RATE_LIMIT_AUTH_MAX=5
 
 # Cognitive Python
-COGNITIVE_PYTHON_URL=http://localhost:8000
+COGNITIVE_PYTHON_URL=http://127.0.0.1:8008
 COGNITIVE_PYTHON_TOKEN=dev-token
 ```
 

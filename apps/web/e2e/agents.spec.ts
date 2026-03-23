@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = 'http://localhost:5000';
+const AUTH_HEADERS = { Authorization: 'Bearer andromeda_dev_web_token' };
 
 test.describe('Agents - Funcionalidades Reais', () => {
   test.beforeEach(async ({ page }) => {
     const health = await page.request.get(`${API_BASE}/v1/health`).catch(() => null);
     if (!health || !health.ok()) {
-      test.fail(true, 'Backend não está rodando em localhost:3000');
+      test.fail(true, 'Backend não está rodando em localhost:5000');
     }
 
     await page.goto('/');
@@ -17,7 +18,7 @@ test.describe('Agents - Funcionalidades Reais', () => {
 
   test('deve carregar lista de agentes reais', async ({ page }) => {
     // Verificar via API
-    const response = await page.request.get(`${API_BASE}/v1/agents`);
+    const response = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS });
     expect(response.ok()).toBe(true);
 
     const agents = await response.json();
@@ -35,7 +36,7 @@ test.describe('Agents - Funcionalidades Reais', () => {
 
   test('deve exibir detalhes do agente ao selecionar', async ({ page }) => {
     // Buscar agentes reais
-    const response = await page.request.get(`${API_BASE}/v1/agents`);
+    const response = await page.request.get(`${API_BASE}/v1/agents`, { headers: AUTH_HEADERS });
     const agents = await response.json();
     expect(agents.length).toBeGreaterThan(0);
 

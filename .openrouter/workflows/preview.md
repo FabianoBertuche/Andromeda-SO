@@ -36,7 +36,7 @@ Response:
    Type: Next.js
 
 ✅ Preview ready!
-   URL: http://localhost:3000
+   URL: http://localhost:5000
 ```
 
 ### Status Check
@@ -46,7 +46,7 @@ Response:
 Response:
 === Preview Status ===
 
-🌐 URL: http://localhost:3000
+🌐 URL: http://localhost:5000
 📁 Project: C:/projects/my-app
 🏷️ Type: nextjs
 💚 Health: OK
@@ -78,4 +78,3 @@ python .agent/scripts/auto_preview.py start [port]
 python .agent/scripts/auto_preview.py stop
 python .agent/scripts/auto_preview.py status
 ```
-

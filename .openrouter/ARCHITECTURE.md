@@ -235,7 +235,7 @@ Master validation scripts that orchestrate skill-level scripts.
 python .agent/scripts/checklist.py .
 
 # Full verification before deployment
-python .agent/scripts/verify_all.py . --url http://localhost:3000
+python .agent/scripts/verify_all.py . --url http://localhost:5000
 ```
 
 ### What They Check

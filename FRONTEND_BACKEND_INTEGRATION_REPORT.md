@@ -70,7 +70,7 @@ npx playwright test --trace=off --reporter=line
 
 ### 1. Wrong assumption in E2E tests
 
-Some tests were written against `http://localhost:3000`, but the app is configured for port `5000`.
+Some tests had been written against an outdated API port, while the app is configured for port `5000`.
 
 Relevant files:
 

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from './runtime-config';
+import { apiFetch } from './api-auth';
 
 export interface AgentSummary {
   id: string;
@@ -309,19 +310,19 @@ export interface ApprovalRequestItem {
 }
 
 export async function listAgents(): Promise<AgentSummary[]> {
-  const response = await fetch(`${getApiBaseUrl()}/agents`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents`);
   ensureOk(response, 'Falha ao listar agentes.');
   return response.json() as Promise<AgentSummary[]>;
 }
 
 export async function getAgentProfile(id: string): Promise<AgentProfileDocument> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/profile`);
   ensureOk(response, 'Falha ao carregar o perfil do agente.');
   return response.json() as Promise<AgentProfileDocument>;
 }
 
 export async function updateAgentProfile(id: string, payload: Partial<AgentProfileDocument>): Promise<AgentProfileDocument> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/profile`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -333,13 +334,13 @@ export async function updateAgentProfile(id: string, payload: Partial<AgentProfi
 }
 
 export async function getAgentProfileHistory(id: string): Promise<AgentProfileHistoryEntry[]> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile/history`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/profile/history`);
   ensureOk(response, 'Falha ao carregar o historico do perfil.');
   return response.json() as Promise<AgentProfileHistoryEntry[]>;
 }
 
 export async function restoreAgentProfileVersion(id: string, version: string): Promise<AgentProfileDocument> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/profile/restore/${version}`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/profile/restore/${version}`, {
     method: 'POST',
   });
   ensureOk(response, 'Falha ao restaurar a versao do perfil.');
@@ -347,13 +348,13 @@ export async function restoreAgentProfileVersion(id: string, version: string): P
 }
 
 export async function getAgentBehavior(id: string): Promise<AgentBehaviorConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/behavior`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/behavior`);
   ensureOk(response, 'Falha ao carregar os parametros comportamentais.');
   return response.json() as Promise<AgentBehaviorConfig>;
 }
 
 export async function updateAgentBehavior(id: string, payload: Partial<AgentBehaviorConfig>): Promise<AgentBehaviorConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/behavior`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/behavior`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -365,13 +366,13 @@ export async function updateAgentBehavior(id: string, payload: Partial<AgentBeha
 }
 
 export async function getAgentSafeguards(id: string): Promise<AgentSafeguardConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/safeguards`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/safeguards`);
   ensureOk(response, 'Falha ao carregar as safeguards.');
   return response.json() as Promise<AgentSafeguardConfig>;
 }
 
 export async function updateAgentSafeguards(id: string, payload: Partial<AgentSafeguardConfig>): Promise<AgentSafeguardConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/safeguards`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/safeguards`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -383,19 +384,19 @@ export async function updateAgentSafeguards(id: string, payload: Partial<AgentSa
 }
 
 export async function getAgentConformance(id: string): Promise<AgentConformanceView> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/conformance`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/conformance`);
   ensureOk(response, 'Falha ao carregar a conformidade do agente.');
   return response.json() as Promise<AgentConformanceView>;
 }
 
 export async function getAgentHistory(id: string): Promise<AgentHistoryItem[]> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/history`);
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/history`);
   ensureOk(response, 'Falha ao carregar o historico do agente.');
   return response.json() as Promise<AgentHistoryItem[]>;
 }
 
 export async function chatWithAgent(id: string, payload: { prompt: string; sessionId?: string; modelId?: string; interactionMode?: string; }): Promise<AgentChatResponse> {
-  const response = await fetch(`${getApiBaseUrl()}/agents/${id}/chat`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -407,19 +408,19 @@ export async function chatWithAgent(id: string, payload: { prompt: string; sessi
 }
 
 export async function listSandboxProfiles(): Promise<SandboxProfile[]> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/profiles`);
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/profiles`);
   ensureOk(response, 'Falha ao listar os perfis de sandbox.');
   return response.json() as Promise<SandboxProfile[]>;
 }
 
 export async function getAgentSandbox(id: string): Promise<AgentSandboxConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`);
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`);
   ensureOk(response, 'Falha ao carregar a configuracao de sandbox do agente.');
   return response.json() as Promise<AgentSandboxConfig>;
 }
 
 export async function updateAgentSandbox(id: string, payload: Partial<AgentSandboxConfig>): Promise<AgentSandboxConfig> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/agents/${id}/sandbox`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -431,7 +432,7 @@ export async function updateAgentSandbox(id: string, payload: Partial<AgentSandb
 }
 
 export async function validateSandboxConfig(payload: SandboxConfig): Promise<SandboxValidationResult> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/validate`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/validate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -452,7 +453,7 @@ export async function dryRunSandbox(payload: {
   skillRequirements?: Partial<SandboxConfig>;
   temporaryOverrides?: Partial<SandboxConfig>;
 }): Promise<SandboxDryRunResult> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/dry-run`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/dry-run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -464,7 +465,7 @@ export async function dryRunSandbox(payload: {
 }
 
 export async function listSandboxExecutions(): Promise<SandboxExecutionItem[]> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/executions`);
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/executions`);
   ensureOk(response, 'Falha ao listar execucoes de sandbox.');
   return response.json() as Promise<SandboxExecutionItem[]>;
 }
@@ -479,7 +480,7 @@ export async function startSandboxExecution(payload: {
   skillRequirements?: Partial<SandboxConfig>;
   temporaryOverrides?: Partial<SandboxConfig>;
 }): Promise<{ execution: SandboxExecutionItem; approvalRequest?: ApprovalRequestItem }> {
-  const response = await fetch(`${getApiBaseUrl()}/sandbox/executions`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/sandbox/executions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

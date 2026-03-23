@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from './runtime-config';
+import { apiFetch, getApiToken } from './api-auth';
 
 export interface GatewayTaskResponse {
     task?: {
@@ -35,7 +36,7 @@ export interface GatewayTaskStatus {
 }
 
 export function getGatewayAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('andromeda_token') || 'andromeda_dev_web_token';
+    const token = getApiToken();
     return {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -43,7 +44,7 @@ export function getGatewayAuthHeaders(): HeadersInit {
 }
 
 export async function createGatewayTask(payload: unknown): Promise<GatewayTaskResponse> {
-    const response = await fetch(`${getApiBaseUrl()}/gateway/message`, {
+    const response = await apiFetch(`${getApiBaseUrl()}/gateway/message`, {
         method: 'POST',
         headers: getGatewayAuthHeaders(),
         body: JSON.stringify(payload),
@@ -59,7 +60,7 @@ export async function createGatewayTask(payload: unknown): Promise<GatewayTaskRe
 
 export async function pollGatewayTask(taskId: string, attempts = 25, delayMs = 800): Promise<GatewayTaskStatus> {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
-        const response = await fetch(`${getApiBaseUrl()}/gateway/tasks/${taskId}/status`);
+        const response = await apiFetch(`${getApiBaseUrl()}/gateway/tasks/${taskId}/status`);
         if (!response.ok) {
             throw new Error('Falha ao consultar status da task.');
         }
