@@ -79,8 +79,62 @@ interface Props {
   refreshAgents: () => Promise<void>;
 }
 
+const sandboxCardTooltipKeys: Record<string, string> = {
+  General: 'agents.sandbox.card.general',
+  Filesystem: 'agents.sandbox.card.filesystem',
+  Network: 'agents.sandbox.card.network',
+  Resources: 'agents.sandbox.card.resources',
+  Execution: 'agents.sandbox.card.execution',
+  Environment: 'agents.sandbox.card.environment',
+  Security: 'agents.sandbox.card.security',
+  'IO Policy': 'agents.sandbox.card.ioPolicy',
+  Audit: 'agents.sandbox.card.audit',
+  Approvals: 'agents.sandbox.card.approvals',
+};
+
+const sandboxFieldTooltipKeys: Record<string, string> = {
+  'Effective mode': 'agents.sandbox.field.effectiveMode',
+  'Persist artifacts': 'agents.sandbox.field.persistArtifacts',
+  'Working directory': 'agents.sandbox.field.workingDirectory',
+  'Read only root': 'agents.sandbox.field.readOnlyRoot',
+  'Allowed read paths': 'agents.sandbox.field.allowedReadPaths',
+  'Allowed write paths': 'agents.sandbox.field.allowedWritePaths',
+  'Temp directory': 'agents.sandbox.field.tempDirectory',
+  'Max artifact size (MB)': 'agents.sandbox.field.maxArtifactSize',
+  'Max total artifacts (MB)': 'agents.sandbox.field.maxTotalArtifacts',
+  'Network mode': 'agents.sandbox.field.networkMode',
+  'Block private networks': 'agents.sandbox.field.blockPrivateNetworks',
+  'Allow DNS': 'agents.sandbox.field.allowDns',
+  'HTTP only': 'agents.sandbox.field.httpOnly',
+  'Allowed domains': 'agents.sandbox.field.allowedDomains',
+  'Allowed ports': 'agents.sandbox.field.allowedPorts',
+  'Timeout (seconds)': 'agents.sandbox.field.timeoutSeconds',
+  'CPU limit': 'agents.sandbox.field.cpuLimit',
+  'Memory (MB)': 'agents.sandbox.field.memoryMb',
+  'Disk (MB)': 'agents.sandbox.field.diskMb',
+  'Max processes': 'agents.sandbox.field.maxProcesses',
+  'Max threads': 'agents.sandbox.field.maxThreads',
+  'Max stdout (KB)': 'agents.sandbox.field.maxStdoutKb',
+  'Max stderr (KB)': 'agents.sandbox.field.maxStderrKb',
+  'Allow shell': 'agents.sandbox.field.allowShell',
+  'Allow subprocess': 'agents.sandbox.field.allowSubprocess',
+  'Allow package install': 'agents.sandbox.field.allowPackageInstall',
+  'Allowed interpreters': 'agents.sandbox.field.allowedInterpreters',
+  'Allowed binaries': 'agents.sandbox.field.allowedBinaries',
+  'Blocked binaries': 'agents.sandbox.field.blockedBinaries',
+  Runtime: 'agents.sandbox.field.runtime',
+  'Runtime version': 'agents.sandbox.field.runtimeVersion',
+  Timezone: 'agents.sandbox.field.timezone',
+  Locale: 'agents.sandbox.field.locale',
+  'Max input (KB)': 'agents.sandbox.field.maxInputKb',
+  'Max output (KB)': 'agents.sandbox.field.maxOutputKb',
+  'Allowed output types': 'agents.sandbox.field.allowedOutputTypes',
+  Retention: 'agents.sandbox.field.retention',
+};
+
 export function AgentManagementView({ agents, selectedAgentId, sessionId, onSelectAgent, onUseInConsole, refreshAgents }: Props) {
   const tooltip = useTooltipText();
+  const sandboxFieldTooltip = (label: string) => tooltip(sandboxFieldTooltipKeys[label] || 'agents.sandbox.field');
   const [activeTab, setActiveTab] = useState<AgentTab>('identity');
   const [activeMarkdown, setActiveMarkdown] = useState<MarkdownKey>('identity');
   const [profile, setProfile] = useState<AgentProfileDocument | null>(null);
@@ -728,7 +782,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                 <div className="space-y-4">
                   <div className="grid gap-4 lg:grid-cols-2">
                     <SandboxEditorCard title="General">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Effective mode')} className="block text-sm text-slate-200">
                         <div className="mb-2">Effective mode</div>
                         <select
                           value={sandboxPolicyPreview?.mode || 'process'}
@@ -741,7 +795,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           <option value="remote">Remote</option>
                         </select>
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Persist artifacts')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Persist artifacts</span>
                         <input
                           type="checkbox"
@@ -753,7 +807,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="Filesystem">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Working directory')} className="block text-sm text-slate-200">
                         <div className="mb-2">Working directory</div>
                         <input
                           type="text"
@@ -762,7 +816,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Read only root')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Read only root</span>
                         <input
                           type="checkbox"
@@ -771,7 +825,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed read paths')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed read paths</div>
                         <input
                           type="text"
@@ -780,7 +834,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed write paths')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed write paths</div>
                         <input
                           type="text"
@@ -789,7 +843,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Temp directory')} className="block text-sm text-slate-200">
                         <div className="mb-2">Temp directory</div>
                         <input
                           type="text"
@@ -798,7 +852,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max artifact size (MB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max artifact size (MB)</div>
                         <input
                           type="number"
@@ -808,7 +862,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max total artifacts (MB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max total artifacts (MB)</div>
                         <input
                           type="number"
@@ -821,7 +875,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="Network">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Network mode')} className="block text-sm text-slate-200">
                         <div className="mb-2">Mode</div>
                         <select
                           value={sandboxPolicyPreview?.network?.mode || 'off'}
@@ -834,7 +888,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           <option value="full">Full</option>
                         </select>
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Block private networks')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Block private networks</span>
                         <input
                           type="checkbox"
@@ -843,7 +897,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allow DNS')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Allow DNS</span>
                         <input
                           type="checkbox"
@@ -852,7 +906,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('HTTP only')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>HTTP only</span>
                         <input
                           type="checkbox"
@@ -861,7 +915,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed domains')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed domains</div>
                         <input
                           type="text"
@@ -870,7 +924,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed ports')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed ports</div>
                         <input
                           type="text"
@@ -882,7 +936,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="Resources">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Timeout (seconds)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Timeout (seconds)</div>
                         <input
                           type="number"
@@ -892,7 +946,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('CPU limit')} className="block text-sm text-slate-200">
                         <div className="mb-2">CPU limit</div>
                         <input
                           type="number"
@@ -902,7 +956,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Memory (MB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Memory (MB)</div>
                         <input
                           type="number"
@@ -912,7 +966,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Disk (MB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Disk (MB)</div>
                         <input
                           type="number"
@@ -922,7 +976,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max processes')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max processes</div>
                         <input
                           type="number"
@@ -932,7 +986,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max threads')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max threads</div>
                         <input
                           type="number"
@@ -942,7 +996,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max stdout (KB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max stdout (KB)</div>
                         <input
                           type="number"
@@ -952,7 +1006,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max stderr (KB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max stderr (KB)</div>
                         <input
                           type="number"
@@ -965,7 +1019,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="Execution">
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allow shell')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Allow shell</span>
                         <input
                           type="checkbox"
@@ -974,7 +1028,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allow subprocess')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Allow subprocess</span>
                         <input
                           type="checkbox"
@@ -983,7 +1037,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allow package install')} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
                         <span>Allow package install</span>
                         <input
                           type="checkbox"
@@ -992,7 +1046,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="h-4 w-4 accent-indigo-400"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed interpreters')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed interpreters</div>
                         <input
                           type="text"
@@ -1001,7 +1055,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed binaries')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed binaries</div>
                         <input
                           type="text"
@@ -1010,7 +1064,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Blocked binaries')} className="block text-sm text-slate-200">
                         <div className="mb-2">Blocked binaries</div>
                         <input
                           type="text"
@@ -1022,7 +1076,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="Environment">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Runtime')} className="block text-sm text-slate-200">
                         <div className="mb-2">Runtime</div>
                         <input
                           type="text"
@@ -1031,7 +1085,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Runtime version')} className="block text-sm text-slate-200">
                         <div className="mb-2">Runtime version</div>
                         <input
                           type="text"
@@ -1040,7 +1094,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Timezone')} className="block text-sm text-slate-200">
                         <div className="mb-2">Timezone</div>
                         <input
                           type="text"
@@ -1049,7 +1103,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Locale')} className="block text-sm text-slate-200">
                         <div className="mb-2">Locale</div>
                         <input
                           type="text"
@@ -1099,7 +1153,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </SandboxEditorCard>
 
                     <SandboxEditorCard title="IO Policy">
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max input (KB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max input (KB)</div>
                         <input
                           type="number"
@@ -1109,7 +1163,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Max output (KB)')} className="block text-sm text-slate-200">
                         <div className="mb-2">Max output (KB)</div>
                         <input
                           type="number"
@@ -1119,7 +1173,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Allowed output types')} className="block text-sm text-slate-200">
                         <div className="mb-2">Allowed output types</div>
                         <input
                           type="text"
@@ -1128,7 +1182,7 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
                         />
                       </label>
-                      <label className="block text-sm text-slate-200">
+                      <label title={sandboxFieldTooltip('Retention')} className="block text-sm text-slate-200">
                         <div className="mb-2">Retention</div>
                         <select
                           value={sandboxPolicyPreview?.ioPolicy?.retention || 'task'}
@@ -1580,19 +1634,6 @@ function SandboxToggleRow({ label, checked, onChange }: { label: string; checked
     </label>
   );
 }
-
-const sandboxCardTooltipKeys: Record<string, string> = {
-  General: 'agents.sandbox.card.general',
-  Filesystem: 'agents.sandbox.card.filesystem',
-  Network: 'agents.sandbox.card.network',
-  Resources: 'agents.sandbox.card.resources',
-  Execution: 'agents.sandbox.card.execution',
-  Environment: 'agents.sandbox.card.environment',
-  Security: 'agents.sandbox.card.security',
-  'IO Policy': 'agents.sandbox.card.ioPolicy',
-  Audit: 'agents.sandbox.card.audit',
-  Approvals: 'agents.sandbox.card.approvals',
-};
 
 function parseSandboxOverrides(value: string): Record<string, unknown> {
   const trimmed = value.trim();
