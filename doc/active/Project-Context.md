@@ -1,44 +1,104 @@
-# Project Context — Andromeda OS MVP09
+# CONTEXT — Projeto Andromeda OS (Estado atual: 23/03/2026)
 
-## O Produto
+## Visão Geral
+Sistema operacional cognitivo para agentes de IA. Monorepo com:
+- **Backend:** Express + TypeScript (`packages/api/`)
+- **Frontend:** React + Vite (`apps/web/`)
+- **Cognitivo:** Python 3.13 / FastAPI (`services/cognitive-python/`)
+- **Banco:** PostgreSQL + Prisma
+- **Testes:** Vitest
+- **Agentes:** `.agent/` com 20+ agentes, 60+ skills, 16 rules, 17 workflows
 
-Andromeda OS é um sistema operacional de agentes de IA rodando no Antigravity.
-Usuário principal: desenvolvedor solo construindo via Vibe Code com LLMs.
-O sistema executa tasks, roteia para modelos, usa memória e RAG, audita tudo.
+## Stack Técnica (pós-MVP09)
 
-## Estado Atual (pós-MVP08)
+| Camada | Tecnologia | Versão |
+|--------|-----------|--------|
+| Backend | Express + TypeScript | ^4.18.2 |
+| ORM | Prisma | ^7.5.0 |
+| Banco | PostgreSQL | via Docker |
+| Realtime | Socket.io | ^4.8.3 |
+| Filas/DLQ | BullMQ + ioredis | ✅ instalado |
+| Auth | jsonwebtoken + bcrypt | ✅ instalado |
+| Rate Limit | express-rate-limit | ✅ instalado |
+| Circuit Breaker | opossum | ✅ instalado |
+| Frontend | React + Vite + Tailwind | apps/web/ |
+| Cognitivo | Python 3.13 + FastAPI | services/cognitive-python/ |
+| Testes | Vitest | por workspace |
 
-MVP08 entregou Knowledge Layer completo (RAG + Obsidian vault + Syncthing).
-O sistema FUNCIONA mas está exposto: sem auth real, sem multi-tenancy, sem backup,
-sem rate limiting, sem circuit breaker, sem DLQ formal, sem soft delete.
+## Schema Prisma Atual (pós-MVP09)
 
-## Problema que o MVP09 resolve
+### Modelos MVP01–08 (existentes)
+- SandboxProfile, AgentSandboxConfig, SandboxExecution, SandboxArtifact, ApprovalRequest
+- MemoryEntry, MemoryLink, MemoryRetrievalRecord, MemoryPolicy
+- KnowledgeCollection, KnowledgeDocument, KnowledgeChunk, RetrievalRecord, AgentKnowledgePolicy
+- CommunicationSession, CommunicationMessage
 
-Construir sofisticação cognitiva sobre fundação insegura = dívida técnica crítica.
-Qualquer MVP10+ (Agent Evolution, Budget Control, Planner) precisa de:
-- Autenticação real para proteger dados de usuário
-- Multi-tenancy para isolar contextos futuros de workspaces
-- API versionada para não quebrar integrações ao evoluir
-- Rate limiting para não explodir custos com loops de agentes
-- Backup para não perder memória/knowledge em crash
+### Modelos adicionados no MVP09
+- `User`, `RefreshToken`, `ApiKey` — Auth/IAM
+- `AuditLog` — auditoria de auth
+- `tenantId` — adicionado em todas as entidades centrais
 
-## Usuários e Contexto de Uso
+### Modelos a criar no MVP10
+- `AgentVersion` — snapshot versionado do AgentProfile
+- `AgentPerformanceRecord` — consolidação diária de métricas
+- `AgentBudgetPolicy` — teto de gasto por agente
+- `TaskFeedback` — thumbs up/down por resultado de task
+- `PlaybookSuggestion` — sugestões geradas por episódios de memória
 
-- **Desenvolvedor (you):** usa via Web Console + ocasionalmente API direta
-- **Agentes:** chamam APIs internas, precisam de rate limit e circuit breaker
-- **Futuro:** múltiplos workspaces/usuários (multi-tenancy prepara isso)
+## MVPs Implementados
 
-## Restrições
+| MVP | Status | Foco |
+|-----|--------|------|
+| MVP01–06C | ✅ | Core, Communication, Console, Models, Hybrid, Agents, Sandbox |
+| MVP-Revisão | ✅ | Saneamento estrutural |
+| MVP07 | ✅ | Memory Layer (Session/Episodic/Semantic) |
+| MVP08 | ✅ | Knowledge Layer (RAG por agente, Obsidian vault) |
+| MVP09 | ✅ | Foundation: Auth/IAM, Multi-tenancy, DLQ, Rate Limiting, Health, Soft Delete |
+| MVP10 | 🔄 | Agent Evolution + Versioning + Budget Control + Feedback |
+| MVP11 | 🔜 | Planner + Agent Handoff Protocol |
+| MVP12 | 🔜 | i18n + Export/Import de Agentes |
+| MVP13 | 🔜 | Multi-channel Nebula + Notificações Proativas |
+| MVP14 | 🔜 | Eval Engine & Benchmark Cognitivo |
+| MVP15 | 🔜 | Skill Marketplace & Intelligence |
+| MVP16 | 🔜 | Device Agent (IoT / Edge Control) |
+| MVP17 | 🔜 | Incident & Alerting + Team Workspaces |
+| MVP18 | 🔜 | Autonomy & Long-running Agents |
+| MVP19 | 🔜 | Reflexive Memory & Agent Marketplace |
 
-- Monorepo existente: `apps/api`, `apps/web`, `services/cognitive-python`
-- Prisma + PostgreSQL já em uso — migrations devem ser incrementais (sem drop)
-- BullMQ já em uso para jobs — DLQ é extensão natural
-- NestJS Guards existem — JWT é extensão do sistema de auth atual
-- Deploy no Antigravity — CI/CD deve ser simples (GitHub Actions)
+## Regras Ativas
+- `rule-15-soft-delete-only` — proibido `prisma.model.delete` em produção
+- `rule-16-tenant-isolation` — obrigatório `tenantId` em todo `findMany`/`findFirst`
 
-## Princípios que não mudam
+## Próximos Passos (MVP10)
 
-- Skill antes de LLM sempre que possível
-- Executor e auditor são entidades diferentes
-- Python é camada cognitiva, TypeScript é control plane
-- Deny-by-default no sandbox (já implementado, não regredir)
+1. **Bloco D** — Budget Control (impacto direto em execuções — implementar primeiro)
+2. **Bloco F** — Feedback do usuário (UI + entidade)
+3. **Bloco A** — Versionamento de AgentProfile (snapshot, diff, rollback)
+4. **Bloco B** — Histórico de desempenho por agente (job diário BullMQ)
+5. **Bloco C** — Reputação por domínio/capability
+6. **Bloco E** — Dashboard de custos por agente/projeto/período
+7. **Bloco G** — Consolidação de lições aprendidas → playbook suggestions
+
+## Estrutura doc/
+
+```
+doc/
+├── README.md
+├── active/           ← MVP10 em andamento
+│   ├── evals/        ← mvp10-*.feature
+│   ├── Development-Log.md
+│   ├── MVP10-PRD.md
+│   ├── Implementation-Plan-MVP10.md
+│   ├── EDD-MVP10-AgentEvolution.md
+│   └── Project-Context.md
+└── implemented/      ← MVPs concluídos
+    ├── mvp01/ → mvp09/
+    └── legados/
+```
+
+## Anti-patterns Proibidos
+- Nunca acoplar frontend diretamente ao kernel
+- Nunca usar `prisma.model.delete` em produção (usar soft delete)
+- Nunca expor tenantId de outro tenant em resposta
+- Nunca colocar lógica de negócio em controller
+- Python só para cognição — todo processamento operacional em TypeScript

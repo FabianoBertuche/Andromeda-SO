@@ -256,3 +256,67 @@ npm install -D @types/jsonwebtoken @types/bcrypt
 npm install opossum
 npm install -D @types/opossum
 ```
+
+
+# 📁 CONTEXT — Projeto Andromeda SO (Estado atual: 23/03/2026)
+
+## Visão Geral
+Sistema operacional cognitivo para agentes de IA. Monorepo com:
+- **Backend:** Express + TypeScript (`packages/api/`)
+- **Frontend:** React + Vite (`apps/web/`)
+- **Cognitivo:** Python 3.13 / FastAPI (`services/cognitive-python/`)
+- **Banco:** PostgreSQL + Prisma
+- **Testes:** Vitest
+- **Agentes:** `.agent/` com 20+ agentes, 60+ skills, 16 rules, 17 workflows
+
+## Stack Técnica (pós-MVP09)
+
+| Camada | Tecnologia | Versão |
+|--------|-----------|--------|
+| Backend | Express + TypeScript | ^4.18.2 |
+| ORM | Prisma | ^7.5.0 |
+| Banco | PostgreSQL | via Docker |
+| Realtime | Socket.io | ^4.8.3 |
+| Filas/DLQ | BullMQ + ioredis | ✅ instalado |
+| Auth | jsonwebtoken + bcrypt | ✅ instalado |
+| Rate Limit | express-rate-limit | ✅ instalado |
+| Circuit Breaker | opossum | ✅ instalado |
+| Frontend | React + Vite + Tailwind | apps/web/ |
+| Cognitivo | Python 3.13 + FastAPI | services/cognitive-python/ |
+| Testes | Vitest | por workspace |
+
+## Schema Prisma Atual (pós-MVP09)
+
+### Modelos MVP01–08 (existentes)
+- SandboxProfile, AgentSandboxConfig, SandboxExecution, SandboxArtifact, ApprovalRequest
+- MemoryEntry, MemoryLink, MemoryRetrievalRecord, MemoryPolicy
+- KnowledgeCollection, KnowledgeDocument, KnowledgeChunk, RetrievalRecord, AgentKnowledgePolicy
+- CommunicationSession, CommunicationMessage
+
+### Modelos adicionados no MVP09
+- `User`, `RefreshToken`, `ApiKey` — Auth/IAM
+- `AuditLog` — auditoria de auth
+- `tenantId` — adicionado em todas as entidades centrais
+
+## MVPs Implementados
+
+| MVP | Status | Foco |
+|-----|--------|------|
+| MVP01–06C | ✅ | Core, Communication, Console, Models, Hybrid, Agents, Sandbox |
+| MVP-Revisão | ✅ | Saneamento estrutural |
+| MVP07 | ✅ | Memory Layer (Session/Episodic/Semantic) |
+| MVP08 | ✅ | Knowledge Layer (RAG por agente, Obsidian vault) |
+| MVP09 | ✅ | Foundation: Auth/IAM, Multi-tenancy, DLQ, Rate Limiting, Health, Soft Delete |
+| MVP10 | 🔄 | Agent Evolution + Versioning + Budget Control + Feedback |
+
+## Próximos Passos (MVP10)
+
+1. **Bloco A** — Versionamento de `AgentProfile` (snapshot, diff, rollback)
+2. **Bloco B** — Histórico de desempenho por agente (scores, conformance trend)
+3. **Bloco C** — Reputação por domínio/capability
+4. **Bloco D** — Budget Control (teto por agente/sessão/dia/mês, alertas, hard stop)
+5. **Bloco E** — Dashboard de custos por agente/projeto/período
+6. **Bloco F** — Feedback do usuário (thumbs up/down + nota → alimenta Router + Evals)
+7. **Bloco G** — Consolidação de lições aprendidas (episódios → playbook suggestions)
+
+## Estrutura doc/
