@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { getWebsocketBaseUrl } from "../lib/runtime-config";
+import { DEFAULT_WEB_TOKEN, getApiToken, resetApiToken } from "../lib/api-auth";
 
 interface WsContextData {
     socket: Socket | null;
@@ -25,35 +26,53 @@ export const WsProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const [activeTask, setActiveTask] = useState<any | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("andromeda_token") || "andromeda_dev_web_token";
-        const newSocket = io(getWebsocketBaseUrl(), {
+        const attachListeners = (currentSocket: Socket) => {
+            currentSocket.on("connect", () => {
+                setIsConnected(true);
+
+                const demoSessionId = "session-demo-mvp03";
+                currentSocket.emit("session.join", demoSessionId);
+                setSession({ sessionId: demoSessionId });
+            });
+
+            currentSocket.on("disconnect", () => {
+                setIsConnected(false);
+            });
+
+            currentSocket.on("gateway.event", (payload) => {
+                if (payload.type === "task.updated") {
+                    setActiveTask((previous: any) => ({ ...previous, status: payload.status, taskId: payload.taskId }));
+                } else if (payload.type === "task.completed") {
+                    setActiveTask((previous: any) => ({ ...previous, result: payload.result, taskId: payload.taskId }));
+                } else if (payload.type === "task.created") {
+                    setActiveTask({ status: "CREATED", taskId: payload.taskId, sessionId: payload.sessionId });
+                }
+            });
+        };
+
+        const connect = (token: string) => io(getWebsocketBaseUrl(), {
             auth: { token },
             transports: ["websocket"]
         });
 
-        newSocket.on("connect", () => {
-            setIsConnected(true);
-
-            const demoSessionId = "session-demo-mvp03";
-            newSocket.emit("session.join", demoSessionId);
-            setSession({ sessionId: demoSessionId });
-        });
+        let fallbackAttempted = false;
+        let newSocket = connect(getApiToken());
+        attachListeners(newSocket);
 
         newSocket.on("connect_error", (error) => {
             console.error("Erro de conexão WS:", error.message);
-        });
 
-        newSocket.on("disconnect", () => {
-            setIsConnected(false);
-        });
+            if (!fallbackAttempted && /unauthorized/i.test(error.message) && getApiToken() !== DEFAULT_WEB_TOKEN) {
+                fallbackAttempted = true;
+                resetApiToken();
+                newSocket.close();
+                newSocket = connect(DEFAULT_WEB_TOKEN);
+                attachListeners(newSocket);
+                setSocket(newSocket);
 
-        newSocket.on("gateway.event", (payload) => {
-            if (payload.type === "task.updated") {
-                setActiveTask((previous: any) => ({ ...previous, status: payload.status, taskId: payload.taskId }));
-            } else if (payload.type === "task.completed") {
-                setActiveTask((previous: any) => ({ ...previous, result: payload.result, taskId: payload.taskId }));
-            } else if (payload.type === "task.created") {
-                setActiveTask({ status: "CREATED", taskId: payload.taskId, sessionId: payload.sessionId });
+                newSocket.on("connect_error", (retryError) => {
+                    console.error("Erro de conexão WS:", retryError.message);
+                });
             }
         });
 

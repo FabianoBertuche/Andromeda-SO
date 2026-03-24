@@ -1,4 +1,5 @@
 const DEFAULT_API_PORT = "5000";
+const DEFAULT_API_HOST = "127.0.0.1";
 
 export function getApiBaseUrl(): string {
     const configured = readEnv("VITE_API_BASE_URL");
@@ -13,11 +14,11 @@ export function getWebsocketBaseUrl(): string {
 
 function getFallbackBaseUrl(): string {
     if (isBrowser()) {
-        const { protocol, hostname, port } = window.location;
+        const { protocol, port } = window.location;
         const resolvedPort = port === "5173" || port === "5174" ? DEFAULT_API_PORT : (port || DEFAULT_API_PORT);
-        return `${protocol}//${hostname}:${resolvedPort}`;
+        return `${protocol}//${DEFAULT_API_HOST}:${resolvedPort}`;
     }
-    return `http://127.0.0.1:${DEFAULT_API_PORT}`;
+    return `http://${DEFAULT_API_HOST}:${DEFAULT_API_PORT}`;
 }
 
 function readEnv(name: "VITE_API_BASE_URL" | "VITE_WS_BASE_URL"): string | undefined {
