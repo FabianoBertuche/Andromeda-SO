@@ -35,7 +35,7 @@ test.describe('Console - Funcionalidades', () => {
   });
 
   test('deve exibir seletor de modelos', async ({ page }) => {
-    const modelSelect = page.locator('select').nth(1);
+    const modelSelect = page.locator('select').last();
     await expect(modelSelect).toBeVisible();
     await expect(modelSelect.locator('option').first()).toContainText('Automatic (Router)');
   });

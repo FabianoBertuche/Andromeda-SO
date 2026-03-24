@@ -4,6 +4,7 @@ import {
     CognitivePingRequest,
     CognitivePingResponse,
     CognitiveReadinessResponse,
+    CognitiveServiceResponse,
     CognitiveSignalPort,
     CognitiveTaskClassificationRequest,
     CognitiveTaskClassificationResponse,
@@ -75,6 +76,51 @@ export class PythonCognitiveServiceAdapter implements CognitiveHealthPort, Cogni
             trace: request,
             validator: isTaskClassificationResponse,
         });
+    }
+
+    async analyzeEpisodes(request: {
+        requestId: string;
+        correlationId: string;
+        agentId: string;
+        tenantId: string;
+        episodes: Array<{
+            id: string;
+            title: string;
+            summary?: string | null;
+            content: string;
+            importanceScore: number;
+            createdAt: string;
+            tags: string[];
+        }>;
+    }): Promise<Array<{
+        title: string;
+        summary: string;
+        suggestion: string;
+        confidence: number;
+        sourceEpisodeIds: string[];
+    }>> {
+        this.ensureEnabled();
+
+        const response = await this.request("/evolution/analyze-episodes", {
+            method: "POST",
+            operation: "analyze-episodes",
+            body: {
+                requestId: request.requestId,
+                correlationId: request.correlationId,
+                tenantId: request.tenantId,
+                agentId: request.agentId,
+                episodes: request.episodes,
+            },
+            trace: {
+                requestId: request.requestId,
+                correlationId: request.correlationId,
+                agentId: request.agentId,
+                tenantId: request.tenantId,
+            },
+            validator: isEpisodeAnalysisResponse,
+        });
+
+        return response.data?.suggestions || [];
     }
 
     private ensureEnabled() {
@@ -320,4 +366,26 @@ function isPingResponse(value: unknown): value is CognitivePingResponse {
 
 function isTaskClassificationResponse(value: unknown): value is CognitiveTaskClassificationResponse {
     return isCanonicalResponse(value);
+}
+
+function isEpisodeAnalysisResponse(value: unknown): value is CognitiveServiceResponse<{
+    suggestions: Array<{
+        title: string;
+        summary: string;
+        suggestion: string;
+        confidence: number;
+        sourceEpisodeIds: string[];
+    }>;
+}> {
+    if (!isCanonicalResponse(value)) {
+        return false;
+    }
+
+    const suggestions = ((value.data as unknown) as Record<string, unknown>)?.suggestions;
+    return Array.isArray(suggestions) && suggestions.every((item) => isObject(item)
+        && typeof item.title === "string"
+        && typeof item.summary === "string"
+        && typeof item.suggestion === "string"
+        && typeof item.confidence === "number"
+        && Array.isArray(item.sourceEpisodeIds));
 }

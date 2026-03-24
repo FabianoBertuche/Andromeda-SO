@@ -5,7 +5,7 @@ import { ListSessionMessages } from "../../application/use-cases/ListSessionMess
 import { GetGatewayTaskStatus } from "../../application/use-cases/GetGatewayTaskStatus";
 import { GatewayValidationError } from "../../application/validators/gateway-message.validator";
 import { sendError } from "../../../../shared/http/error-response";
-import { getRequestId } from "../../../../shared/http/request-context";
+import { getRequestId, RequestWithContext } from "../../../../shared/http/request-context";
 
 export class CommunicationController {
     constructor(
@@ -15,7 +15,7 @@ export class CommunicationController {
         private readonly getGatewayTaskStatus: GetGatewayTaskStatus
     ) { }
 
-    async handleMessage(req: Request, res: Response) {
+    async handleMessage(req: RequestWithContext, res: Response) {
         try {
             const auth = (req as any).gatewayAuth;
             const response = await this.receiveGatewayMessage.execute({
@@ -23,6 +23,11 @@ export class CommunicationController {
                 metadata: {
                     ...req.body?.metadata,
                     requestId: req.body?.metadata?.requestId || getRequestId(req, res),
+                    context: {
+                        ...req.body?.metadata?.context,
+                        tenantId: req.tenantId || req.user?.tenantId || "default",
+                        userId: req.user?.id,
+                    },
                 },
             }, auth);
             return res.status(200).json(response);

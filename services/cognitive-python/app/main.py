@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from time import perf_counter
+from typing import Any
 
 from fastapi import Depends, FastAPI
 
@@ -223,6 +224,38 @@ async def classify_task(payload: CognitiveRequest) -> CognitiveResponse:
     )
 
 
+@app.post(
+    "/evolution/analyze-episodes",
+    dependencies=[Depends(verify_service_token)],
+)
+async def analyze_episodes(payload: dict[str, Any]) -> dict[str, Any]:
+    started_at = perf_counter()
+    episodes = payload.get("episodes", []) if isinstance(payload, dict) else []
+    suggestions = build_episode_suggestions(episodes if isinstance(episodes, list) else [])
+    duration = elapsed_ms(started_at)
+
+    return {
+        "success": True,
+        "data": {
+            "suggestions": suggestions,
+        },
+        "metrics": {
+            "latencyMs": duration,
+        },
+        "warnings": [],
+        "error": None,
+        "provider": SERVICE_NAME,
+        "modelUsed": "episode-analyzer-v1",
+        "durationMs": duration,
+        "trace": {
+            "requestId": str(payload.get("requestId", "episode-analysis")),
+            "correlationId": str(payload.get("correlationId", "episode-analysis")),
+            "agentId": payload.get("agentId"),
+            "tenantId": payload.get("tenantId"),
+        },
+    }
+
+
 def build_response(
     payload: CognitiveRequest,
     data: dict[str, object],
@@ -261,3 +294,41 @@ def elapsed_ms(started_at: float) -> int:
     """Converts a perf counter delta into integer milliseconds."""
 
     return max(1, int((perf_counter() - started_at) * 1000))
+
+
+def build_episode_suggestions(episodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    suggestions: list[dict[str, Any]] = []
+    grouped: dict[str, list[dict[str, Any]]] = {}
+
+    for episode in episodes:
+        tags = episode.get("tags") if isinstance(episode.get("tags"), list) else []
+        normalized_tags = [str(tag).strip().lower() for tag in tags if str(tag).strip()] or ["general"]
+        for tag in normalized_tags:
+            grouped.setdefault(tag, []).append(episode)
+
+    for tag, tagged_episodes in grouped.items():
+        if len(tagged_episodes) < 2:
+            continue
+
+        importance = sum(float(item.get("importanceScore", 0) or 0) for item in tagged_episodes) / len(tagged_episodes)
+        confidence = min(0.95, max(0.55, 0.58 + min(len(tagged_episodes), 6) * 0.05 + importance / 250))
+        summaries = [str(item.get("summary") or item.get("content") or "").strip() for item in tagged_episodes]
+        summaries = [summary for summary in summaries if summary]
+        source_ids = [str(item.get("id")) for item in tagged_episodes if item.get("id")]
+
+        suggestions.append({
+            "title": f"Reforcar playbook para {tag}",
+            "summary": f"{len(tagged_episodes)} episodios recentes sugerem uma melhoria recorrente em {tag}.",
+            "suggestion": build_suggestion_text(tag, summaries),
+            "confidence": round(confidence, 3),
+            "sourceEpisodeIds": source_ids[:6],
+        })
+
+    return suggestions[:8]
+
+
+def build_suggestion_text(tag: str, summaries: list[str]) -> str:
+    examples = "; ".join(summaries[:2])
+    if examples:
+        return f"Adicionar ao playbook uma verificacao explicita para {tag} antes da execucao. Evidencias recentes: {examples}"
+    return f"Adicionar ao playbook uma verificacao explicita para {tag} antes da execucao."

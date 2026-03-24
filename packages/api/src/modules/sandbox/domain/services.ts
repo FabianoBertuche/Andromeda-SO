@@ -200,6 +200,8 @@ function isControlledPath(value: string): boolean {
     return normalized.startsWith("/workspace")
         || normalized.startsWith("./workspace")
         || normalized.startsWith("workspace")
+        || normalized.startsWith("c:/fb/andromeda-so")
+        || normalized.startsWith("c:\\fb\\andromeda-so")
         || normalized.startsWith("c:/fb/andromeda so")
         || normalized.startsWith("c:\\fb\\andromeda so");
 }

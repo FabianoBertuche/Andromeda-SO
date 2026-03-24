@@ -13,7 +13,7 @@ export default defineConfig({
     trace: 'on',
     screenshot: 'on',
     video: 'on',
-    headless: false,
+    headless: true,
     actionTimeout: 10000,
     navigationTimeout: 15000,
   },
@@ -22,10 +22,8 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        channel: 'chrome',
         launchOptions: {
-          slowMo: 500,
-          args: ['--start-maximized'],
+          args: ['--window-size=1440,960'],
         },
       },
     },

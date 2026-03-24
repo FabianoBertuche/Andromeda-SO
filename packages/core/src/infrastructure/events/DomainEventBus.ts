@@ -19,6 +19,10 @@ export class DomainEventBus {
     public publish(event: DomainEvent): void {
         const eventName = event.constructor.name;
         this.emitter.emit(eventName, event);
+        const namedEvent = (event as DomainEvent & { eventName?: string }).eventName;
+        if (typeof namedEvent === "string" && namedEvent.trim().length > 0) {
+            this.emitter.emit(namedEvent, event);
+        }
         // Also emit a generic event for global listeners
         this.emitter.emit("domain_event", event);
     }

@@ -1,12 +1,13 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { CreateTask, TaskRepository } from "@andromeda/core";
 import { createDefaultExecuteTaskUseCase } from "../../infrastructure/execution/createDefaultExecuteTaskUseCase";
 import { globalAgentRegistry } from "../routes/agentRoutes";
+import { RequestWithContext } from "../../shared/http/request-context";
 
 export class TaskController {
     constructor(private readonly repository: TaskRepository) { }
 
-    async create(req: Request, res: Response) {
+    async create(req: RequestWithContext, res: Response) {
         try {
             const { raw_request, metadata } = req.body;
             if (!raw_request) {
@@ -16,7 +17,11 @@ export class TaskController {
             const useCase = new CreateTask(this.repository);
             const task = await useCase.execute({
                 rawRequest: raw_request,
-                metadata: metadata || {},
+                metadata: {
+                    ...(metadata || {}),
+                    tenantId: req.tenantId || req.user?.tenantId || "default",
+                    userId: req.user?.id,
+                },
             });
 
             return res.status(201).json(task.toJSON());
@@ -26,7 +31,7 @@ export class TaskController {
         }
     }
 
-    async list(_req: Request, res: Response) {
+    async list(_req: RequestWithContext, res: Response) {
         try {
             const tasks = await this.repository.findAll();
             return res.json(tasks.map((task) => task.toJSON()));
@@ -35,7 +40,7 @@ export class TaskController {
         }
     }
 
-    async getById(req: Request, res: Response) {
+    async getById(req: RequestWithContext, res: Response) {
         try {
             const task = await this.repository.findById(req.params.id);
             if (!task) return res.status(404).json({ error: "Task not found" });
@@ -45,7 +50,7 @@ export class TaskController {
         }
     }
 
-    async execute(req: Request, res: Response) {
+    async execute(req: RequestWithContext, res: Response) {
         try {
             const useCase = createDefaultExecuteTaskUseCase(this.repository, globalAgentRegistry);
             const task = await useCase.execute(req.params.id);

@@ -428,6 +428,165 @@ model ApiKey {
   @@map("api_keys")
 }
 
+model AgentBudgetPolicy {
+  id                 String   @id @default(cuid())
+  tenantId           String   @default("default")
+  agentId            String
+  dailyLimitUsd      Decimal  @db.Decimal(12, 4)
+  monthlyLimitUsd    Decimal  @db.Decimal(12, 4)
+  dailySpentUsd      Decimal  @default(0) @db.Decimal(12, 4)
+  monthlySpentUsd    Decimal  @default(0) @db.Decimal(12, 4)
+  currency           String   @default("USD")
+  alertsEnabled      Boolean  @default(true)
+  lastDailyResetAt   DateTime?
+  lastMonthlyResetAt DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  deletedAt          DateTime?
+
+  @@unique([tenantId, agentId])
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, deletedAt])
+  @@map("agent_budget_policies")
+}
+
+model AgentVersion {
+  id                        String   @id @default(cuid())
+  tenantId                  String   @default("default")
+  agentId                   String
+  versionNumber             Int
+  sourceVersionLabel        String?
+  snapshot                  Json
+  changeSummary             String
+  restoredFromVersionNumber Int?
+  createdBy                 String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  deletedAt                 DateTime?
+
+  @@unique([tenantId, agentId, versionNumber])
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, agentId, createdAt])
+  @@index([tenantId, deletedAt])
+  @@map("agent_versions")
+}
+
+model TaskFeedback {
+  id          String   @id @default(cuid())
+  tenantId    String   @default("default")
+  taskId      String
+  agentId     String
+  userId      String
+  rating      Int
+  comment     String?
+  metadata    Json?
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([tenantId, taskId, userId])
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, taskId])
+  @@index([tenantId, submittedAt])
+  @@index([tenantId, deletedAt])
+  @@map("task_feedback")
+}
+
+model AgentPerformanceRecord {
+  id                  String   @id @default(cuid())
+  tenantId            String   @default("default")
+  agentId             String
+  periodType          String
+  periodStart         DateTime
+  periodEnd           DateTime
+  tasksTotal          Int      @default(0)
+  tasksSucceeded      Int      @default(0)
+  tasksFailed         Int      @default(0)
+  successRate         Decimal  @default(0) @db.Decimal(5, 4)
+  avgConformance      Decimal? @db.Decimal(5, 4)
+  feedbackScore       Decimal? @db.Decimal(5, 4)
+  avgLatencyMs        Int?
+  totalTokensUsed     Int      @default(0)
+  totalCostUsd        Decimal  @default(0) @db.Decimal(12, 4)
+  reputationScores    Json?
+  reputationUpdatedAt DateTime?
+  metricsSnapshot     Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deletedAt           DateTime?
+
+  @@unique([tenantId, agentId, periodType, periodStart, periodEnd])
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, periodType, periodStart])
+  @@index([tenantId, deletedAt])
+  @@map("agent_performance_records")
+}
+
+model PlaybookSuggestion {
+  id              String   @id @default(cuid())
+  tenantId        String   @default("default")
+  agentId         String
+  title           String
+  summary         String
+  proposedChange  Json
+  confidence      Decimal  @db.Decimal(4, 3)
+  status          String
+  sourceEpisodeIds Json?
+  analysisPayload Json?
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, status])
+  @@index([tenantId, confidence])
+  @@index([tenantId, deletedAt])
+  @@map("playbook_suggestions")
+}
+
+model AgentExecutionLedger {
+  id                   String   @id @default(cuid())
+  tenantId             String   @default("default")
+  taskId               String
+  agentId              String
+  sessionId            String?
+  capability           String?
+  status               String
+  model                String?
+  provider             String?
+  promptTokens         Int?
+  completionTokens     Int?
+  totalTokens          Int?
+  latencyMs            Int?
+  costUsd              Decimal? @db.Decimal(12, 4)
+  conformanceScore     Decimal? @db.Decimal(5, 4)
+  feedbackRating       Int?
+  executionStartedAt   DateTime?
+  executionCompletedAt DateTime?
+  resultSnapshot       Json?
+  metadata             Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
+
+  @@unique([tenantId, taskId])
+  @@index([tenantId])
+  @@index([tenantId, agentId])
+  @@index([tenantId, executionCompletedAt])
+  @@index([tenantId, status])
+  @@index([tenantId, deletedAt])
+  @@map("agent_execution_ledger")
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   tenantId   String

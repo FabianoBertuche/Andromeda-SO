@@ -32,3 +32,17 @@ export class AuditParecerAvailable extends DomainEvent {
         super();
     }
 }
+
+export class FeedbackSubmitted extends DomainEvent {
+    public readonly eventName = "feedback.submitted";
+
+    constructor(
+        public readonly taskId: string,
+        public readonly agentId: string,
+        public readonly userId: string,
+        public readonly tenantId: string,
+        public readonly rating: number,
+    ) {
+        super();
+    }
+}

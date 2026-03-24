@@ -158,6 +158,30 @@ export function createAgentManagementRouter(deps: AgentManagementRouterDeps): Ro
         }
     });
 
+    router.get("/:id/versions", async (req, res) => {
+        try {
+            const versions = await profileService.listStoredVersions(req.params.id);
+            return res.status(200).json({ agentId: req.params.id, items: versions });
+        } catch (error: any) {
+            return sendRouteError(req, res, error);
+        }
+    });
+
+    router.post("/:id/versions/:versionNumber/restore", async (req, res) => {
+        try {
+            const restored = await profileService.restoreStoredVersion(req.params.id, Number(req.params.versionNumber));
+            return res.status(200).json({
+                agentId: req.params.id,
+                restoredVersionNumber: restored.restoredVersionNumber,
+                currentVersionNumber: restored.currentVersionNumber,
+                profileVersionLabel: restored.profile.version,
+                updatedAt: restored.profile.updatedAt,
+            });
+        } catch (error: any) {
+            return sendRouteError(req, res, error);
+        }
+    });
+
     router.get("/:id/test-sessions", async (req, res) => {
         try {
             const sessions = await profileService.getTestSessions(req.params.id);

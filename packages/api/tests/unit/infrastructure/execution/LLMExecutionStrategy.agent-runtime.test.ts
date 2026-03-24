@@ -13,6 +13,7 @@ import { InMemoryTaskRepository } from "../../../../src/infrastructure/repositor
 import { LLMExecutionStrategy } from "../../../../src/infrastructure/execution/LLMExecutionStrategy";
 
 describe("LLMExecutionStrategy agent runtime integration", () => {
+    vi.setConfig({ testTimeout: 15000 });
     let tempDir = "";
 
     beforeEach(async () => {

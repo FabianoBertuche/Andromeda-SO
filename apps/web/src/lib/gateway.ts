@@ -35,6 +35,26 @@ export interface GatewayTaskStatus {
     };
 }
 
+export interface TaskFeedbackItem {
+    id: string;
+    taskId: string;
+    agentId: string;
+    userId: string;
+    rating: number;
+    comment: string | null;
+    submittedAt: string;
+}
+
+export interface TaskFeedbackSummary {
+    taskId: string;
+    items: TaskFeedbackItem[];
+    summary: {
+        positive: number;
+        negative: number;
+        score: number;
+    };
+}
+
 export function getGatewayAuthHeaders(): HeadersInit {
     const token = getApiToken();
     return {
@@ -77,6 +97,34 @@ export async function pollGatewayTask(taskId: string, attempts = 25, delayMs = 8
     }
 
     throw new Error('Timeout aguardando resposta da task.');
+}
+
+export async function submitTaskFeedback(taskId: string, payload: { rating: 1 | -1; comment?: string }): Promise<TaskFeedbackItem> {
+    const response = await apiFetch(`${getApiBaseUrl()}/tasks/${taskId}/feedback`, {
+        method: 'POST',
+        headers: getGatewayAuthHeaders(),
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+        throw new Error(errorBody?.error?.message || 'Falha ao enviar feedback da task.');
+    }
+
+    return response.json() as Promise<TaskFeedbackItem>;
+}
+
+export async function getTaskFeedback(taskId: string): Promise<TaskFeedbackSummary> {
+    const response = await apiFetch(`${getApiBaseUrl()}/tasks/${taskId}/feedback`, {
+        headers: getGatewayAuthHeaders(),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+        throw new Error(errorBody?.error?.message || 'Falha ao carregar feedback da task.');
+    }
+
+    return response.json() as Promise<TaskFeedbackSummary>;
 }
 
 function sleep(ms: number): Promise<void> {

@@ -1,16 +1,22 @@
 import { globalTaskRepository } from "../../infrastructure/repositories/GlobalRepositories";
 import { AgentProfileService } from "./application/AgentProfileService";
+import { AgentVersioningService } from "./application/AgentVersioningService";
 import { AgentPromptAssembler } from "./application/AgentPromptAssembler";
 import { AgentRuntimeOrchestrator } from "./application/AgentRuntimeOrchestrator";
 import { RuntimeAgentConversationService } from "./application/RuntimeAgentConversationService";
 import { createDefaultAgentProfile } from "./domain/agent-profile";
 import { FileBackedAgentRegistry } from "./infrastructure/FileBackedAgentRegistry";
 import { FileSystemAgentProfileRepository } from "./infrastructure/FileSystemAgentProfileRepository";
+import { PrismaAgentVersionRepository } from "./infrastructure/PrismaAgentVersionRepository";
 import { createAgentManagementRouter } from "./interfaces/http/agent-management.routes";
+import { getPrismaClient } from "../../infrastructure/database/prisma";
 
 export const agentProfileRepository = new FileSystemAgentProfileRepository();
+const prisma = getPrismaClient();
+export const agentVersionRepository = new PrismaAgentVersionRepository(prisma);
+export const agentVersioningService = new AgentVersioningService(agentVersionRepository);
 export const agentPromptAssembler = new AgentPromptAssembler();
-export const agentProfileService = new AgentProfileService(agentProfileRepository, globalTaskRepository);
+export const agentProfileService = new AgentProfileService(agentProfileRepository, globalTaskRepository, agentVersioningService);
 export const agentRuntimeOrchestrator = new AgentRuntimeOrchestrator(agentProfileService, agentPromptAssembler);
 export const globalAgentRegistry = new FileBackedAgentRegistry(agentProfileService, agentPromptAssembler);
 export const agentConversationService = new RuntimeAgentConversationService(globalTaskRepository, globalAgentRegistry);

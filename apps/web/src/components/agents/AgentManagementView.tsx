@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, History, MessageSquare, Save, Shield, SlidersHorizontal } from 'lucide-react';
+import { Bot, History, Lightbulb, LineChart, MessageSquare, Save, Shield, SlidersHorizontal } from 'lucide-react';
 import {
   dryRunSandbox,
   chatWithAgent,
@@ -7,12 +7,19 @@ import {
   getAgentBehavior,
   getAgentConformance,
   getAgentHistory,
+  getAgentPerformance,
+  getAgentPerformanceTrend,
   getAgentProfile,
   getAgentProfileHistory,
+  getAgentVersions,
+  listPlaybookSuggestions,
+  approvePlaybookSuggestion,
+  rejectPlaybookSuggestion,
   getAgentSafeguards,
   listSandboxExecutions,
   listSandboxProfiles,
   restoreAgentProfileVersion,
+  restoreAgentStoredVersion,
   startSandboxExecution,
   updateAgentSandbox,
   updateAgentBehavior,
@@ -26,8 +33,12 @@ import type {
   AgentConformanceView,
   AgentHistoryItem,
   AgentMarkdownSections,
+  AgentPerformanceTrendView,
+  AgentPerformanceView,
+  PlaybookSuggestionItem,
   AgentProfileDocument,
   AgentProfileHistoryEntry,
+  AgentStoredVersionEntry,
   AgentSafeguardConfig,
   AgentSummary,
   SandboxDryRunResult,
@@ -40,7 +51,7 @@ import { useI18n, useTooltipEntry, useTooltipText } from '../../contexts/I18nCon
 import { RichTooltip, TooltipIcon } from '../ui/RichTooltip';
 import type { TooltipEntry } from '../../lib/tooltip-messages';
 
-type AgentTab = 'identity' | 'behavior' | 'safeguards' | 'sandbox' | 'chat';
+type AgentTab = 'identity' | 'history' | 'performance' | 'suggestions' | 'behavior' | 'safeguards' | 'sandbox' | 'chat';
 type MarkdownKey = keyof AgentMarkdownSections;
 
 const markdownTabs: MarkdownKey[] = ['identity', 'soul', 'rules', 'playbook', 'context'];
@@ -208,6 +219,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
   const [behavior, setBehavior] = useState<AgentBehaviorConfig | null>(null);
   const [safeguards, setSafeguards] = useState<AgentSafeguardConfig | null>(null);
   const [profileHistory, setProfileHistory] = useState<AgentProfileHistoryEntry[]>([]);
+  const [storedVersions, setStoredVersions] = useState<AgentStoredVersionEntry[]>([]);
+  const [performance, setPerformance] = useState<AgentPerformanceView | null>(null);
+  const [performanceTrend, setPerformanceTrend] = useState<AgentPerformanceTrendView | null>(null);
+  const [suggestions, setSuggestions] = useState<PlaybookSuggestionItem[]>([]);
   const [history, setHistory] = useState<AgentHistoryItem[]>([]);
   const [conformance, setConformance] = useState<AgentConformanceView | null>(null);
   const [sandboxProfiles, setSandboxProfiles] = useState<SandboxProfile[]>([]);
@@ -253,6 +268,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     setBehavior(null);
     setSafeguards(null);
     setProfileHistory([]);
+    setStoredVersions([]);
+    setPerformance(null);
+    setPerformanceTrend(null);
+    setSuggestions([]);
     setHistory([]);
     setSandboxConfig(null);
     setSandboxProfiles([]);
@@ -311,6 +330,33 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
         if (nextProfileHistory) {
           setProfileHistory(nextProfileHistory);
         }
+      }
+
+      if (tab === 'history') {
+        const [nextStoredVersions, nextProfileHistory] = await Promise.all([
+          safeLoad('versoes persistidas', getAgentVersions(agentId), loadErrors),
+          safeLoad('historico do perfil', getAgentProfileHistory(agentId), loadErrors),
+        ]);
+        if (nextStoredVersions) {
+          setStoredVersions(nextStoredVersions);
+        }
+        if (nextProfileHistory) {
+          setProfileHistory(nextProfileHistory);
+        }
+      }
+
+      if (tab === 'performance') {
+        const [nextPerformance, nextTrend] = await Promise.all([
+          safeLoad('performance', getAgentPerformance(agentId), loadErrors),
+          safeLoad('tendencia de performance', getAgentPerformanceTrend(agentId), loadErrors),
+        ]);
+        setPerformance(nextPerformance);
+        setPerformanceTrend(nextTrend);
+      }
+
+      if (tab === 'suggestions') {
+        const nextSuggestions = await safeLoad('sugestoes de playbook', listPlaybookSuggestions(agentId), loadErrors);
+        setSuggestions(nextSuggestions || []);
       }
 
       if (tab === 'behavior') {
@@ -500,6 +546,54 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     }
   }
 
+  async function restoreStoredVersion(versionNumber: number) {
+    if (!selectedAgentId) return;
+    setSaving(true);
+    try {
+      await restoreAgentStoredVersion(selectedAgentId, versionNumber);
+      await refreshAgents();
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'history');
+      await loadAgentTab(selectedAgentId, 'identity');
+    } catch (nextError) {
+      console.error(nextError);
+      setError('Falha ao restaurar a versao persistida.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function approveSuggestion(suggestionId: string) {
+    if (!selectedAgentId) return;
+    setSaving(true);
+    try {
+      await approvePlaybookSuggestion(selectedAgentId, suggestionId);
+      await refreshAgents();
+      await loadAgentShell(selectedAgentId);
+      await loadAgentTab(selectedAgentId, 'suggestions');
+      await loadAgentTab(selectedAgentId, 'history');
+    } catch (nextError) {
+      console.error(nextError);
+      setError('Falha ao aprovar a sugestao.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function rejectSuggestion(suggestionId: string) {
+    if (!selectedAgentId) return;
+    setSaving(true);
+    try {
+      await rejectPlaybookSuggestion(selectedAgentId, suggestionId);
+      await loadAgentTab(selectedAgentId, 'suggestions');
+    } catch (nextError) {
+      console.error(nextError);
+      setError('Falha ao rejeitar a sugestao.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function sendChat(event: React.FormEvent) {
     event.preventDefault();
     const prompt = chatInput.trim();
@@ -592,6 +686,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
 
             <div className="mt-6 flex flex-wrap gap-2">
               <TabButton active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} icon={<MessageSquare className="h-4 w-4" />} label="Identity" tooltipEntry={tooltipFor('agents.tab.identity')} />
+              <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<History className="h-4 w-4" />} label="History" tooltipEntry={tooltipFor('agents.tab.history')} />
+              <TabButton active={activeTab === 'performance'} onClick={() => setActiveTab('performance')} icon={<LineChart className="h-4 w-4" />} label="Performance" tooltipEntry={tooltipFor('agents.tab.performance')} />
+              <TabButton active={activeTab === 'suggestions'} onClick={() => setActiveTab('suggestions')} icon={<Lightbulb className="h-4 w-4" />} label="Suggestions" tooltipEntry={tooltipFor('agents.tab.suggestions')} />
               <TabButton active={activeTab === 'behavior'} onClick={() => setActiveTab('behavior')} icon={<SlidersHorizontal className="h-4 w-4" />} label="Behavior" tooltipEntry={tooltipFor('agents.tab.behavior')} />
               <TabButton active={activeTab === 'safeguards'} onClick={() => setActiveTab('safeguards')} icon={<Shield className="h-4 w-4" />} label="Safeguards" tooltipEntry={tooltipFor('agents.tab.safeguards')} />
               <TabButton active={activeTab === 'sandbox'} onClick={() => setActiveTab('sandbox')} icon={<Shield className="h-4 w-4" />} label="Sandbox" tooltipEntry={tooltipFor('agents.tab.sandbox')} />
@@ -652,30 +749,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   <pre className="min-h-[220px] whitespace-pre-wrap rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-xs text-slate-300">
                     {profile.markdown[activeMarkdown]}
                   </pre>
-                  <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
-                    <div className="mb-3 text-sm font-semibold text-slate-200">Version History</div>
-                    <div className="space-y-2">
-                      {profileHistory.map((entry) => (
-                        <div key={`${entry.version}-${entry.updatedAt}`} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-sm text-white">{entry.version}</div>
-                              <div className="text-xs text-slate-500">{entry.summary}</div>
-                            </div>
-                            <RichTooltip entry={tooltipFor('agents.identity.restore')}>
-                              <button
-                                type="button"
-                                onClick={() => void restoreVersion(entry.version)}
-                                disabled={saving || entry.version === profile.version}
-                                className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
-                              >
-                                Restore
-                              </button>
-                            </RichTooltip>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                    Use a aba History para navegar e restaurar versoes persistidas do agente.
                   </div>
                 </div>
               </div>
@@ -683,6 +758,222 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
             {!loading && activeTab === 'identity' && !profile && (
               <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-950/70 p-6 text-sm text-slate-400">
                 O perfil ainda nao foi carregado.
+              </div>
+            )}
+
+            {!loading && activeTab === 'history' && (
+              <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr,0.9fr]">
+                <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-200">Stored Versions</div>
+                  <div className="space-y-2">
+                    {storedVersions.map((entry) => (
+                      <div key={entry.versionNumber} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm text-white">Version #{entry.versionNumber}</div>
+                            <div className="text-xs text-slate-400">{entry.sourceVersionLabel || 'sem label'}</div>
+                            <div className="mt-1 text-xs text-slate-500">{entry.changeSummary}</div>
+                            {entry.restoredFromVersionNumber !== undefined && (
+                              <div className="mt-1 text-[11px] text-indigo-300">Restored from #{entry.restoredFromVersionNumber}</div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void restoreStoredVersion(entry.versionNumber)}
+                            disabled={saving}
+                            className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
+                          >
+                            Restore
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {storedVersions.length === 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">
+                        Nenhuma versao persistida encontrada.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-200">Legacy File History</div>
+                  <div className="space-y-2">
+                    {profileHistory.map((entry) => (
+                      <div key={`${entry.version}-${entry.updatedAt}`} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm text-white">{entry.version}</div>
+                            <div className="text-xs text-slate-500">{entry.summary}</div>
+                          </div>
+                          <RichTooltip entry={tooltipFor('agents.identity.restore')}>
+                            <button
+                              type="button"
+                              onClick={() => void restoreVersion(entry.version)}
+                              disabled={saving || entry.version === profile?.version}
+                              className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
+                            >
+                              Restore
+                            </button>
+                          </RichTooltip>
+                        </div>
+                      </div>
+                    ))}
+                    {profileHistory.length === 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">
+                        Nenhum snapshot legado encontrado.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!loading && activeTab === 'performance' && (
+              <div className="mt-6 space-y-4">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <MiniStat icon={<LineChart className="h-4 w-4" />} label="Success Rate" value={formatPct(performance?.items[0]?.successRate)} />
+                  <MiniStat icon={<Shield className="h-4 w-4" />} label="Feedback" value={formatPct(performance?.items[0]?.feedbackScore)} />
+                  <MiniStat icon={<Bot className="h-4 w-4" />} label="Cost" value={formatCurrency(performance?.items[0]?.totalCostUsd)} />
+                  <MiniStat icon={<History className="h-4 w-4" />} label="Updated" value={performance?.items[0]?.reputationUpdatedAt ? new Date(performance.items[0].reputationUpdatedAt).toLocaleDateString() : 'n/a'} />
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[1.05fr,0.95fr]">
+                  <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                    <div className="mb-3 text-sm font-semibold text-slate-200">Reputacao por Capability</div>
+                    <div className="space-y-3">
+                      {Object.entries(performance?.items[0]?.reputationScores || {}).map(([capability, score]) => (
+                        <div key={capability}>
+                          <div className="mb-1 flex items-center justify-between text-xs text-slate-300">
+                            <span className="uppercase tracking-[0.2em]">{capability}</span>
+                            <span>{score.toFixed(3)}</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-slate-800">
+                            <div className="h-2 rounded-full bg-indigo-400" style={{ width: `${Math.max(6, Math.min(100, score * 100))}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                      {Object.keys(performance?.items[0]?.reputationScores || {}).length === 0 && (
+                        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">
+                          Nenhum score de reputacao disponivel ainda.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                    <div className="mb-3 text-sm font-semibold text-slate-200">Trend (90 dias)</div>
+                    <div className="space-y-2">
+                      {(performanceTrend?.items || []).slice(0, 8).map((item) => (
+                        <div key={item.weekStart} className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+                          <div className="flex items-center justify-between gap-3">
+                            <span>{new Date(item.weekStart).toLocaleDateString()}</span>
+                            <span className="text-xs text-slate-500">Cost {formatCurrency(item.totalCostUsd)}</span>
+                          </div>
+                          <div className="mt-2 flex gap-4 text-xs text-slate-400">
+                            <span>Success {formatPct(item.avgSuccessRate)}</span>
+                            <span>Conformance {formatPct(item.avgConformanceScore)}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {(performanceTrend?.items || []).length === 0 && (
+                        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">
+                          Nenhuma tendencia agregada encontrada.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-200">Daily Performance</div>
+                  <div className="space-y-2">
+                    {(performance?.items || []).map((item) => (
+                      <div key={item.periodStart} className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <div className="text-white">{new Date(item.periodStart).toLocaleDateString()}</div>
+                            <div className="text-xs text-slate-500">{item.tasksSucceeded}/{item.tasksTotal} successful tasks</div>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-xs text-slate-400">
+                            <span>Success {formatPct(item.successRate)}</span>
+                            <span>Conformance {formatPct(item.avgConformance)}</span>
+                            <span>Feedback {formatPct(item.feedbackScore)}</span>
+                            <span>Cost {formatCurrency(item.totalCostUsd)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(performance?.items || []).length === 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">
+                        Nenhum registro de performance consolidado ainda.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!loading && activeTab === 'suggestions' && (
+              <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr,0.95fr]">
+                <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-200">Pending Suggestions</div>
+                  <div className="space-y-3">
+                    {suggestions.filter((item) => item.status === 'pending').map((item) => (
+                      <div key={item.id} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm text-white">{item.title}</div>
+                            <div className="mt-1 text-xs text-slate-400">Confidence {item.confidence.toFixed(2)}</div>
+                            <div className="mt-2 text-sm text-slate-300">{item.summary}</div>
+                            <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">{item.suggestion}</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => void approveSuggestion(item.id)} disabled={saving} className="rounded-full border border-emerald-500/50 px-3 py-1 text-xs text-emerald-200 disabled:opacity-40">Approve</button>
+                            <button type="button" onClick={() => void rejectSuggestion(item.id)} disabled={saving} className="rounded-full border border-rose-500/50 px-3 py-1 text-xs text-rose-200 disabled:opacity-40">Reject</button>
+                          </div>
+                        </div>
+                        <div className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">Source Episodes</div>
+                        <div className="mt-2 space-y-2">
+                          {item.sourceEpisodes.map((episode) => (
+                            <div key={episode.id} className="rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
+                              <div className="flex items-center justify-between gap-2">
+                                <span>{episode.summary}</span>
+                                <span className="text-slate-500">{new Date(episode.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <div className="mt-1 text-[11px] text-slate-500">Importance {episode.importanceScore}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {suggestions.filter((item) => item.status === 'pending').length === 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">Nenhuma sugestao pendente encontrada.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-200">Suggestion History</div>
+                  <div className="space-y-3">
+                    {suggestions.filter((item) => item.status !== 'pending').map((item) => (
+                      <div key={item.id} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm text-white">{item.title}</div>
+                            <div className="text-xs text-slate-400">{item.summary}</div>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs ${item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-200' : 'bg-rose-500/15 text-rose-200'}`}>{item.status}</span>
+                        </div>
+                        {item.rejectionReason && <div className="mt-2 text-xs text-rose-300">{item.rejectionReason}</div>}
+                        {item.reviewedAt && <div className="mt-2 text-[11px] text-slate-500">Reviewed {new Date(item.reviewedAt).toLocaleString()}</div>}
+                      </div>
+                    ))}
+                    {suggestions.filter((item) => item.status !== 'pending').length === 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 text-sm text-slate-500">Nenhuma sugestao revisada ainda.</div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1922,4 +2213,18 @@ function splitCommaNumberList(value: string): number[] {
     .split(',')
     .map((item) => Number(item.trim()))
     .filter((item) => Number.isFinite(item));
+}
+
+function formatPct(value: number | null | undefined): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 'n/a';
+  }
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatCurrency(value: number | null | undefined): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 'n/a';
+  }
+  return `$${value.toFixed(2)}`;
 }

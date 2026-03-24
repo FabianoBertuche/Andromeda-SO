@@ -91,6 +91,36 @@ export interface AgentProfileHistoryEntry {
   restoredFromVersion?: string;
 }
 
+export interface AgentStoredVersionEntry {
+  versionNumber: number;
+  sourceVersionLabel?: string;
+  changeSummary: string;
+  restoredFromVersionNumber?: number;
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface PlaybookSuggestionItem {
+  id: string;
+  agentId: string;
+  title: string;
+  summary: string;
+  suggestion: string;
+  confidence: number;
+  status: string;
+  sourceEpisodeIds: string[];
+  sourceEpisodes: Array<{
+    id: string;
+    summary: string;
+    createdAt: string;
+    importanceScore: number;
+  }>;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
 export interface AgentConformanceExecution {
   overallConformanceScore: number;
   status: string;
@@ -105,6 +135,43 @@ export interface AgentConformanceView {
   lastExecutionAt?: string;
   recentExecutions: AgentConformanceExecution[];
   recentViolations: string[];
+}
+
+export interface AgentPerformanceRecord {
+  agentId: string;
+  periodType: string;
+  periodStart: string;
+  periodEnd: string;
+  tasksTotal: number;
+  tasksSucceeded: number;
+  tasksFailed: number;
+  successRate: number;
+  avgConformance: number | null;
+  feedbackScore: number | null;
+  avgLatencyMs: number | null;
+  totalTokensUsed: number;
+  totalCostUsd: number;
+  reputationScores: Record<string, number>;
+  reputationUpdatedAt: string | null;
+  metricsSnapshot: Record<string, unknown> | null;
+}
+
+export interface AgentPerformanceView {
+  agentId: string;
+  period: string;
+  items: AgentPerformanceRecord[];
+}
+
+export interface AgentPerformanceTrendPoint {
+  weekStart: string;
+  avgSuccessRate: number;
+  avgConformanceScore: number;
+  totalCostUsd: number;
+}
+
+export interface AgentPerformanceTrendView {
+  agentId: string;
+  items: AgentPerformanceTrendPoint[];
 }
 
 export interface AgentHistoryItem {
@@ -347,6 +414,60 @@ export async function restoreAgentProfileVersion(id: string, version: string): P
   return response.json() as Promise<AgentProfileDocument>;
 }
 
+export async function getAgentVersions(id: string): Promise<AgentStoredVersionEntry[]> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/versions`);
+  ensureOk(response, 'Falha ao carregar as versoes do agente.');
+  const payload = await response.json() as { items?: AgentStoredVersionEntry[] };
+  return payload.items || [];
+}
+
+export async function restoreAgentStoredVersion(id: string, versionNumber: number): Promise<{
+  agentId: string;
+  restoredVersionNumber: number;
+  currentVersionNumber: number;
+  profileVersionLabel: string;
+  updatedAt: string;
+}> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/versions/${versionNumber}/restore`, {
+    method: 'POST',
+  });
+  ensureOk(response, 'Falha ao restaurar a versao persistida do agente.');
+  return response.json() as Promise<{
+    agentId: string;
+    restoredVersionNumber: number;
+    currentVersionNumber: number;
+    profileVersionLabel: string;
+    updatedAt: string;
+  }>;
+}
+
+export async function listPlaybookSuggestions(id: string): Promise<PlaybookSuggestionItem[]> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/playbook-suggestions`);
+  ensureOk(response, 'Falha ao carregar as sugestoes de playbook.');
+  const payload = await response.json() as { items?: PlaybookSuggestionItem[] };
+  return payload.items || [];
+}
+
+export async function approvePlaybookSuggestion(id: string, suggestionId: string): Promise<PlaybookSuggestionItem> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/playbook-suggestions/${suggestionId}/approve`, {
+    method: 'POST',
+  });
+  ensureOk(response, 'Falha ao aprovar a sugestao de playbook.');
+  return response.json() as Promise<PlaybookSuggestionItem>;
+}
+
+export async function rejectPlaybookSuggestion(id: string, suggestionId: string, reason?: string): Promise<PlaybookSuggestionItem> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/playbook-suggestions/${suggestionId}/reject`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason }),
+  });
+  ensureOk(response, 'Falha ao rejeitar a sugestao de playbook.');
+  return response.json() as Promise<PlaybookSuggestionItem>;
+}
+
 export async function getAgentBehavior(id: string): Promise<AgentBehaviorConfig> {
   const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/behavior`);
   ensureOk(response, 'Falha ao carregar os parametros comportamentais.');
@@ -393,6 +514,18 @@ export async function getAgentHistory(id: string): Promise<AgentHistoryItem[]> {
   const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/history`);
   ensureOk(response, 'Falha ao carregar o historico do agente.');
   return response.json() as Promise<AgentHistoryItem[]>;
+}
+
+export async function getAgentPerformance(id: string, period = '30d'): Promise<AgentPerformanceView> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/performance?period=${encodeURIComponent(period)}`);
+  ensureOk(response, 'Falha ao carregar o historico de performance do agente.');
+  return response.json() as Promise<AgentPerformanceView>;
+}
+
+export async function getAgentPerformanceTrend(id: string): Promise<AgentPerformanceTrendView> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents/${id}/performance/trend`);
+  ensureOk(response, 'Falha ao carregar a tendencia de performance do agente.');
+  return response.json() as Promise<AgentPerformanceTrendView>;
 }
 
 export async function chatWithAgent(id: string, payload: { prompt: string; sessionId?: string; modelId?: string; interactionMode?: string; }): Promise<AgentChatResponse> {

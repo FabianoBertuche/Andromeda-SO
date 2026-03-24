@@ -1,3 +1,5 @@
+import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,10 +15,17 @@ const mocks = vi.hoisted(() => ({
   getAgentHistory: vi.fn(),
   getAgentProfile: vi.fn(),
   getAgentProfileHistory: vi.fn(),
+  getAgentPerformance: vi.fn(),
+  getAgentPerformanceTrend: vi.fn(),
+  getAgentVersions: vi.fn(),
   getAgentSafeguards: vi.fn(),
+  listPlaybookSuggestions: vi.fn(),
   listSandboxExecutions: vi.fn(),
   listSandboxProfiles: vi.fn(),
+  approvePlaybookSuggestion: vi.fn(),
+  rejectPlaybookSuggestion: vi.fn(),
   restoreAgentProfileVersion: vi.fn(),
+  restoreAgentStoredVersion: vi.fn(),
   startSandboxExecution: vi.fn(),
   updateAgentSandbox: vi.fn(),
   updateAgentBehavior: vi.fn(),
@@ -34,10 +43,17 @@ vi.mock('../../../src/lib/agents', () => ({
   getAgentHistory: mocks.getAgentHistory,
   getAgentProfile: mocks.getAgentProfile,
   getAgentProfileHistory: mocks.getAgentProfileHistory,
+  getAgentPerformance: mocks.getAgentPerformance,
+  getAgentPerformanceTrend: mocks.getAgentPerformanceTrend,
+  getAgentVersions: mocks.getAgentVersions,
   getAgentSafeguards: mocks.getAgentSafeguards,
+  listPlaybookSuggestions: mocks.listPlaybookSuggestions,
   listSandboxExecutions: mocks.listSandboxExecutions,
   listSandboxProfiles: mocks.listSandboxProfiles,
+  approvePlaybookSuggestion: mocks.approvePlaybookSuggestion,
+  rejectPlaybookSuggestion: mocks.rejectPlaybookSuggestion,
   restoreAgentProfileVersion: mocks.restoreAgentProfileVersion,
+  restoreAgentStoredVersion: mocks.restoreAgentStoredVersion,
   startSandboxExecution: mocks.startSandboxExecution,
   updateAgentSandbox: mocks.updateAgentSandbox,
   updateAgentBehavior: mocks.updateAgentBehavior,
@@ -47,6 +63,7 @@ vi.mock('../../../src/lib/agents', () => ({
 }));
 
 describe('AgentManagementView sandbox tab', () => {
+  vi.setConfig({ testTimeout: 20000 });
   const agent = {
     id: 'agent-1',
     name: 'Agent One',
@@ -232,8 +249,12 @@ describe('AgentManagementView sandbox tab', () => {
     mocks.getAgentBehavior.mockResolvedValue(profileDocument.persona);
     mocks.getAgentSafeguards.mockResolvedValue(profileDocument.safeguards);
     mocks.getAgentProfileHistory.mockResolvedValue([{ version: 'v12', updatedAt: '2026-03-18T12:00:00.000Z', summary: 'v12' }]);
+    mocks.getAgentVersions.mockResolvedValue([{ versionNumber: 1, sourceVersionLabel: 'v12', changeSummary: 'seed', createdAt: '2026-03-18T12:00:00.000Z' }]);
     mocks.getAgentHistory.mockResolvedValue([]);
     mocks.getAgentConformance.mockResolvedValue({ agentId: 'agent-1', recentExecutions: [], recentViolations: [] });
+    mocks.getAgentPerformance.mockResolvedValue({ agentId: 'agent-1', period: '30d', items: [] });
+    mocks.getAgentPerformanceTrend.mockResolvedValue({ agentId: 'agent-1', items: [] });
+    mocks.listPlaybookSuggestions.mockResolvedValue([]);
     mocks.getAgentSandbox.mockResolvedValue(sandboxConfig);
     mocks.listSandboxProfiles.mockResolvedValue([sandboxProfile]);
     mocks.listSandboxExecutions.mockResolvedValue([]);

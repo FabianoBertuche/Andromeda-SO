@@ -17,11 +17,13 @@ import {
     sanitizePersonaPatch,
 } from "../domain/agent-profile";
 import { AgentProfileRepository } from "../infrastructure/FileSystemAgentProfileRepository";
+import { AgentVersioningService } from "./AgentVersioningService";
 
 export class AgentProfileService {
     constructor(
         private readonly repository: AgentProfileRepository,
         private readonly taskRepository?: TaskRepository,
+        private readonly versioningService?: AgentVersioningService,
     ) { }
 
     async listAgents(): Promise<AgentListItem[]> {
@@ -76,15 +78,22 @@ export class AgentProfileService {
 
     async createAgent(input: CreateAgentInput): Promise<AgentProfile> {
         const profile = createDefaultAgentProfile(input);
-        return this.repository.save(profile, { summary: "created via API" });
+        const saved = await this.repository.save(profile, { summary: "created via API" });
+        await this.versioningService?.recordCurrentVersion(saved, "created via API", { tenantId: "default" });
+        return saved;
     }
 
     async updateAgent(id: string, patch: AgentProfilePatch): Promise<AgentProfile> {
         const current = await this.getProfile(id);
         const updated = mergeAgentProfile(current, patch);
+        if (profilesMatch(current, updated)) {
+            return current;
+        }
         updated.version = bumpSemanticVersion(current.version);
         updated.updatedAt = new Date().toISOString();
-        return this.repository.save(updated, { summary: "agent metadata updated" });
+        const saved = await this.repository.save(updated, { summary: "agent metadata updated" });
+        await this.versioningService?.recordCurrentVersion(saved, "agent metadata updated", { tenantId: "default" });
+        return saved;
     }
 
     async updateProfile(id: string, patch: AgentProfilePatch): Promise<AgentProfile> {
@@ -111,10 +120,14 @@ export class AgentProfileService {
                 ...patch,
             }),
         });
+        if (profilesMatch(current, updated)) {
+            return current.persona;
+        }
         updated.version = bumpSemanticVersion(current.version);
         updated.updatedAt = new Date().toISOString();
 
         const saved = await this.repository.save(updated, { summary: "behavior updated" });
+        await this.versioningService?.recordCurrentVersion(saved, "behavior updated", { tenantId: "default" });
         return saved.persona;
     }
 
@@ -130,11 +143,65 @@ export class AgentProfileService {
                 ...patch,
             },
         });
+        if (profilesMatch(current, updated)) {
+            return current.safeguards;
+        }
         updated.version = bumpSemanticVersion(current.version);
         updated.updatedAt = new Date().toISOString();
 
         const saved = await this.repository.save(updated, { summary: "safeguards updated" });
+        await this.versioningService?.recordCurrentVersion(saved, "safeguards updated", { tenantId: "default" });
         return saved.safeguards;
+    }
+
+    async listStoredVersions(id: string): Promise<Array<{
+        versionNumber: number;
+        sourceVersionLabel?: string;
+        changeSummary: string;
+        restoredFromVersionNumber?: number;
+        createdBy?: string;
+        createdAt: string;
+    }>> {
+        const profile = await this.getProfile(id);
+        const versions = await this.versioningService?.listVersions(id, "default") || [];
+        if (versions.length === 0) {
+            await this.versioningService?.recordCurrentVersion(profile, "current profile", { tenantId: "default" });
+        }
+        const refreshed = await this.versioningService?.listVersions(id, "default") || [];
+
+        return refreshed.map((entry) => ({
+            versionNumber: entry.versionNumber,
+            sourceVersionLabel: entry.sourceVersionLabel,
+            changeSummary: entry.changeSummary,
+            restoredFromVersionNumber: entry.restoredFromVersionNumber,
+            createdBy: entry.createdBy,
+            createdAt: entry.createdAt,
+        }));
+    }
+
+    async restoreStoredVersion(id: string, versionNumber: number): Promise<{ profile: AgentProfile; restoredVersionNumber: number; currentVersionNumber: number; }> {
+        const current = await this.getProfile(id);
+        const version = await this.versioningService?.getVersion(id, versionNumber, "default");
+        if (!version) {
+            throw new Error(`Version ${versionNumber} not found for agent ${id}`);
+        }
+
+        const restored: AgentProfile = {
+            ...version.snapshot,
+            version: bumpSemanticVersion(current.version),
+            updatedAt: new Date().toISOString(),
+        };
+        const saved = await this.repository.save(restored, { summary: `restored from stored version ${versionNumber}` });
+        const created = await this.versioningService?.recordCurrentVersion(saved, `restored from stored version ${versionNumber}`, {
+            tenantId: "default",
+            restoredFromVersionNumber: versionNumber,
+        });
+
+        return {
+            profile: saved,
+            restoredVersionNumber: versionNumber,
+            currentVersionNumber: created?.versionNumber || versionNumber,
+        };
     }
 
     async listHistory(id: string): Promise<AgentProfileHistoryEntry[]> {
@@ -241,6 +308,10 @@ export class AgentProfileService {
             lastExecutionAt: relatedTasks[0]?.getUpdatedAt().toISOString(),
         };
     }
+}
+
+function profilesMatch(left: AgentProfile, right: AgentProfile): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function resolveTaskAgentId(task: Task): string | undefined {

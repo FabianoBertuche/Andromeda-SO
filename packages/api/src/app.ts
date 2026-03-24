@@ -23,6 +23,11 @@ console.log("Importing modelCenterRoutes...");
 import modelCenterRoutes from "./modules/model-center/interfaces/http/modelCenter.routes";
 console.log("modelCenterRoutes imported!");
 import knowledgeRouter from "./modules/knowledge/interfaces/http/knowledge.routes";
+import { budgetRouter } from "./modules/budget/dependencies";
+import { feedbackRouter } from "./modules/feedback/dependencies";
+import { performanceRouter } from "./modules/performance/dependencies";
+import { costsRouter } from "./modules/costs/dependencies";
+import { playbookSuggestionsRouter } from "./modules/evolution/playbook/dependencies";
 
 import { authController } from "./modules/auth/dependencies";
 import { createAuthRoutes } from "./modules/auth/interfaces/http/auth.routes";
@@ -64,6 +69,7 @@ import { dlqRouter } from "./modules/queue/dependencies";
 import { healthRouter } from "./modules/health/dependencies";
 import { tenantMiddleware } from "./shared/middleware/tenant.middleware";
 
+v1Router.use("/", healthRouter);
 v1Router.use("/tasks", authMiddleware, tenantMiddleware, taskRoutes);
 v1Router.use("/skills", authMiddleware, tenantMiddleware, skillRoutes);
 v1Router.use("/agents", authMiddleware, tenantMiddleware, agentRoutes);
@@ -72,10 +78,14 @@ v1Router.use("/memory", authMiddleware, tenantMiddleware, memoryRouter);
 v1Router.use("/gateway", authMiddleware, tenantMiddleware, communicationRoutes);
 v1Router.use("/model-center", authMiddleware, tenantMiddleware, modelCenterRoutes);
 v1Router.use("/knowledge", authMiddleware, tenantMiddleware, knowledgeRouter);
+v1Router.use("/", authMiddleware, tenantMiddleware, budgetRouter);
+v1Router.use("/", authMiddleware, tenantMiddleware, feedbackRouter);
+v1Router.use("/agents", authMiddleware, tenantMiddleware, performanceRouter);
+v1Router.use("/agents", authMiddleware, tenantMiddleware, playbookSuggestionsRouter);
+v1Router.use("/costs", authMiddleware, tenantMiddleware, costsRouter);
 v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
 v1Router.use("/backup", authMiddleware, requireRole('owner'), backupRouter);
 v1Router.use("/dlq", authMiddleware, requireRole('admin'), dlqRouter);
-v1Router.use("/", healthRouter);
 
 app.use("/v1", v1Router);
 

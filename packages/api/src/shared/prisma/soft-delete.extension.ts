@@ -4,31 +4,31 @@ export const softDeleteExtension = Prisma.defineExtension({
     name: 'softDelete',
     query: {
         $allModels: {
-            async findMany({ model, operation, args, query }) {
+            async findMany({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
-            async findFirst({ model, operation, args, query }) {
+            async findFirst({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
-            async findUnique({ model, operation, args, query }) {
+            async findUnique({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
-            async count({ model, operation, args, query }) {
+            async count({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     args.where = { ...(args.where ?? {}), deletedAt: null };
                 }
                 return query(args);
             },
-            async delete({ model, operation, args, query }) {
+            async delete({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     return (Prisma.getExtensionContext(this) as any).update({
                         ...args,
@@ -37,7 +37,7 @@ export const softDeleteExtension = Prisma.defineExtension({
                 }
                 return query(args);
             },
-            async deleteMany({ model, operation, args, query }) {
+            async deleteMany({ model, args, query }: { model: string; args: any; query: (args: any) => Promise<any> }) {
                 if (supportsSoftDelete(model)) {
                     return (Prisma.getExtensionContext(this) as any).updateMany({
                         ...args,
@@ -77,7 +77,13 @@ function supportsSoftDelete(model: string): boolean {
         'KnowledgeChunk',
         'CommunicationSession',
         'CommunicationMessage',
-        'User'
+        'User',
+        'AgentBudgetPolicy',
+        'AgentVersion',
+        'TaskFeedback',
+        'AgentPerformanceRecord',
+        'PlaybookSuggestion',
+        'AgentExecutionLedger'
     ];
     return modelsWithSoftDelete.includes(model);
 }

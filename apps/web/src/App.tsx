@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Book, Clock, Cpu, Database, Send, Terminal, User, Users } from 'lucide-react';
+import { Activity, Book, Clock, Cpu, Database, DollarSign, Send, Terminal, User, Users } from 'lucide-react';
 import { AgentManagementView } from './components/agents/AgentManagementView';
 import { MemoryView } from './components/memory/MemoryView';
 import { KnowledgeView } from './components/knowledge/KnowledgeView';
 import { TimelineView } from './components/Timeline/TimelineView';
 import { ModelCenterView } from './components/model-center/ModelCenterView';
+import { CostsView } from './components/costs/CostsView';
 import { useWs } from './contexts/WsContext';
 import { useI18n, useTooltipText } from './contexts/I18nContext';
-import { createGatewayTask, pollGatewayTask } from './lib/gateway';
+import { createGatewayTask, pollGatewayTask, submitTaskFeedback } from './lib/gateway';
 import { listAgents } from './lib/agents';
 import type { AgentSummary } from './lib/agents';
 
@@ -24,9 +25,13 @@ interface ChatMessage {
   model?: string;
   agentName?: string;
   conformance?: number;
+  taskId?: string;
+  feedbackState?: 'idle' | 'submitting' | 'submitted';
+  feedbackRating?: 1 | -1;
+  feedbackError?: string;
 }
 
-type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' | 'knowledge';
+type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' | 'knowledge' | 'costs';
 
 function App() {
   const { isConnected, session, activeTask } = useWs();
@@ -155,15 +160,19 @@ function App() {
       }
 
       const status = await pollGatewayTask(taskId);
+      const assistantContent = status.result?.content || status.result?.error || 'Sem resposta do modelo.';
+      const feedbackAllowed = Boolean(status.taskId) && !status.result?.error;
       setChatMessages((previous) => [
         ...previous,
         {
           role: 'assistant',
-          content: status.result?.content || status.result?.error || 'Sem resposta do modelo.',
+          content: formatConsoleMessage(assistantContent),
           model: status.result?.model || thisModelLabel(selectedModel, availableModels) || 'automatic-router',
           agentName: status.result?.agent?.name || selectedAgent?.name || 'Andromeda Agent',
           conformance: status.result?.audit?.overallConformanceScore ?? status.auditParecer?.overallConformanceScore,
           timestamp: new Date().toISOString(),
+          taskId: feedbackAllowed ? status.taskId : undefined,
+          feedbackState: feedbackAllowed ? 'idle' : undefined,
         },
       ]);
     } catch (error) {
@@ -226,6 +235,12 @@ function App() {
               </button>
             </li>
             <li>
+              <button onClick={() => setActiveTab('costs')} className={navClass(activeTab === 'costs')} title={tooltip('app.nav.costs')}>
+                <DollarSign className="w-5 h-5 mr-3" />
+                Costs
+              </button>
+            </li>
+            <li>
               <button onClick={() => setActiveTab('knowledge')} className={navClass(activeTab === 'knowledge')} title={tooltip('app.nav.knowledge')}>
                 <Book className="w-5 h-5 mr-3" />
                 Knowledge
@@ -281,6 +296,7 @@ function App() {
               <ConsoleView
                 selectedAgent={selectedAgent}
                 chatMessages={chatMessages}
+                setChatMessages={setChatMessages}
                 activeTask={activeTask}
               />
             </div>
@@ -309,6 +325,10 @@ function App() {
           ) : activeTab === 'knowledge' ? (
             <div className="flex-1 overflow-auto">
               <KnowledgeView />
+            </div>
+          ) : activeTab === 'costs' ? (
+            <div className="flex-1 overflow-auto">
+              <CostsView />
             </div>
           ) : (
             <div className="flex-1 overflow-auto">
@@ -383,9 +403,33 @@ function App() {
   );
 }
 
-function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgent: AgentSummary | null; chatMessages: ChatMessage[]; activeTask: any }) {
+function ConsoleView({ selectedAgent, chatMessages, setChatMessages, activeTask }: { selectedAgent: AgentSummary | null; chatMessages: ChatMessage[]; setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>; activeTask: any }) {
   const [isExecutionPanelOpen, setIsExecutionPanelOpen] = useState(false);
   const tooltip = useTooltipText();
+
+  async function handleFeedback(taskId: string, rating: 1 | -1) {
+    setChatMessages((previous) => previous.map((message) => (
+      message.taskId === taskId
+        ? { ...message, feedbackState: 'submitting', feedbackError: '' }
+        : message
+    )));
+
+    try {
+      await submitTaskFeedback(taskId, { rating });
+      setChatMessages((previous) => previous.map((message) => (
+        message.taskId === taskId
+          ? { ...message, feedbackState: 'submitted', feedbackRating: rating, feedbackError: '' }
+          : message
+      )));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha ao enviar feedback.';
+      setChatMessages((previous) => previous.map((item) => (
+        item.taskId === taskId
+          ? { ...item, feedbackState: 'idle', feedbackError: message }
+          : item
+      )));
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 h-full min-h-0">
@@ -415,6 +459,36 @@ function ConsoleView({ selectedAgent, chatMessages, activeTask }: { selectedAgen
                 </div>
               )}
               <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              {message.role === 'assistant' && message.taskId && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-700/60 pt-3">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Feedback</span>
+                  <button
+                    type="button"
+                    disabled={message.feedbackState === 'submitting' || message.feedbackState === 'submitted'}
+                    onClick={() => void handleFeedback(message.taskId as string, 1)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${message.feedbackRating === 1 ? 'border-emerald-400 bg-emerald-500/15 text-emerald-200' : 'border-slate-600 text-slate-300 hover:border-emerald-400 hover:text-white'} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    👍
+                  </button>
+                  <button
+                    type="button"
+                    disabled={message.feedbackState === 'submitting' || message.feedbackState === 'submitted'}
+                    onClick={() => void handleFeedback(message.taskId as string, -1)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${message.feedbackRating === -1 ? 'border-rose-400 bg-rose-500/15 text-rose-200' : 'border-slate-600 text-slate-300 hover:border-rose-400 hover:text-white'} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    👎
+                  </button>
+                  {message.feedbackState === 'submitting' && (
+                    <span className="text-xs text-slate-400">Enviando feedback...</span>
+                  )}
+                  {message.feedbackState === 'submitted' && (
+                    <span className="text-xs text-emerald-300">Feedback registrado.</span>
+                  )}
+                  {message.feedbackError && (
+                    <span className="text-xs text-rose-300">{message.feedbackError}</span>
+                  )}
+                </div>
+              )}
               <div className="text-[10px] text-slate-500 mt-2 text-right">
                 {new Date(message.timestamp).toLocaleTimeString()}
               </div>
@@ -460,6 +534,14 @@ function navClass(active: boolean) {
 
 function thisModelLabel(selectedModel: string, models: AvailableModel[]): string | undefined {
   return models.find((model) => model.id === selectedModel)?.displayName;
+}
+
+function formatConsoleMessage(message: string): string {
+  if (/budget exceeded/i.test(message)) {
+    return 'Budget do agente excedido. Ajuste o limite configurado ou escolha outro agente antes de tentar novamente.';
+  }
+
+  return message;
 }
 
 export default App;
