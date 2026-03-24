@@ -2,23 +2,84 @@ import { spawn } from "node:child_process";
 import net from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const API_DIR = resolve(ROOT, "packages", "api");
 const WEB_DIR = resolve(ROOT, "apps", "web");
 const PYTHON_DIR = resolve(ROOT, "services", "cognitive-python");
 const isWindows = process.platform === "win32";
+const windowsProgramFiles = process.env.ProgramFiles || "C:\\Program Files";
+const windowsCmdPath = resolve(process.env.SystemRoot || "C:\\Windows", "System32", "cmd.exe");
+const nodeWindowsPath = resolve(windowsProgramFiles, "nodejs", "node.exe");
+const npmWindowsPath = resolve(windowsProgramFiles, "nodejs", "npm.cmd");
+const npmCliWindowsPath = resolve(windowsProgramFiles, "nodejs", "node_modules", "npm", "bin", "npm-cli.js");
+const dockerWindowsPath = resolve(windowsProgramFiles, "Docker", "Docker", "resources", "bin", "docker.exe");
+const windowsPathKey = Object.keys(process.env).find((key) => key.toLowerCase() === "path") || "Path";
+const dockerWindowsDir = dirname(dockerWindowsPath);
 const skipInfra = process.argv.includes("--skip-infra");
 
 const children = [];
 let shuttingDown = false;
 
+function withRequiredPaths(env = process.env) {
+    if (!isWindows || !existsSync(dockerWindowsPath)) {
+        return env;
+    }
+
+    const currentPath = env[windowsPathKey] || "";
+    const hasDockerPath = currentPath
+        .split(";")
+        .some((entry) => entry.trim().toLowerCase() === dockerWindowsDir.toLowerCase());
+
+    if (hasDockerPath) {
+        return env;
+    }
+
+    return {
+        ...env,
+        [windowsPathKey]: currentPath ? `${currentPath};${dockerWindowsDir}` : dockerWindowsDir,
+    };
+}
+
 function resolveCommand(command) {
-    if (isWindows && command === "npm") {
-        return "npm.cmd";
+    if (isWindows && command === "node" && existsSync(nodeWindowsPath)) {
+        return nodeWindowsPath;
+    }
+
+    if (isWindows && command === "npm" && existsSync(npmWindowsPath)) {
+        return npmWindowsPath;
+    }
+
+    if (isWindows && command === "docker" && existsSync(dockerWindowsPath)) {
+        return dockerWindowsPath;
     }
 
     return command;
+}
+
+function createSpawnArgs(command, args) {
+    if (isWindows && command === "npm" && existsSync(nodeWindowsPath) && existsSync(npmCliWindowsPath)) {
+        return {
+            file: nodeWindowsPath,
+            args: [npmCliWindowsPath, ...args],
+        };
+    }
+
+    const resolvedCommand = resolveCommand(command);
+
+    if (!isWindows || !resolvedCommand.toLowerCase().endsWith(".cmd")) {
+        return {
+            file: resolvedCommand,
+            args,
+        };
+    }
+
+    const cmdline = [quoteWindowsArg(resolvedCommand), ...args.map(quoteWindowsArg)].join(" ");
+    return {
+        file: windowsCmdPath,
+        args: ["/d", "/s", "/c", cmdline],
+    };
 }
 
 function quoteWindowsArg(value) {
@@ -29,21 +90,6 @@ function quoteWindowsArg(value) {
     return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-function createSpawnArgs(command, args) {
-    if (!isWindows) {
-        return {
-            file: resolveCommand(command),
-            args,
-        };
-    }
-
-    const cmdline = [resolveCommand(command), ...args.map(quoteWindowsArg)].join(" ");
-    return {
-        file: "cmd.exe",
-        args: ["/d", "/s", "/c", cmdline],
-    };
-}
-
 function spawnProcess(name, command, args, cwd = ROOT) {
     console.log(`[dev] starting ${name}...`);
 
@@ -52,7 +98,7 @@ function spawnProcess(name, command, args, cwd = ROOT) {
     const child = spawn(processSpec.file, processSpec.args, {
         cwd,
         stdio: "inherit",
-        env: process.env,
+        env: withRequiredPaths(),
     });
 
     children.push(child);
@@ -91,7 +137,7 @@ function runCommand(name, command, args, cwd = ROOT) {
         const child = spawn(processSpec.file, processSpec.args, {
             cwd,
             stdio: "inherit",
-            env: process.env,
+            env: withRequiredPaths(),
         });
 
         child.on("exit", (code) => {
@@ -172,7 +218,7 @@ try {
         await runCommand("docker infra", "docker", ["compose", "up", "-d", "postgres", "redis"]);
     }
 
-    await runCommand("prisma sync", "npm", ["run", "prisma:sync", "--", "--skip-generate"], API_DIR);
+    await runCommand("prisma sync", "npm", ["run", "prisma:sync"], API_DIR);
 
     if (await isPortOpen(5000)) {
         console.log("[dev] api already running on http://127.0.0.1:5000, skipping startup");

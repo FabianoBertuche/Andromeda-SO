@@ -50,3 +50,10 @@ chrome/
 audit-runner.sh
 audit.ps1
 start-dev.ps1
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

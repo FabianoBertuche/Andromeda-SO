@@ -8,6 +8,14 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const PYTHON_DIR = resolve(ROOT, "services", "cognitive-python");
 const REQUIREMENTS_FILE = resolve(PYTHON_DIR, "requirements.txt");
 const isWindows = process.platform === "win32";
+const windowsProgramFiles = process.env.ProgramFiles || "C:\\Program Files";
+const windowsCmdPath = resolve(process.env.SystemRoot || "C:\\Windows", "System32", "cmd.exe");
+const nodeWindowsPath = resolve(windowsProgramFiles, "nodejs", "node.exe");
+const npmWindowsPath = resolve(windowsProgramFiles, "nodejs", "npm.cmd");
+const npmCliWindowsPath = resolve(windowsProgramFiles, "nodejs", "node_modules", "npm", "bin", "npm-cli.js");
+const dockerWindowsPath = resolve(windowsProgramFiles, "Docker", "Docker", "resources", "bin", "docker.exe");
+const windowsPathKey = Object.keys(process.env).find((key) => key.toLowerCase() === "path") || "Path";
+const dockerWindowsDir = dirname(dockerWindowsPath);
 
 const args = new Set(process.argv.slice(2));
 const checkOnly = args.has("--check");
@@ -16,11 +24,43 @@ const skipPythonInstall = args.has("--skip-python-install");
 const noOpen = args.has("--no-open");
 
 function commandFor(command) {
-    if (isWindows && command === "npm") {
-        return "npm.cmd";
+    if (isWindows && command === "node" && existsSync(nodeWindowsPath)) {
+        return nodeWindowsPath;
+    }
+
+    if (isWindows && command === "npm" && existsSync(npmWindowsPath)) {
+        return npmWindowsPath;
+    }
+
+    if (isWindows && command === "docker" && existsSync(dockerWindowsPath)) {
+        return dockerWindowsPath;
     }
 
     return command;
+}
+
+function createSpawnSpec(command, commandArgs) {
+    if (isWindows && command === "npm" && existsSync(nodeWindowsPath) && existsSync(npmCliWindowsPath)) {
+        return {
+            file: nodeWindowsPath,
+            args: [npmCliWindowsPath, ...commandArgs],
+        };
+    }
+
+    const resolvedCommand = commandFor(command);
+
+    if (!isWindows || !resolvedCommand.toLowerCase().endsWith(".cmd")) {
+        return {
+            file: resolvedCommand,
+            args: commandArgs,
+        };
+    }
+
+    const cmdline = [quoteWindowsArg(resolvedCommand), ...commandArgs.map(quoteWindowsArg)].join(" ");
+    return {
+        file: windowsCmdPath,
+        args: ["/d", "/s", "/c", cmdline],
+    };
 }
 
 function quoteWindowsArg(value) {
@@ -31,18 +71,23 @@ function quoteWindowsArg(value) {
     return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-function createSpawnSpec(command, commandArgs) {
-    if (!isWindows) {
-        return {
-            file: commandFor(command),
-            args: commandArgs,
-        };
+function withRequiredPaths(env = process.env) {
+    if (!isWindows || !existsSync(dockerWindowsPath)) {
+        return env;
     }
 
-    const cmdline = [quoteWindowsArg(commandFor(command)), ...commandArgs.map(quoteWindowsArg)].join(" ");
+    const currentPath = env[windowsPathKey] || "";
+    const hasDockerPath = currentPath
+        .split(";")
+        .some((entry) => entry.trim().toLowerCase() === dockerWindowsDir.toLowerCase());
+
+    if (hasDockerPath) {
+        return env;
+    }
+
     return {
-        file: "cmd.exe",
-        args: ["/d", "/s", "/c", cmdline],
+        ...env,
+        [windowsPathKey]: currentPath ? `${currentPath};${dockerWindowsDir}` : dockerWindowsDir,
     };
 }
 
@@ -52,6 +97,7 @@ function run(command, commandArgs, options = {}) {
         cwd: ROOT,
         stdio: options.capture ? "pipe" : "inherit",
         encoding: "utf8",
+        env: withRequiredPaths(options.env),
         ...options,
     });
 
@@ -70,6 +116,7 @@ function assertCommand(command, versionArgs = ["--version"], label = command) {
         cwd: ROOT,
         stdio: "pipe",
         encoding: "utf8",
+        env: withRequiredPaths(),
     });
 
     if (result.status !== 0) {
@@ -89,6 +136,7 @@ function hasPythonRequirements() {
     const check = spawnSync("python", ["-c", "import fastapi, uvicorn, numpy"], {
         cwd: PYTHON_DIR,
         stdio: "ignore",
+        env: withRequiredPaths(),
     });
 
     return check.status === 0;
@@ -96,10 +144,12 @@ function hasPythonRequirements() {
 
 function ensureDockerDaemon() {
     process.stdout.write("[start] checking docker daemon... ");
-    const result = spawnSync("docker", ["info"], {
+    const spec = createSpawnSpec("docker", ["info"]);
+    const result = spawnSync(spec.file, spec.args, {
         cwd: ROOT,
         stdio: "pipe",
         encoding: "utf8",
+        env: withRequiredPaths(),
     });
 
     if (result.status !== 0) {
@@ -146,7 +196,7 @@ function startStack() {
     const child = spawn(process.execPath, [resolve(ROOT, "scripts", "dev.mjs")], {
         cwd: ROOT,
         stdio: "inherit",
-        env: process.env,
+        env: withRequiredPaths(),
     });
 
     child.on("exit", (code, signal) => {
@@ -220,9 +270,9 @@ async function main() {
     }
 
     startStack();
-    await waitForUrl("http://127.0.0.1:5000/v1/health", 30000);
-    await waitForUrl("http://127.0.0.1:5173", 30000);
-    await waitForUrl("http://127.0.0.1:8008/health", 30000);
+    await waitForUrl("http://127.0.0.1:5000/v1/health", 180000);
+    await waitForUrl("http://127.0.0.1:5173", 180000);
+    await waitForUrl("http://127.0.0.1:8008/health", 180000);
     if (!noOpen) {
         console.log("[start] opening http://127.0.0.1:5173");
         openBrowser("http://127.0.0.1:5173");
