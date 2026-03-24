@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, History, Lightbulb, LineChart, MessageSquare, Save, Shield, SlidersHorizontal } from 'lucide-react';
+import { Bot, History, Lightbulb, LineChart, MessageSquare, Plus, Save, Shield, SlidersHorizontal, Sparkles } from 'lucide-react';
 import {
   dryRunSandbox,
   chatWithAgent,
+  createAgent,
   getAgentSandbox,
   getAgentBehavior,
   getAgentConformance,
@@ -29,6 +30,7 @@ import {
 } from '../../lib/agents';
 import type {
   AgentBehaviorConfig,
+  CreateAgentInput,
   AgentSandboxConfig,
   AgentConformanceView,
   AgentHistoryItem,
@@ -130,6 +132,58 @@ interface Props {
   onUseInConsole: (agentId: string) => void;
   refreshAgents: () => Promise<void>;
 }
+
+interface AgentTemplate {
+  id: string;
+  name: string;
+  summary: string;
+  defaults: Omit<CreateAgentInput, 'name'>;
+}
+
+const agentTemplates: AgentTemplate[] = [
+  {
+    id: 'generalist',
+    name: 'General Assistant',
+    summary: 'Um agente equilibrado para atendimento geral, coordenacao e suporte do dia a dia.',
+    defaults: {
+      role: 'Operations Assistant',
+      description: 'Ajuda a organizar tarefas, responder perguntas e orientar proximos passos com clareza.',
+      teamId: 'ops-core',
+      category: 'operations',
+      type: 'generalist',
+      defaultModel: 'gpt-4.1-mini',
+      specializations: ['general', 'coordination', 'support'],
+    },
+  },
+  {
+    id: 'analyst',
+    name: 'Analyst',
+    summary: 'Focado em diagnostico, investigacao, comparacao de cenarios e explicacoes mais objetivas.',
+    defaults: {
+      role: 'Technical Analyst',
+      description: 'Investiga problemas, compara opcoes e explica conclusoes com foco em evidencias.',
+      teamId: 'analysis',
+      category: 'analysis',
+      type: 'specialist',
+      defaultModel: 'gpt-4.1',
+      specializations: ['analysis', 'troubleshooting', 'reporting'],
+    },
+  },
+  {
+    id: 'builder',
+    name: 'Builder',
+    summary: 'Pensado para implementacao, execucao orientada a passos e tarefas mais praticas.',
+    defaults: {
+      role: 'Implementation Specialist',
+      description: 'Traduz objetivos em acoes praticas, com foco em execucao guiada e entrega incremental.',
+      teamId: 'delivery',
+      category: 'implementation',
+      type: 'specialist',
+      defaultModel: 'gpt-4.1',
+      specializations: ['implementation', 'automation', 'delivery'],
+    },
+  },
+];
 
 const sandboxCardTooltipKeys: Record<string, string> = {
   General: 'agents.sandbox.card.general',
@@ -235,6 +289,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
   const [sandboxOverridesText, setSandboxOverridesText] = useState('{}');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; meta?: string }>>([]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(agentTemplates[0].id);
+  const [createForm, setCreateForm] = useState<CreateAgentInput>(() => buildCreateForm(agentTemplates[0]));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -622,6 +679,45 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
     }
   }
 
+  function applyTemplate(templateId: string) {
+    const template = agentTemplates.find((item) => item.id === templateId) || agentTemplates[0];
+    setSelectedTemplateId(template.id);
+    setCreateForm((current) => ({
+      ...buildCreateForm(template),
+      name: current.name,
+    }));
+  }
+
+  async function handleCreateAgent(event: React.FormEvent) {
+    event.preventDefault();
+    if (!createForm.name.trim()) {
+      setError('Defina um nome para o novo agente.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      const created = await createAgent({
+        ...createForm,
+        name: createForm.name.trim(),
+        description: createForm.description.trim(),
+        role: createForm.role.trim(),
+        specializations: createForm.specializations || [],
+      });
+      await refreshAgents();
+      onSelectAgent(created.id);
+      setSelectedTemplateId(agentTemplates[0].id);
+      setCreateForm(buildCreateForm(agentTemplates[0]));
+      setIsCreateOpen(false);
+    } catch (nextError) {
+      console.error(nextError);
+      setError(nextError instanceof Error ? nextError.message : 'Falha ao criar o agente.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (agents.length === 0) {
     return <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-8 text-center text-slate-400">Nenhum agente disponivel.</div>;
   }
@@ -629,16 +725,25 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
   return (
     <div className="grid gap-6 xl:grid-cols-[320px,1fr]">
       <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
-        <div className="mb-4 text-xs uppercase tracking-[0.3em] text-slate-500">Agents</div>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="text-xs uppercase tracking-[0.3em] text-slate-500">Agents</div>
+          <button
+            type="button"
+            onClick={() => setIsCreateOpen((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-full border border-indigo-400/50 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-100 transition hover:bg-indigo-500/20"
+          >
+            <Plus className="h-4 w-4" />
+            New Agent
+          </button>
+        </div>
         <div className="space-y-3">
           {agents.map((agent) => (
             <RichTooltip key={agent.id} entry={tooltipFor('agents.card.select')}>
               <button
                 type="button"
                 onClick={() => onSelectAgent(agent.id)}
-                className={`w-full rounded-2xl border p-4 text-left transition ${
-                  agent.id === selectedAgentId ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
-                }`}
+                className={`w-full rounded-2xl border p-4 text-left transition ${agent.id === selectedAgentId ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
+                  }`}
               >
                 <div className="text-sm font-semibold text-white">{agent.name}</div>
                 <div className="mt-1 text-xs text-slate-400">{agent.role}</div>
@@ -653,7 +758,80 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
       </section>
 
       <section className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
-      {selectedAgent ? (
+        {isCreateOpen ? (
+          <div className="mb-6 rounded-3xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-indigo-500/10 p-2 text-indigo-200">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Criar novo agente</h3>
+                <p className="mt-1 text-sm text-slate-300">Escolha um layout inicial e preencha as informacoes basicas para gerar um novo agente pronto para edicao.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {agentTemplates.map((template) => {
+                const active = template.id === selectedTemplateId;
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => applyTemplate(template.id)}
+                    className={`rounded-2xl border p-4 text-left transition ${active ? 'border-indigo-400 bg-indigo-500/10' : 'border-slate-800 bg-slate-950/50 hover:border-slate-600'}`}
+                  >
+                    <div className="text-sm font-semibold text-white">{template.name}</div>
+                    <div className="mt-2 text-xs leading-5 text-slate-400">{template.summary}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <form onSubmit={handleCreateAgent} className="mt-5 grid gap-4 lg:grid-cols-2">
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Nome do agente</div>
+                <input value={createForm.name} onChange={(event) => setCreateForm((current) => ({ ...current, name: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: Analista de Incidentes" />
+              </label>
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Papel principal</div>
+                <input value={createForm.role} onChange={(event) => setCreateForm((current) => ({ ...current, role: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: Incident Analyst" />
+              </label>
+              <label className="block text-sm text-slate-200 lg:col-span-2">
+                <div className="mb-2">Descricao inicial</div>
+                <textarea value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} className="min-h-[110px] w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Explique para que este agente existe e como ele deve ajudar." />
+              </label>
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Time</div>
+                <input value={createForm.teamId || ''} onChange={(event) => setCreateForm((current) => ({ ...current, teamId: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: ops-core" />
+              </label>
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Categoria</div>
+                <input value={createForm.category || ''} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: operations" />
+              </label>
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Tipo</div>
+                <select value={createForm.type || 'specialist'} onChange={(event) => setCreateForm((current) => ({ ...current, type: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                  <option value="generalist">Generalist</option>
+                  <option value="specialist">Specialist</option>
+                  <option value="orchestrator">Orchestrator</option>
+                </select>
+              </label>
+              <label className="block text-sm text-slate-200">
+                <div className="mb-2">Modelo padrao</div>
+                <input value={createForm.defaultModel || ''} onChange={(event) => setCreateForm((current) => ({ ...current, defaultModel: event.target.value }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: gpt-4.1-mini" />
+              </label>
+              <label className="block text-sm text-slate-200 lg:col-span-2">
+                <div className="mb-2">Especializacoes</div>
+                <input value={(createForm.specializations || []).join(', ')} onChange={(event) => setCreateForm((current) => ({ ...current, specializations: splitCommaList(event.target.value) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-white outline-none" placeholder="Ex.: support, diagnostics, automation" />
+              </label>
+              <div className="lg:col-span-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setIsCreateOpen(false)} className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300">Cancelar</button>
+                <button type="submit" disabled={saving} className="rounded-full border border-indigo-400/50 bg-indigo-500/10 px-5 py-2 text-sm font-semibold text-indigo-100 disabled:opacity-50">{saving ? 'Criando...' : 'Criar agente'}</button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+        {selectedAgent ? (
           <>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -732,12 +910,12 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       setProfile((current) =>
                         current
                           ? {
-                              ...current,
-                              markdown: {
-                                ...current.markdown,
-                                [activeMarkdown]: event.target.value,
-                              },
-                            }
+                            ...current,
+                            markdown: {
+                              ...current.markdown,
+                              [activeMarkdown]: event.target.value,
+                            },
+                          }
                           : current,
                       )
                     }
@@ -995,9 +1173,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           setBehavior((current) =>
                             current
                               ? {
-                                  ...current,
-                                  [item.key]: Number(event.target.value),
-                                }
+                                ...current,
+                                [item.key]: Number(event.target.value),
+                              }
                               : current,
                           )
                         }
@@ -1621,10 +1799,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                       <SandboxFieldLabel label="Capability" />
-                        <input
-                          type="text"
-                          aria-label="Capability"
-                          value={sandboxCapability}
+                      <input
+                        type="text"
+                        aria-label="Capability"
+                        value={sandboxCapability}
                         onChange={(event) => setSandboxCapability(event.target.value)}
                         title={tooltip('agents.sandbox.test.capability')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
@@ -1632,10 +1810,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                       <SandboxFieldLabel label="Command" />
-                        <input
-                          type="text"
-                          aria-label="Command"
-                          value={sandboxCommand}
+                      <input
+                        type="text"
+                        aria-label="Command"
+                        value={sandboxCommand}
                         onChange={(event) => setSandboxCommand(event.target.value)}
                         title={tooltip('agents.sandbox.test.command')}
                         className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none"
@@ -1643,9 +1821,9 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </label>
                     <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
                       <SandboxFieldLabel label="Preset" />
-                        <select
-                          aria-label="Preset"
-                          value={sandboxConfig.profileId || ''}
+                      <select
+                        aria-label="Preset"
+                        value={sandboxConfig.profileId || ''}
                         onChange={(event) =>
                           setSandboxConfig((current) =>
                             current
@@ -1685,12 +1863,12 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           setSandboxConfig((current) =>
                             current
                               ? {
-                                  ...current,
-                                  enforcement: {
-                                    ...current.enforcement,
-                                    fallbackBehavior: event.target.value as AgentSandboxConfig['enforcement']['fallbackBehavior'],
-                                  },
-                                }
+                                ...current,
+                                enforcement: {
+                                  ...current.enforcement,
+                                  fallbackBehavior: event.target.value as AgentSandboxConfig['enforcement']['fallbackBehavior'],
+                                },
+                              }
                               : current,
                           )
                         }
@@ -1710,15 +1888,15 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                           setSandboxConfig((current) =>
                             current
                               ? {
-                                  ...current,
-                                  enforcement: {
-                                    ...current.enforcement,
-                                    mandatoryForCapabilities: event.target.value
-                                      .split(',')
-                                      .map((value) => value.trim())
-                                      .filter(Boolean),
-                                  },
-                                }
+                                ...current,
+                                enforcement: {
+                                  ...current.enforcement,
+                                  mandatoryForCapabilities: event.target.value
+                                    .split(',')
+                                    .map((value) => value.trim())
+                                    .filter(Boolean),
+                                },
+                              }
                               : current,
                           )
                         }
@@ -1729,11 +1907,11 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                     </label>
                   </div>
 
-                    <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
-                      <SandboxFieldLabel label="Overrides JSON" />
-                      <textarea
-                        aria-label="Overrides JSON"
-                        value={sandboxOverridesText}
+                  <label className="block rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+                    <SandboxFieldLabel label="Overrides JSON" />
+                    <textarea
+                      aria-label="Overrides JSON"
+                      value={sandboxOverridesText}
                       onChange={(event) => setSandboxOverridesText(event.target.value)}
                       title={tooltip('agents.sandbox.test.overridesJson')}
                       className="min-h-[220px] w-full rounded-xl border border-slate-700 bg-slate-900 p-3 font-mono text-xs text-slate-100 outline-none"
@@ -1785,13 +1963,12 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="text-sm font-semibold text-slate-200">Policy Preview</div>
-                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${
-                        (sandboxDryRun?.riskLevel || selectedSandboxProfile?.riskLevel || 'low') === 'critical'
-                          ? 'border-red-400/40 text-red-200'
-                          : (sandboxDryRun?.riskLevel || selectedSandboxProfile?.riskLevel || 'low') === 'high'
-                            ? 'border-orange-400/40 text-orange-200'
-                            : 'border-slate-700 text-slate-300'
-                      }`}>
+                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${(sandboxDryRun?.riskLevel || selectedSandboxProfile?.riskLevel || 'low') === 'critical'
+                        ? 'border-red-400/40 text-red-200'
+                        : (sandboxDryRun?.riskLevel || selectedSandboxProfile?.riskLevel || 'low') === 'high'
+                          ? 'border-orange-400/40 text-orange-200'
+                          : 'border-slate-700 text-slate-300'
+                        }`}>
                         {(sandboxDryRun?.riskLevel || selectedSandboxProfile?.riskLevel || 'low').toString()}
                       </span>
                     </div>
@@ -1815,11 +1992,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                       {(sandboxValidation?.issues || []).map((issue, index) => (
                         <div
                           key={`${issue.field}-${index}`}
-                          className={`rounded-2xl border px-4 py-3 text-sm ${
-                            issue.severity === 'error'
-                              ? 'border-red-500/20 bg-red-500/10 text-red-100'
-                              : 'border-amber-500/20 bg-amber-500/10 text-amber-100'
-                          }`}
+                          className={`rounded-2xl border px-4 py-3 text-sm ${issue.severity === 'error'
+                            ? 'border-red-500/20 bg-red-500/10 text-red-100'
+                            : 'border-amber-500/20 bg-amber-500/10 text-amber-100'
+                            }`}
                         >
                           <div className="font-semibold">{issue.field}</div>
                           <div className="mt-1 text-xs opacity-90">{issue.message}</div>
@@ -1885,11 +2061,10 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
                   <div className="max-h-[360px] space-y-3 overflow-y-auto">
                     {chatMessages.map((message, index) => (
                       <div key={`${message.role}-${index}`} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] rounded-2xl border px-4 py-3 text-sm ${
-                          message.role === 'user'
-                            ? 'border-indigo-400/30 bg-indigo-500/10 text-indigo-50'
-                            : 'border-slate-800 bg-slate-900/80 text-slate-200'
-                        }`}>
+                        <div className={`max-w-[85%] rounded-2xl border px-4 py-3 text-sm ${message.role === 'user'
+                          ? 'border-indigo-400/30 bg-indigo-500/10 text-indigo-50'
+                          : 'border-slate-800 bg-slate-900/80 text-slate-200'
+                          }`}>
                           <div>{message.content}</div>
                           {message.meta && <div className="mt-2 text-[11px] text-slate-500">{message.meta}</div>}
                         </div>
@@ -1964,9 +2139,8 @@ function TabButton({ active, icon, label, onClick, tooltipEntry }: { active: boo
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-          active ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-100' : 'border-slate-700 text-slate-300'
-        }`}
+        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${active ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-100' : 'border-slate-700 text-slate-300'
+          }`}
       >
         {icon}
         {label}
@@ -2215,6 +2389,7 @@ function splitCommaNumberList(value: string): number[] {
     .filter((item) => Number.isFinite(item));
 }
 
+
 function formatPct(value: number | null | undefined): string {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return 'n/a';
@@ -2227,4 +2402,19 @@ function formatCurrency(value: number | null | undefined): string {
     return 'n/a';
   }
   return `$${value.toFixed(2)}`;
+}
+
+function buildCreateForm(template: AgentTemplate): CreateAgentInput {
+  return {
+    name: '',
+    role: template.defaults.role,
+    description: template.defaults.description,
+    teamId: template.defaults.teamId,
+    category: template.defaults.category,
+    type: template.defaults.type,
+    defaultModel: template.defaults.defaultModel,
+    isDefault: false,
+    specializations: [...(template.defaults.specializations || [])],
+  };
+
 }

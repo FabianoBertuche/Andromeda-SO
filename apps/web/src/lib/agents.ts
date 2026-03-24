@@ -16,6 +16,19 @@ export interface AgentSummary {
   lastExecutionAt?: string;
 }
 
+export interface CreateAgentInput {
+  id?: string;
+  name: string;
+  role: string;
+  description: string;
+  teamId?: string;
+  category?: string;
+  type?: string;
+  defaultModel?: string;
+  isDefault?: boolean;
+  specializations?: string[];
+}
+
 export interface AgentBehaviorConfig {
   formality: number;
   warmth: number;
@@ -380,6 +393,18 @@ export async function listAgents(): Promise<AgentSummary[]> {
   const response = await apiFetch(`${getApiBaseUrl()}/agents`);
   ensureOk(response, 'Falha ao listar agentes.');
   return response.json() as Promise<AgentSummary[]>;
+}
+
+export async function createAgent(input: CreateAgentInput): Promise<AgentProfileDocument> {
+  const response = await apiFetch(`${getApiBaseUrl()}/agents`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+  ensureOk(response, 'Falha ao criar agente.');
+  return response.json() as Promise<AgentProfileDocument>;
 }
 
 export async function getAgentProfile(id: string): Promise<AgentProfileDocument> {
