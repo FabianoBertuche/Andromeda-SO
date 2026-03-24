@@ -41,6 +41,16 @@ export class BuildTaskTimeline {
             });
         }
 
+        const appliedAgentAssets = task.getMetadata().appliedAgentAssets;
+        if (appliedAgentAssets) {
+            entries.push({
+                type: "task.agent_assets",
+                timestamp: updatedAt,
+                description: "Assets locais aplicados na execucao",
+                metadata: appliedAgentAssets,
+            });
+        }
+
         if (task.getAuditParecer()) {
             entries.push({
                 type: "audit.completed",

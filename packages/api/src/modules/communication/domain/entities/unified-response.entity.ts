@@ -30,6 +30,7 @@ export interface UnifiedResponse {
     task?: {
         id: string;
         status: string;
+        appliedAgentAssets?: Record<string, unknown>;
     };
 
     visual?: {
@@ -48,5 +49,6 @@ export interface UnifiedResponse {
         requestId?: string;
         correlationId?: string;
         durationMs?: number;
+        appliedAgentAssets?: Record<string, unknown>;
     };
 }

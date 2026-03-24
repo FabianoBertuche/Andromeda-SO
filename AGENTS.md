@@ -5,9 +5,9 @@ Este projeto usa rules, skills e workflows locais para orientar o agente de dese
 
 ## Ordem de precedência
 1. Este arquivo (`AGENTS.md`)
-2. Arquivos em `.agents/rules/`
-3. Arquivos em `.agents/workflows/`
-4. Arquivos em `.agents/skills/`
+2. Arquivos em `.agent/rules/`
+3. Arquivos em `.agent/workflows/`
+4. Arquivos em `.agent/skills/`
 
 ## Princípios globais
 - Nunca invente fatos sobre o código sem verificar os arquivos relevantes.
@@ -20,6 +20,7 @@ Este projeto usa rules, skills e workflows locais para orientar o agente de dese
 - Não altere contratos de API sem validar consistência.
 - Não exponha segredos, dados sensíveis ou credenciais.
 - Sempre adapte a solução à stack detectada no repositório.
+- Se o runtime não expuser skills carregáveis automaticamente, use leitura direta de `.agent/` como fallback oficial.
 
 ## Roteamento inicial
 Ao receber uma tarefa:

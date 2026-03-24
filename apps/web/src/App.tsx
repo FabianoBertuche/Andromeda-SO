@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Book, Clock, Cpu, Database, DollarSign, Send, Terminal, User, Users } from 'lucide-react';
+import { Activity, Book, Clock, Cpu, Database, DollarSign, List, Send, Terminal, User, Users } from 'lucide-react';
 import { AgentManagementView } from './components/agents/AgentManagementView';
 import { MemoryView } from './components/memory/MemoryView';
 import { KnowledgeView } from './components/knowledge/KnowledgeView';
 import { TimelineView } from './components/Timeline/TimelineView';
 import { ModelCenterView } from './components/model-center/ModelCenterView';
 import { CostsView } from './components/costs/CostsView';
+import { PlansView } from './components/plans/PlansView';
 import { useWs } from './contexts/WsContext';
 import { useI18n, useTooltipText } from './contexts/I18nContext';
 import { createGatewayTask, pollGatewayTask, submitTaskFeedback } from './lib/gateway';
@@ -31,7 +32,7 @@ interface ChatMessage {
   feedbackError?: string;
 }
 
-type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' | 'knowledge' | 'costs';
+type ActiveTab = 'console' | 'timeline' | 'model-center' | 'agents' | 'memory' | 'knowledge' | 'costs' | 'plans';
 
 function App() {
   const { isConnected, session, activeTask } = useWs();
@@ -246,6 +247,12 @@ function App() {
                 Knowledge
               </button>
             </li>
+            <li>
+              <button onClick={() => setActiveTab('plans')} className={navClass(activeTab === 'plans')} title={tooltip('app.nav.plans')}>
+                <List className="w-5 h-5 mr-3" />
+                Plans
+              </button>
+            </li>
           </ul>
         </nav>
 
@@ -329,6 +336,10 @@ function App() {
           ) : activeTab === 'costs' ? (
             <div className="flex-1 overflow-auto">
               <CostsView />
+            </div>
+          ) : activeTab === 'plans' ? (
+            <div className="flex-1 overflow-auto">
+              <PlansView sessionId={session?.sessionId} />
             </div>
           ) : (
             <div className="flex-1 overflow-auto">

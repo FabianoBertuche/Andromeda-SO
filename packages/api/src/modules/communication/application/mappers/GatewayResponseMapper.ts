@@ -7,7 +7,7 @@ export class GatewayResponseMapper {
     static fromTaskResult(input: {
         message: UnifiedMessage;
         session: CommunicationSession;
-        taskResult: { taskId: string; status: string; outputText?: string };
+        taskResult: { taskId: string; status: string; outputText?: string; appliedAgentAssets?: Record<string, unknown> };
         durationMs?: number;
     }): UnifiedResponse {
         const { message, session, taskResult, durationMs } = input;
@@ -34,6 +34,7 @@ export class GatewayResponseMapper {
             task: {
                 id: taskResult.taskId,
                 status: taskResult.status,
+                appliedAgentAssets: taskResult.appliedAgentAssets,
             },
             visual: {
                 state: mapped.visual,
@@ -44,6 +45,7 @@ export class GatewayResponseMapper {
                 requestId: message.metadata.requestId,
                 correlationId: message.metadata.correlationId,
                 durationMs,
+                appliedAgentAssets: taskResult.appliedAgentAssets,
             },
         };
     }

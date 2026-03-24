@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { CreateTask, TaskCreated, globalEventBus } from "@andromeda/core";
-import { createDefaultExecuteTaskUseCase } from "../../../../infrastructure/execution/createDefaultExecuteTaskUseCase";
+import { AssetAwareExecuteTask } from "../../../../infrastructure/execution/AssetAwareExecuteTask";
 import { globalTaskRepository } from "../../../../infrastructure/repositories/GlobalRepositories";
 import { globalAgentRegistry } from "../../../../presentation/routes/agentRoutes";
 import { ReceiveGatewayMessage } from "../../application/use-cases/ReceiveGatewayMessage";
@@ -29,7 +29,7 @@ const authAdapter = new StaticTokenChannelAuthAdapter();
 const resolveSession = new ResolveSession(globalSessionRepository);
 const createTaskUseCase = new CreateTask(globalTaskRepository);
 const createTaskFromMessage = new CreateTaskFromMessage(createTaskUseCase);
-const executeTaskUseCase = createDefaultExecuteTaskUseCase(globalTaskRepository, globalAgentRegistry);
+const executeTaskUseCase = new AssetAwareExecuteTask(globalTaskRepository, globalAgentRegistry);
 
 globalEventBus.subscribe("TaskCreated", async (event: any) => {
     if (event instanceof TaskCreated) {

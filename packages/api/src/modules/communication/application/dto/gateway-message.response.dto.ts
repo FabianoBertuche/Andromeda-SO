@@ -11,6 +11,7 @@ export interface GatewayMessageResponseDto {
     task?: {
         id: string;
         status: string;
+        appliedAgentAssets?: Record<string, unknown>;
     };
     visual?: {
         state:
@@ -28,5 +29,6 @@ export interface GatewayMessageResponseDto {
         requestId?: string;
         correlationId?: string;
         durationMs?: number;
+        appliedAgentAssets?: Record<string, unknown>;
     };
 }

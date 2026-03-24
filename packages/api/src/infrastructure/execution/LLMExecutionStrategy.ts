@@ -192,7 +192,7 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
             };
         }
 
-        const routedTarget = await this.tryRouteTask(task);
+            const routedTarget = await this.tryRouteTask(task);
         if (routedTarget) {
             return routedTarget;
         }
@@ -235,6 +235,23 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
     private async tryRouteTask(task: Task): Promise<{ modelName: string; provider: Provider; pricing?: Pricing } | null> {
         try {
             const routing = await this.routingSignalService.resolve(task);
+            const inferredWorkflow = inferWorkflowName(routing.activityType);
+            task.mergeMetadata({
+                activityType: routing.activityType,
+                inferredWorkflow,
+                routing: {
+                    source: routing.source,
+                    activityType: routing.activityType,
+                    requiredCapabilities: routing.requiredCapabilities,
+                    confidence: routing.confidence,
+                    warnings: routing.warnings,
+                    inferredWorkflow,
+                },
+                execution: {
+                    ...(task.getMetadata().execution || {}),
+                    workflowName: inferredWorkflow,
+                },
+            });
             console.info("[routing.signal.selected]", {
                 taskId: task.getId(),
                 source: routing.source,
@@ -372,5 +389,20 @@ export class LLMExecutionStrategy implements ExecutionStrategy {
                 error: error instanceof Error ? error.message : "unknown_error",
             });
         }
+    }
+}
+
+function inferWorkflowName(activityType?: string): string | undefined {
+    switch (activityType) {
+        case "coding.debug":
+            return "debug";
+        case "coding.architecture":
+            return "plan";
+        case "coding.generate":
+            return "create";
+        case "chat.summarization":
+            return "status";
+        default:
+            return undefined;
     }
 }

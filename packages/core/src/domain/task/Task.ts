@@ -84,6 +84,14 @@ export class Task {
         this.updatedAt = new Date();
     }
 
+    mergeMetadata(metadata: Record<string, any>): void {
+        this.metadata = {
+            ...this.metadata,
+            ...metadata,
+        };
+        this.updatedAt = new Date();
+    }
+
     toJSON() {
         return {
             id: this.id,

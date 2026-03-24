@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { CreateTask, TaskRepository } from "@andromeda/core";
-import { createDefaultExecuteTaskUseCase } from "../../infrastructure/execution/createDefaultExecuteTaskUseCase";
+import { AssetAwareExecuteTask } from "../../infrastructure/execution/AssetAwareExecuteTask";
+import { summarizeAppliedAgentAssets } from "../../infrastructure/agent-assets/AppliedAgentAssetSummary";
 import { globalAgentRegistry } from "../routes/agentRoutes";
 import { RequestWithContext } from "../../shared/http/request-context";
 
@@ -44,7 +45,10 @@ export class TaskController {
         try {
             const task = await this.repository.findById(req.params.id);
             if (!task) return res.status(404).json({ error: "Task not found" });
-            return res.json(task.toJSON());
+            return res.json({
+                ...task.toJSON(),
+                appliedAgentAssetsSummary: summarizeAppliedAgentAssets(task.getMetadata().appliedAgentAssets),
+            });
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
         }
@@ -52,12 +56,28 @@ export class TaskController {
 
     async execute(req: RequestWithContext, res: Response) {
         try {
-            const useCase = createDefaultExecuteTaskUseCase(this.repository, globalAgentRegistry);
+            const useCase = new AssetAwareExecuteTask(this.repository, globalAgentRegistry);
             const task = await useCase.execute(req.params.id);
 
             return res.json(task.toJSON());
         } catch (error: any) {
             console.error(error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    async getAssets(req: RequestWithContext, res: Response) {
+        try {
+            const task = await this.repository.findById(req.params.id);
+            if (!task) return res.status(404).json({ error: "Task not found" });
+
+            return res.json({
+                taskId: task.getId(),
+                status: task.getStatus(),
+                appliedAgentAssets: task.getMetadata().appliedAgentAssets || null,
+                appliedAgentAssetsSummary: summarizeAppliedAgentAssets(task.getMetadata().appliedAgentAssets),
+            });
+        } catch (error: any) {
             return res.status(500).json({ error: error.message });
         }
     }

@@ -1,5 +1,6 @@
 import { Task, ExecutionStrategy, ExecutionResult, SkillRegistry } from "@andromeda/core";
 import { SandboxedSkillExecutor } from "../skills/SandboxedSkillExecutor";
+import { isExecutableSkill } from "../skills/SkillMetadata";
 
 export class SkillExecutionStrategy implements ExecutionStrategy {
     constructor(
@@ -10,7 +11,7 @@ export class SkillExecutionStrategy implements ExecutionStrategy {
     async execute(task: Task): Promise<ExecutionResult> {
         try {
             // Busca a skill baseada na task
-            const skills = await this.skillRegistry.searchByCapability(task.getRawRequest());
+            const skills = (await this.skillRegistry.searchByCapability(task.getRawRequest())).filter(isExecutableSkill);
             if (skills.length === 0) {
                 return { success: false, data: null, strategyUsed: this.getIdentifier(), error: "Nenhuma skill encontrada" };
             }

@@ -14,6 +14,7 @@ console.log("Initializing Andromeda OS Express App...");
 
 import taskRoutes from "./presentation/routes/taskRoutes";
 import skillRoutes from "./presentation/routes/skillRoutes";
+import agentAssetRoutes from "./presentation/routes/agentAssetRoutes";
 import agentRoutes from "./presentation/routes/agentRoutes";
 import { sandboxRouter } from "./modules/sandbox/dependencies";
 import { memoryRouter } from "./modules/memory/dependencies";
@@ -28,6 +29,7 @@ import { feedbackRouter } from "./modules/feedback/dependencies";
 import { performanceRouter } from "./modules/performance/dependencies";
 import { costsRouter } from "./modules/costs/dependencies";
 import { playbookSuggestionsRouter } from "./modules/evolution/playbook/dependencies";
+import { plannerRouter } from "./modules/planner/dependencies";
 
 import { authController } from "./modules/auth/dependencies";
 import { createAuthRoutes } from "./modules/auth/interfaces/http/auth.routes";
@@ -71,8 +73,9 @@ import { tenantMiddleware } from "./shared/middleware/tenant.middleware";
 
 v1Router.use("/", healthRouter);
 v1Router.use("/tasks", authMiddleware, tenantMiddleware, taskRoutes);
-v1Router.use("/skills", authMiddleware, tenantMiddleware, skillRoutes);
-v1Router.use("/agents", authMiddleware, tenantMiddleware, agentRoutes);
+    v1Router.use("/skills", authMiddleware, tenantMiddleware, skillRoutes);
+    v1Router.use("/agent-assets", authMiddleware, tenantMiddleware, agentAssetRoutes);
+    v1Router.use("/agents", authMiddleware, tenantMiddleware, agentRoutes);
 v1Router.use("/sandbox", authMiddleware, tenantMiddleware, sandboxRouter);
 v1Router.use("/memory", authMiddleware, tenantMiddleware, memoryRouter);
 v1Router.use("/gateway", authMiddleware, tenantMiddleware, communicationRoutes);
@@ -83,6 +86,7 @@ v1Router.use("/", authMiddleware, tenantMiddleware, feedbackRouter);
 v1Router.use("/agents", authMiddleware, tenantMiddleware, performanceRouter);
 v1Router.use("/agents", authMiddleware, tenantMiddleware, playbookSuggestionsRouter);
 v1Router.use("/costs", authMiddleware, tenantMiddleware, costsRouter);
+v1Router.use("/", authMiddleware, tenantMiddleware, plannerRouter);
 v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
 v1Router.use("/backup", authMiddleware, requireRole('owner'), backupRouter);
 v1Router.use("/dlq", authMiddleware, requireRole('admin'), dlqRouter);

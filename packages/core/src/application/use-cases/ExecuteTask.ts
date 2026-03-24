@@ -34,6 +34,12 @@ export class ExecuteTask {
 
             const strategy = await this.factory.getStrategy(task);
             const result = await strategy.execute(task);
+            task.mergeMetadata({
+                execution: {
+                    strategyUsed: result.strategyUsed,
+                    success: result.success,
+                },
+            });
 
             const oldStatus4 = task.getStatus();
             if (result.success) {
@@ -61,6 +67,12 @@ export class ExecuteTask {
             this.eventBus.publish(new TaskStatusChanged(task.getId(), oldStatus4, task.getStatus()));
             return task;
         } catch (error: any) {
+            task.mergeMetadata({
+                execution: {
+                    strategyUsed: task.getMetadata().execution?.strategyUsed,
+                    success: false,
+                },
+            });
             task.transitionTo(TaskStatus.FAILED);
             task.setResult({ error: error.message });
             await this.repository.save(task);

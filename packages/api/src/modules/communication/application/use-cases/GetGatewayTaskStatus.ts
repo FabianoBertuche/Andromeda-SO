@@ -15,6 +15,7 @@ export class GetGatewayTaskStatus {
             updatedAt: task.getUpdatedAt(),
             result: task.getResult(),
             auditParecer: task.getAuditParecer(),
+            appliedAgentAssets: task.getMetadata().appliedAgentAssets,
         };
     }
 }

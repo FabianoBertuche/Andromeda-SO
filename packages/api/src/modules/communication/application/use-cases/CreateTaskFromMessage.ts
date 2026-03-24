@@ -57,6 +57,7 @@ export class CreateTaskFromMessage {
         return {
             taskId: task.getId(),
             status: task.getStatus(),
+            appliedAgentAssets: task.getMetadata().appliedAgentAssets,
         };
     }
 }
