@@ -1,4 +1,5 @@
 # ANDROMEDA CONSTITUTION — MVP09
+
 # Lido automaticamente pelo Antigravity em cada sessão via CLAUDE.md na raiz
 
 ## Stack Real do Projeto (NÃO usar NestJS)
@@ -13,6 +14,7 @@
 - **Monorepo:** packages/api + packages/core + packages/telegram + apps/web
 
 ## Estrutura de módulos (packages/api/src/modules/)
+
 - communication/   — Gateway, sessions, WebSocket
 - agent-management/ — Identity, safeguards, prompts
 - cognitive/       — Adapter para Python
@@ -35,6 +37,7 @@
 ## Rules Ativas (todas obrigatórias neste MVP)
 
 Localização: .agent/rules/
+
 - rule-01-security-isolation.md   → JWT, RBAC, tokens nunca logados
 - rule-02-async-performance.md    → async/await, sem blocking I/O
 - rule-03-multi-tenant-shield.md  → tenantId em TODOS os queries
@@ -140,3 +143,40 @@ Este workflow aciona todos os agentes especializados em paralelo para revisão c
 
 Prioridade: CLAUDE.md → EDD-MVP09 → Technical-Details.md → Notion
 Se ainda ambíguo: PARAR e perguntar. Não assumir.
+
+## REGRA INEGOCIÁVEL: Testes Playwright ao Final de Todo MVP
+
+Ao concluir qualquer MVP, execute obrigatoriamente:
+
+```bash
+# 1. Testes unitários e integração
+npm test
+
+# 2. Testes Playwright — interface real no navegador
+cd packages/web-e2e && npx playwright test
+
+# 3. Só declare MVP concluído se AMBOS passarem com 0 falhas
+Os testes Playwright devem cobrir:
+
+Carregamento sem erros de todas as telas novas
+
+Todos os botões clicáveis disparando ações reais no backend
+
+Fluxo CRUD completo via interface
+
+Fluxo E2E principal do MVP (ponta a ponta)
+
+Arquivo de spec deve ser criado em:
+packages/web-e2e/tests/mvpXX-nome.spec.ts
+
+Antes de commitar o MVP, verifique:
+
+ npm test → verde
+
+ npx playwright test → verde
+
+ Spec Playwright do MVP commitada
+
+ PROJECT-CONTEXT.md atualizado
+
+ Documentação do MVP atualizada com nota dos testes Playwright

@@ -131,3 +131,42 @@ packages/api/src/modules/health/
 
 **Status:** ⚠️ Revisão concluída com pendências críticas
 
+---
+
+## [2026-03-25] — MVP12 Planejado: i18n Nativa + Export/Import
+
+**Participantes:** Human + AI
+
+**O que foi feito:**
+- Análise completa do código existente
+- Identificação de lacunas no plano original:
+  1. Agentes são file-based, precisam migrar para DB
+  2. CLI não existe, precisa ser criado
+  3. I18n parcial (tooltips only), precisa ser estendido
+- Decisões tomadas:
+  1. Migração file-based → DB: **uma vez**, DB é fonte de verdade
+  2. Escopo preferredLocale: **ambos** (system prompt + knowledge retrieval)
+  3. CLI: pacote separado `packages/cli/`
+
+**Plano atualizado:**
+- **FASE 0:** Model Agent + Migração File→DB (NOVA)
+- **FASE 1:** Prisma Migrations + Entidades i18n/portability
+- **FASE 2:** i18n Backend (API)
+- **FASE 3:** Language Detection (Python + langdetect)
+- **FASE 4:** Export de Agentes (BundleBuilder)
+- **FASE 5:** Import de Agentes (transação atômica)
+- **FASE 6:** UI i18n Frontend (i18next)
+- **FASE 7:** UI Export/Import (modais + progress)
+- **FASE 8:** CLI (NOVA - packages/cli/)
+- **FASE 9:** Testes + Evals E2E
+
+**Estimativa:** ~14 horas
+
+**Dependências novas:**
+- packages/api: archiver, unzipper
+- apps/web: i18next, react-i18next
+- packages/cli: commander
+- services/cognitive-python: langdetect
+
+**Status:** 📋 Planejado, aguardando implementação
+

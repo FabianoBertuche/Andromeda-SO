@@ -1,6 +1,6 @@
 # PROJECT-CONTEXT.md — Andromeda OS
-**Última atualização:** 2026-03-24  
-**Status atual:** MVP12 em andamento  
+**Última atualização:** 2026-03-25  
+**Status atual:** MVP12 planejado  
 
 ---
 
@@ -46,16 +46,39 @@ Sistema operacional de agentes de IA com skill-first, auditoria independente, me
 
 ## MVP Atual: MVP12 — i18n Nativa + Export/Import de Agentes
 
+**Status:** 📋 Planejado (implementação não iniciada)
+
 **Objetivos:**
 1. Internacionalização real em 3 camadas (UI / Agent Locale / System Messages + Knowledge)
 2. Portabilidade completa de agentes via bundle `.andromeda-agent`
+3. CLI para export/import de agentes
+4. Migração de agentes file-based para database
+
+**Decisões de arquitetura:**
+- Migração Agent: **uma vez** — DB é fonte de verdade, `.md` descartados
+- Escopo preferredLocale: **ambos** — System prompt + Knowledge retrieval
+- Localização CLI: **pacote separado** — `packages/cli/`
 
 **Documentação ativa:**
-- `doc/active/MVP12-PRD.md`
-- `doc/active/EDD-MVP12.md`
-- `doc/active/Implementation-Plan-MVP12.md`
-- `doc/active/evals/mvp12-i18n.feature`
-- `doc/active/evals/mvp12-export-import.feature`
+- `doc/active/MVP12-PRD.md` — Requisitos
+- `doc/active/EDD-MVP12.md` — Engineering Design
+- `doc/active/Implementation-Plan-MVP12.md` — Plano de implementação (atualizado)
+- `doc/active/evals/mvp12-i18n.feature` — Evals i18n
+- `doc/active/evals/mvp12-export-import.feature` — Evals export/import
+
+**Fases do plano:**
+| Fase | Descrição | Estimativa |
+|------|-----------|------------|
+| 0 | Model Agent + Migração File→DB | 1.5h |
+| 1 | Prisma Migrations | 1h |
+| 2 | i18n Backend (API) | 1.5h |
+| 3 | Language Detection (Python) | 1h |
+| 4 | Export de Agentes | 1.5h |
+| 5 | Import de Agentes | 2h |
+| 6 | UI i18n Frontend | 1.5h |
+| 7 | UI Export/Import | 1.5h |
+| 8 | CLI | 2h |
+| 9 | Testes + Evals | 1h |
 
 ---
 

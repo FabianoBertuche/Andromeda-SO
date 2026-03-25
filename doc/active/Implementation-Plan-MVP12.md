@@ -1,7 +1,7 @@
 # Implementation Plan — MVP12
 **Zero-Shot Ready para Antigravity/Claude Code**  
-**Estimativa:** 6–8 sessões de coding  
-**Data:** 2026-03-24  
+**Estimativa:** 14 sessões de coding  
+**Data:** 2026-03-25 (atualizado)
 
 ---
 
@@ -18,7 +18,103 @@
 
 ---
 
-## FASE 1 — Prisma Migrations + Entidades Base
+## Decisões Pré-Implementação
+
+| Decisão | Escolha |
+|---------|---------|
+| Migração Agent | **Uma vez** — DB é fonte de verdadade, `.md` descartados |
+| Escopo preferredLocale | **Ambos** — System prompt + Knowledge retrieval |
+| Localização CLI | **Pacote separado** — `packages/cli/` |
+| UI Export/Import | **Sim** — Modais web além do CLI |
+
+---
+
+## FASE 0 — Model Agent + Migração File→DB (NOVA)
+**Estimativa:** 1.5h  
+**Objetivo:** Persistir agentes no banco para suportar export/import com relacionamentos.
+
+**Arquivos a criar/modificar:**
+
+```
+packages/api/prisma/schema.prisma                          ADICIONAR model Agent
+packages/api/src/modules/agent-management/
+  infrastructure/
+    PrismaAgentProfileRepository.ts                        NOVO
+    AgentMigrationService.ts                               NOVO
+  dependencies.ts                                           ALTERAR
+```
+
+**O que fazer:**
+
+1. Adicionar model `Agent` no Prisma:
+
+```prisma
+model Agent {
+  id                String   @id @default(uuid())
+  slug              String   @unique
+  name              String
+  role              String
+  description       String
+  teamId            String   @default("team-core")
+  category          String   @default("general")
+  type              String   @default("specialist")
+  defaultModel      String   @default("automatic-router")
+  status            String   @default("active")
+  isDefault         Boolean  @default(false)
+  version           String   @default("v1.0.0")
+  preferredLocale   String   @default("pt-BR")
+  fallbackLocale    String   @default("en-US")
+  
+  identity          Json
+  soul              Json
+  rules             Json
+  playbook          Json
+  context           Json
+  safeguardConfig   Json
+  personaConfig     Json
+  
+  bundles           AgentBundle[]
+  
+  tenantId          String   @default("default")
+  createdBy         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+  archivedAt        DateTime?
+
+  @@index([tenantId])
+  @@index([slug])
+  @@index([deletedAt])
+  @@map("agents")
+}
+```
+
+2. Criar `PrismaAgentProfileRepository.ts`:
+   - Implementar mesma interface de `FileSystemAgentProfileRepository`
+   - Mapear `AgentProfile` (type TS) para `Agent` (model Prisma)
+   - Métodos: `getById`, `list`, `save`, `delete`
+
+3. Criar `AgentMigrationService.ts`:
+   - Script one-shot para migrar arquivos `.md` para banco
+   - Executar: `npx ts-node scripts/migrate-agents-to-db.ts`
+   - Preservar estrutura completa do AgentProfile
+   - Criar backup de `.agent/agents/` antes de migrar
+
+4. Atualizar `dependencies.ts`:
+   - Swap de `FileSystemAgentProfileRepository` para `PrismaAgentProfileRepository`
+
+5. Rodar:
+```bash
+npx prisma migrate dev --name mvp12-agent-model
+npx prisma generate
+npm run test
+```
+
+**Commit gate:** Agentes existentes em `.agent/agents/` aparecem na API via banco de dados.
+
+---
+
+## FASE 1 — Prisma Migrations + Entidades Base (ORIGINAL)
 **Estimativa:** 1h  
 **Arquivos a criar/modificar:**
 
@@ -313,22 +409,157 @@ apps/web/src/
 
 ---
 
-## FASE 8 — Testes E2E + Evals
-**Estimativa:** 1h  
+## FASE 8 — CLI (NOVA)
+**Estimativa:** 2h  
+**Arquivos a criar:**
+
+```
+packages/cli/
+  package.json                   NOVO
+  tsconfig.json                  NOVO
+  src/
+    index.ts                     NOVO (entry point)
+    commands/
+      agents.export.ts           NOVO
+      agents.import.ts           NOVO
+      i18n.locales.ts            NOVO
+      i18n.seed.ts               NOVO
+    lib/
+      api-client.ts              NOVO
+      bundle-io.ts               NOVO
+```
+
+**O que fazer:**
+
+1. Criar estrutura do pacote CLI:
+
+```json
+// packages/cli/package.json
+{
+  "name": "@andromeda/cli",
+  "version": "0.1.0",
+  "bin": {
+    "andromeda": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "archiver": "^7.0.0",
+    "unzipper": "^0.12.0"
+  }
+}
+```
+
+2. Criar `src/index.ts` com commander:
+
+```typescript
+#!/usr/bin/env node
+import { program } from 'commander';
+import { agentsExport } from './commands/agents.export';
+import { agentsImport } from './commands/agents.import';
+import { i18nLocales } from './commands/i18n.locales';
+import { i18nSeed } from './commands/i18n.seed';
+
+program
+  .name('andromeda')
+  .description('Andromeda OS CLI')
+  .version('0.1.0');
+
+program
+  .command('agents export <agentId>')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--include-knowledge', 'Include knowledge collections')
+  .action(agentsExport);
+
+program
+  .command('agents import <file>')
+  .option('--conflict <policy>', 'Conflict policy: abort|rename|overwrite', 'abort')
+  .action(agentsImport);
+
+program
+  .command('i18n locales')
+  .action(i18nLocales);
+
+program
+  .command('i18n seed')
+  .option('--locale <code>', 'Locale to seed', 'pt-BR')
+  .action(i18nSeed);
+
+program.parse();
+```
+
+3. Criar `commands/agents.export.ts`:
+   - Chama `GET /v1/agents/:id` para obter dados do agente
+   - Chama `POST /v1/agents/:id/export` para gerar bundle
+   - Faz download do arquivo `.andromeda-agent`
+   - Exibe progresso e checksum
+
+4. Criar `commands/agents.import.ts`:
+   - Valida arquivo `.andromeda-agent`
+   - Chama `POST /v1/agents/import` (multipart)
+   - Polling de `GET /v1/agents/import/:jobId`
+   - Se `CONFLICT_DETECTED`, solicita resolução interativa
+
+5. Criar `lib/api-client.ts`:
+   - HTTP client para API do Andromeda
+   - Lê URL base de `ANDROMEDA_API_URL` ou `http://localhost:3000`
+   - Lê token de `ANDROMEDA_TOKEN` ou arquivo de config
+
+6. Adicionar script no root `package.json`:
+
+```json
+{
+  "scripts": {
+    "cli": "tsx packages/cli/src/index.ts"
+  }
+}
+```
+
+**Uso:**
+
+```bash
+# Export
+npx andromeda agents export agent-001 --output ./my-agent.andromeda-agent
+
+# Import
+npx andromeda agents import ./my-agent.andromeda-agent --conflict rename
+
+# Listar locales
+npx andromeda i18n locales
+
+# Seed de mensagens
+npx andromeda i18n seed --locale pt-BR
+```
+
+**Commit gate:** CLI consegue exportar agente, importar com conflito resolvido interativamente, e listar locales.
+
+---
+
+## FASE 9 — Testes E2E + Evals
+**Estimativa:** 1.5h  
 **Arquivos a criar:**
 
 ```
 packages/api/tests/mvp12/
   i18n.test.ts                  NOVO
   export-import.test.ts         NOVO
-doc/active/evals/
-  mvp12-i18n.feature            NOVO
-  mvp12-export-import.feature   NOVO
+packages/cli/tests/
+  export.test.ts                NOVO
+  import.test.ts                NOVO
+packages/web-e2e/tests/
+  mvp12-i18n.spec.ts            NOVO
+  mvp12-export-import.spec.ts   NOVO
+  mvp12-cli.spec.ts             NOVO
+  fixtures/
+    manifest.json               NOVO
 ```
 
 **O que fazer:**
 
-1. Testes de integração para:
+1. Testes de integração API (Vitest):
    - `GET /v1/i18n/locales` retorna PT-BR e EN-US
    - `GET /v1/i18n/messages?locale=pt-BR&category=system` retorna mensagens
    - Export → gera arquivo + persiste `AgentBundle` no banco
@@ -337,37 +568,186 @@ doc/active/evals/
    - Import com conflito + ABORT → CONFLICT_DETECTED, nada criado
    - Import com conflito + OVERWRITE → agente substituído
 
-2. Rodar evals BDD (copie os arquivos `.feature` gerados)
+2. Testes de CLI (subprocess):
+   - `andromeda agents export` gera arquivo válido
+   - `andromeda agents import` com arquivo válido cria agente
+   - `andromeda agents import` com conflito exibe opções interativas
+   - `andromeda i18n locales` lista locales
 
-3. Atualizar `Development-Log.md`:
-```
-## 2026-03-24 — MVP12 Concluído
-- i18n PT-BR/EN-US implementado em 3 camadas
-- Language detection automático na ingestão de documentos
+3. Testes E2E Playwright (UI):
+   - LocaleSwitcher display PT-BR como padrão
+   - Troca de locale PT↔EN sem reload
+   - Locale persiste após refresh
+   - Labels de formulário traduzidos
+   - Mensagens de erro traduzidas
+   - Preferência de locale salva no backend
+   - Agente com locale preferido configurável
+   - Botão Export na listagem e menu de contexto
+   - Modal de export com opções
+   - Download do arquivo .andromeda-agent
+   - Import com drag-drop e progress
+   - Conflito: ABORT, RENAME, OVERWRITE
+   - Export→Import mantém dados do agente
+
+4. Rodar evals BDD:
+   - `doc/active/evals/mvp12-i18n.feature`
+   - `doc/active/evals/mvp12-export-import.feature`
+
+5. Atualizar `Development-Log.md`:
+
+```markdown
+## 2026-03-25 — MVP12 Concluído
+- i18n PT-BR/EN-US implementado em 3 camadas (UI, Agent, Knowledge)
+- Language detection automático na ingestão de documentos (langdetect)
 - Export/Import de agentes com bundle .andromeda-agent
 - Transação atômica no import com 3 políticas de conflito
-- CLI: andromeda agents export/import
+- CLI: andromeda agents export/import funcional
+- UI: Modais de Export/Import em AgentManagementView
+- Agentes migrados de file-based para database
+- E2E tests: Playwright + Vitest + CLI tests
 ```
 
 **Commit gate final:** Todos os testes verdes. `npm run test` + `npm run typecheck` passam.
 
 ---
 
+## Estrutura de Testes E2E (Playwright)
+
+### mvp12-i18n.spec.ts
+| Teste | Descrição |
+|-------|-----------|
+| LocaleSwitcher display PT-BR padrão | Verifica locale padrão |
+| Troca PT-BR → EN-US sem reload | Verifica troca dinâmica |
+| Locale persiste após refresh | Verifica localStorage + backend |
+| Labels traduzidos | Verifica i18n em formulários |
+| Mensagens de erro traduzidas | Verifica i18n em validações |
+| Preferência salva no backend | Verifica PUT /users/me/preferences |
+| Agente com locale preferido | Verifica campos preferredLocale/fallbackLocale |
+
+### mvp12-export-import.spec.ts
+| Teste | Descrição |
+|-------|-----------|
+| Botão Export aparece | Verifica UI de export |
+| Modal de export com opções | Verifica checkboxes de knowledge/versions |
+| Download .andromeda-agent | Verifica download do bundle |
+| Botão Import aparece | Verifica UI de import |
+| Import com drag-drop | Verifica upload |
+| Import com progress | Verifica polling do job |
+| Import falha checksum | Verifica erro de validação |
+| Conflito: ABORT | Verifica cancelamento |
+| Conflito: RENAME | Verifica sufixo -imported |
+| Conflito: OVERWRITE | Verifica substituição |
+| Export→Import ciclo | Verifica integridade dos dados |
+
+### mvp12-cli.spec.ts
+| Teste | Descrição |
+|-------|-----------|
+| i18n locales lista locales | Verifica CLI output |
+| i18n seed popula mensagens | Verifica seed command |
+| agents export gera arquivo | Verifica CLI export |
+| agents export --include-knowledge | Verifica opção |
+| agents export falha inexistente | Verifica erro |
+| agents import cria agente | Verifica CLI import |
+| agents import com conflito abort | Verifica política ABORT |
+| agents import com conflito rename | Verifica política RENAME |
+| agents import com conflito overwrite | Verifica política OVERWRITE |
+| agents import falha corrompido | Verifica validação |
+| Bundle contém manifest.json | Verifica estrutura |
+
+---
+
+## Dependências Novas
+
+### packages/api
+```bash
+npm install archiver @types/archiver unzipper @types/unzipper
+```
+
+### apps/web
+```bash
+npm install i18next react-i18next i18next-browser-languagedetector
+```
+
+### packages/cli (novo)
+```bash
+npm install commander archiver unzipper
+```
+
+### services/cognitive-python
+```bash
+pip install langdetect>=1.0.9
+```
+
+---
+
 ## Checklist Final MVP12
 
+### Fase 0 — Model Agent + Migração
+- [ ] Model `Agent` criado no Prisma com todos os campos
+- [ ] `PrismaAgentProfileRepository` implementado
+- [ ] `AgentMigrationService` migrou `.agent/agents/` para banco
+- [ ] `dependencies.ts` atualizado para usar `PrismaAgentProfileRepository`
+- [ ] Agentes existentes aparecem na API após migração
+
+### Fase 1 — Prisma Migrations
+- [ ] Migration `mvp12-agent-model` aplicada
 - [ ] Migration `mvp12-i18n-portability` aplicada
+- [ ] Models `LocaleRegistry`, `LocalizedMessage`, `UserPreferences` criados
+- [ ] Models `AgentBundle`, `AgentImportJob` criados
+- [ ] KnowledgeDocument com campos `detectedLang`, `detectedLocale`, `langConfidence`
+
+### Fase 2 — i18n Backend
 - [ ] `GET /v1/i18n/locales` funcional
-- [ ] UI em PT-BR por padrão
-- [ ] LocaleSwitcher alterna PT↔EN sem reload
-- [ ] `preferredLocale` configurável por agente
-- [ ] Language detection ativo na ingestão de documentos (Python)
-- [ ] Retrieval filtra por idioma do agente
-- [ ] Export gera `.andromeda-agent` com checksum SHA-256
+- [ ] `GET /v1/i18n/messages?locale=pt-BR&category=system` retorna mensagens
+- [ ] `PUT /v1/users/me/preferences` persiste locale
+- [ ] Seeds PT-BR e EN-US populados
+
+### Fase 3 — Language Detection
+- [ ] `POST /language/detect` no Python service
+- [ ] Texto em PT detectado como `pt-BR`
+- [ ] Texto em EN detectado como `en-US`
+- [ ] Fallback para `en-US` quando confiança < 0.8
+- [ ] KnowledgeDocument com idioma detectado na ingestão
+
+### Fase 4 — Export
+- [ ] `POST /v1/agents/:id/export` gera bundle
+- [ ] Bundle `.andromeda-agent` é ZIP válido
+- [ ] Checksum SHA-256 calculado e armazenado
+- [ ] `AgentBundle` persistido no banco
+
+### Fase 5 — Import
 - [ ] Import valida checksum antes de processar
-- [ ] Import conflito: 3 políticas funcionando (ABORT/RENAME/OVERWRITE)
+- [ ] Import com conflito ABORT → CONFLICT_DETECTED
+- [ ] Import com conflito RENAME → agente com slug `-imported`
+- [ ] Import com conflito OVERWRITE → agente substituído
 - [ ] Import atômico: falha não deixa agente parcial
 - [ ] RBAC: apenas admin/owner exportam/importam
-- [ ] CLI `andromeda agents export/import` funcional
+
+### Fase 6 — UI i18n
+- [ ] UI renderiza 100% em PT-BR por padrão
+- [ ] LocaleSwitcher alterna PT↔EN sem reload
+- [ ] Locale persistido em localStorage + backend
+- [ ] `preferredLocale` configurável por agente na UI
+
+### Fase 7 — UI Export/Import
+- [ ] AgentExportModal funcional
+- [ ] AgentImportModal com drag-drop
+- [ ] ImportConflictDialog com opções
+- [ ] ImportProgressBar mostra progresso
+- [ ] Botões Export/Import em AgentManagementView
+
+### Fase 8 — CLI
+- [ ] `andromeda agents export <id>` funcional
+- [ ] `andromeda agents import <file>` funcional
+- [ ] `andromeda i18n locales` funcional
+- [ ] `andromeda i18n seed --locale pt-BR` funcional
+
+### Fase 9 — Testes
+- [ ] Todos os testes de integração passando
 - [ ] Todos os evals BDD verdes
+- [ ] `npm run test` passa
+- [ ] `npm run typecheck` passa
+
+### Documentação
 - [ ] `Development-Log.md` atualizado
 - [ ] `Project-Context.md` atualizado com MVP12 concluído

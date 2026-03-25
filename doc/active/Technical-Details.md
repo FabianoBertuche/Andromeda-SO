@@ -1,6 +1,21 @@
-# Technical Details — MVP09
+# Technical Details — MVP12
 
-## Stack Real (verificada em 2026-03-19)
+## Stack Real (verificada em 2026-03-25)
+
+| Camada | Tecnologia | Versão |
+|---|---|---|
+| Backend | Express + TypeScript | express ^4.18.2 |
+| ORM | Prisma | ^7.5.0 |
+| Banco | PostgreSQL | via Docker |
+| Realtime | Socket.io | ^4.8.3 |
+| Filas | BullMQ | ✅ instalado |
+| Frontend | React + Vite + Tailwind | apps/web/ |
+| Cognitivo | Python 3.13 + FastAPI | services/cognitive-python/ |
+| CLI (NOVO MVP12) | Commander | packages/cli/ |
+| Testes | Vitest | por workspace |
+| HTTP Utils | helmet, cors, morgan | já instalados |
+| i18n (NOVO MVP12) | i18next + react-i18next | apps/web/ |
+| Bundle (NOVO MVP12) | archiver + unzipper | packages/api/ |
 
 | Camada | Tecnologia | Versão |
 |---|---|---|
@@ -23,19 +38,33 @@ Andromeda-SO/
 ├── package.json                     ← Workspace root
 ├── apps/
 │   └── web/                         ← React + Vite + Tailwind
+│       └── src/locales/             ← NOVO MVP12: pt-BR/, en-US/
 ├── packages/
 │   ├── api/                         ← Backend Express (módulos aqui)
 │   │   ├── prisma/
-│   │   │   ├── schema.prisma        ← Schema atual (MVP01→MVP08)
-│   │   │   └── migrations/          ← 4 migrations existentes
+│   │   │   ├── schema.prisma        ← Schema atual (MVP01→MVP12)
+│   │   │   └── migrations/          ← migrations existentes
 │   │   └── src/
 │   │       ├── app.ts               ← Express app config
 │   │       ├── index.ts             ← Entry point
-│   │       ├── modules/             ← Módulos de domínio
+│   │       ├── modules/
+│   │       │   ├── communication/   ← Gateway, channels, WebSocket
+│   │       │   ├── agent-management/← Identidade, safeguards, CRUD
+│   │       │   ├── sandbox/         ← Execução isolada, approvals
+│   │       │   ├── memory/          ← Session, Episodic, Semantic
+│   │       │   ├── knowledge/       ← RAG, vault, ingestão, retrieval
+│   │       │   ├── model-center/    ← Providers, benchmark, router
+│   │       │   ├── i18n/            ← NOVO MVP12: locale registry, messages
+│   │       │   └── agent-portability/← NOVO MVP12: export/import bundles
 │   │       ├── infrastructure/      ← Adapters, repositories
 │   │       ├── presentation/        ← Routes e controllers legados
 │   │       └── shared/              ← Middlewares, utils, DTOs
 │   ├── core/                        ← Contratos e domínio compartilhado
+│   ├── cli/                         ← NOVO MVP12: CLI andromeda
+│   │   └── src/commands/
+│   │       ├── agents.export.ts
+│   │       ├── agents.import.ts
+│   │       └── i18n.locales.ts
 │   └── telegram/                    ← Canal Telegram (já implementado)
 ├── services/
 │   └── cognitive-python/            ← FastAPI + RAG + embeddings
@@ -49,254 +78,29 @@ Andromeda-SO/
     └── workflows/                   ← 17 workflows + review-mvp09.md (novo)
 ```
 
-## Schema Prisma Atual (pós-MVP08)
+## Schema Prisma Atual (pós-MVP11)
 
 Modelos existentes:
+- Agent (NOVO MVP12 — migrado de file-based)
 - SandboxProfile, AgentSandboxConfig, SandboxExecution, SandboxArtifact
 - ApprovalRequest
 - MemoryEntry, MemoryLink, MemoryRetrievalRecord, MemoryPolicy
-- KnowledgeCollection, KnowledgeDocument, KnowledgeChunk
+- KnowledgeCollection, KnowledgeDocument, KnowledgeChunk (+ detectedLang/detectedLocale/langConfidence MVP12)
 - RetrievalRecord, AgentKnowledgePolicy
 - CommunicationSession, CommunicationMessage
+- User, RefreshToken, ApiKey — Auth/IAM
+- AuditLog — auditoria
+- AgentBudgetPolicy, AgentVersion, AgentPerformanceRecord, AgentExecutionLedger
+- TaskFeedback, PlaybookSuggestion
+- ExecutionPlan, PlanStep, AgentHandoff
 
-**Modelos a adicionar no MVP09:**
-- User, RefreshToken, ApiKey (Fase 1 — Auth)
-- AuditLog (Fase 1 — Auth audit)
-- Adicionar tenantId em modelos existentes (Fase 2)
-- HealthCheckRecord (Fase 8 — opcional)
-
-## Padrão de Módulo (Express — NÃO NestJS)
-
-```typescript
-// packages/api/src/modules/auth/
-├── application/
-│   └── use-cases/
-│       ├── LoginUseCase.ts
-│       ├── RefreshTokenUseCase.ts
-│       └── RevokeTokenUseCase.ts
-├── domain/
-│   ├── user.ts
-│   ├── ports.ts          ← interfaces IUserRepository, ITokenRepository
-│   └── types.ts
-├── infrastructure/
-│   └── persistence/
-│       ├── PrismaUserRepository.ts
-│       └── PrismaTokenRepository.ts
-├── interfaces/
-│   └── http/
-│       ├── auth.routes.ts
-│       └── auth.controller.ts
-└── dependencies.ts       ← wire-up (instância de use cases com repos)
-```
-
-## Exemplo: Middleware Auth (Express)
-
-```typescript
-// packages/api/src/shared/middleware/auth.middleware.ts
-import { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
-
-export interface AuthRequest extends Request {
-  user?: { id: string; role: string; tenantId: string }
-}
-
-export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-  try {
-    const token = header.split(' ')[1]
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
-    req.user = { id: payload.sub, role: payload.role, tenantId: payload.tenantId }
-    next()
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired token' })
-  }
-}
-```
-
-## Exemplo: RBAC Middleware (Express)
-
-```typescript
-// packages/api/src/shared/middleware/rbac.middleware.ts
-const ROLE_HIERARCHY = { owner: 4, admin: 3, operator: 2, viewer: 1 }
-
-export function requireRole(minRole: keyof typeof ROLE_HIERARCHY) {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    const userLevel = ROLE_HIERARCHY[req.user?.role as keyof typeof ROLE_HIERARCHY] ?? 0
-    const minLevel = ROLE_HIERARCHY[minRole]
-    if (userLevel < minLevel) {
-      return res.status(403).json({ error: 'Forbidden' })
-    }
-    next()
-  }
-}
-```
-
-## Exemplo: Registro de Rota com Auth
-
-```typescript
-// packages/api/src/modules/agents/interfaces/http/agent-management.routes.ts
-import { Router } from 'express'
-import { authMiddleware } from '../../../../shared/middleware/auth.middleware'
-import { requireRole } from '../../../../shared/middleware/rbac.middleware'
-
-const router = Router()
-
-router.get('/', authMiddleware, (req, res) => { /* list agents */ })
-router.post('/', authMiddleware, requireRole('admin'), (req, res) => { /* create */ })
-router.delete('/:id', authMiddleware, requireRole('admin'), (req, res) => { /* delete */ })
-
-export default router
-```
-
-## Exemplo: Migration Prisma Incremental
-
-```sql
--- packages/api/prisma/migrations/20260320000000_auth_iam/migration.sql
-
--- Fase 1: Adicionar tabelas de auth
-CREATE TABLE "users" (
-  "id" TEXT NOT NULL,
-  "email" TEXT NOT NULL,
-  "passwordHash" TEXT NOT NULL,
-  "role" TEXT NOT NULL DEFAULT 'viewer',
-  "tenantId" TEXT NOT NULL DEFAULT 'default',
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "deletedAt" TIMESTAMP(3),
-  CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
-
-CREATE TABLE "refresh_tokens" (
-  "id" TEXT NOT NULL,
-  "userId" TEXT NOT NULL,
-  "tokenHash" TEXT NOT NULL,
-  "expiresAt" TIMESTAMP(3) NOT NULL,
-  "revokedAt" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
-);
-
-CREATE TABLE "api_keys" (
-  "id" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "keyHash" TEXT NOT NULL,
-  "userId" TEXT NOT NULL,
-  "tenantId" TEXT NOT NULL,
-  "lastUsedAt" TIMESTAMP(3),
-  "expiresAt" TIMESTAMP(3),
-  "revokedAt" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "api_keys_pkey" PRIMARY KEY ("id")
-);
-```
-
-## Exemplo: BullMQ DLQ (Fase 6)
-
-```typescript
-// packages/api/src/modules/dlq/infrastructure/dlq.worker.ts
-import { Worker, Queue } from 'bullmq'
-import { redisConnection } from '../../shared/redis'
-
-export const mainQueue = new Queue('andromeda-tasks', { connection: redisConnection })
-
-export const worker = new Worker('andromeda-tasks', async (job) => {
-  // processamento do job
-}, {
-  connection: redisConnection,
-  settings: {
-    backoffStrategy: (attemptsMade) => Math.min(1000 * 2 ** attemptsMade, 30000)
-  }
-})
-
-worker.on('failed', async (job, err) => {
-  if (job && job.attemptsMade >= (job.opts.attempts ?? 3)) {
-    await dlqQueue.add('failed', { originalJob: job.data, error: err.message })
-  }
-})
-
-export const dlqQueue = new Queue('andromeda-dlq', { connection: redisConnection })
-```
-
-## Variáveis de Ambiente Necessárias (MVP09)
-
-```env
-# .env.development
-NODE_ENV=development
-PORT=5000
-DATABASE_URL=postgresql://andromeda:andromeda@localhost:5433/andromeda_dev
-REDIS_URL=redis://localhost:6379
-
-# Auth
-JWT_SECRET=dev-secret-mude-em-producao
-JWT_ACCESS_EXPIRES=7d        # 15m em produção
-JWT_REFRESH_EXPIRES=30d      # 7d em produção
-BCRYPT_ROUNDS=10
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX=100
-RATE_LIMIT_AUTH_MAX=5
-
-# Cognitive Python
-COGNITIVE_PYTHON_URL=http://127.0.0.1:8008
-COGNITIVE_PYTHON_TOKEN=dev-token
-```
-
-## Dependências a Instalar no MVP09
-
-```bash
-# packages/api/
-npm install bullmq ioredis jsonwebtoken bcrypt express-rate-limit
-npm install -D @types/jsonwebtoken @types/bcrypt
-
-# Opcional para circuit breaker
-npm install opossum
-npm install -D @types/opossum
-```
-
-
-# 📁 CONTEXT — Projeto Andromeda SO (Estado atual: 23/03/2026)
-
-## Visão Geral
-Sistema operacional cognitivo para agentes de IA. Monorepo com:
-- **Backend:** Express + TypeScript (`packages/api/`)
-- **Frontend:** React + Vite (`apps/web/`)
-- **Cognitivo:** Python 3.13 / FastAPI (`services/cognitive-python/`)
-- **Banco:** PostgreSQL + Prisma
-- **Testes:** Vitest
-- **Agentes:** `.agent/` com 20+ agentes, 60+ skills, 16 rules, 17 workflows
-
-## Stack Técnica (pós-MVP09)
-
-| Camada | Tecnologia | Versão |
-|--------|-----------|--------|
-| Backend | Express + TypeScript | ^4.18.2 |
-| ORM | Prisma | ^7.5.0 |
-| Banco | PostgreSQL | via Docker |
-| Realtime | Socket.io | ^4.8.3 |
-| Filas/DLQ | BullMQ + ioredis | ✅ instalado |
-| Auth | jsonwebtoken + bcrypt | ✅ instalado |
-| Rate Limit | express-rate-limit | ✅ instalado |
-| Circuit Breaker | opossum | ✅ instalado |
-| Frontend | React + Vite + Tailwind | apps/web/ |
-| Cognitivo | Python 3.13 + FastAPI | services/cognitive-python/ |
-| Testes | Vitest | por workspace |
-
-## Schema Prisma Atual (pós-MVP09)
-
-### Modelos MVP01–08 (existentes)
-- SandboxProfile, AgentSandboxConfig, SandboxExecution, SandboxArtifact, ApprovalRequest
-- MemoryEntry, MemoryLink, MemoryRetrievalRecord, MemoryPolicy
-- KnowledgeCollection, KnowledgeDocument, KnowledgeChunk, RetrievalRecord, AgentKnowledgePolicy
-- CommunicationSession, CommunicationMessage
-
-### Modelos adicionados no MVP09
-- `User`, `RefreshToken`, `ApiKey` — Auth/IAM
-- `AuditLog` — auditoria de auth
-- `tenantId` — adicionado em todas as entidades centrais
+### Modelos MVP12 (a adicionar)
+- `LocaleRegistry` — locales disponíveis (pt-BR, en-US)
+- `LocalizedMessage` — mensagens traduzidas por locale
+- `UserPreferences` — locale do usuário
+- `AgentBundle` — histórico de exports
+- `AgentImportJob` — tracking de imports
+- `Agent` — migrado de file-based para database
 
 ## MVPs Implementados
 
@@ -309,14 +113,72 @@ Sistema operacional cognitivo para agentes de IA. Monorepo com:
 | MVP09 | ✅ | Foundation: Auth/IAM, Multi-tenancy, DLQ, Rate Limiting, Health, Soft Delete |
 | MVP10 | 🔄 | Agent Evolution + Versioning + Budget Control + Feedback |
 
-## Próximos Passos (MVP10)
+## Próximos Passos (MVP12)
 
-1. **Bloco A** — Versionamento de `AgentProfile` (snapshot, diff, rollback)
-2. **Bloco B** — Histórico de desempenho por agente (scores, conformance trend)
-3. **Bloco C** — Reputação por domínio/capability
-4. **Bloco D** — Budget Control (teto por agente/sessão/dia/mês, alertas, hard stop)
-5. **Bloco E** — Dashboard de custos por agente/projeto/período
-6. **Bloco F** — Feedback do usuário (thumbs up/down + nota → alimenta Router + Evals)
-7. **Bloco G** — Consolidação de lições aprendidas (episódios → playbook suggestions)
+1. **Fase 0** — Model Agent no Prisma + Migração file-based → DB
+2. **Fase 1** — Prisma migrations (LocaleRegistry, LocalizedMessage, UserPreferences, AgentBundle, AgentImportJob)
+3. **Fase 2** — Módulo i18n Backend (API)
+4. **Fase 3** — Language Detection (Python + langdetect)
+5. **Fase 4** — Export de Agentes (BundleBuilder)
+6. **Fase 5** — Import de Agentes (transação atômica, políticas de conflito)
+7. **Fase 6** — UI i18n Frontend (i18next)
+8. **Fase 7** — UI Export/Import (modais)
+9. **Fase 8** — CLI (packages/cli/)
+10. **Fase 9** — Testes + Evals E2E
+
+## Estrutura de Agentes (MVP12 - Migração)
+
+**Antes (file-based):**
+```
+.agent/agents/
+├── orchestrator.md
+├── security-auditor.md
+├── backend-specialist.md
+└── ... (20 agentes)
+```
+
+**Depois (database):**
+```prisma
+model Agent {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  role            String
+  preferredLocale String   @default("pt-BR")
+  fallbackLocale  String   @default("en-US")
+  identity        Json
+  soul            Json
+  rules           Json
+  playbook        Json
+  // ... demais campos
+}
+```
+
+## Dependências Novas (MVP12)
+
+```json
+// packages/api/package.json
+{
+  "archiver": "^7.0.0",
+  "unzipper": "^0.12.0"
+}
+
+// apps/web/package.json
+{
+  "i18next": "^23.0.0",
+  "react-i18next": "^14.0.0",
+  "i18next-browser-languagedetector": "^8.0.0"
+}
+
+// packages/cli/package.json (NOVO)
+{
+  "commander": "^12.0.0",
+  "archiver": "^7.0.0",
+  "unzipper": "^0.12.0"
+}
+
+// services/cognitive-python/requirements.txt
+langdetect>=1.0.9
+```
 
 ## Estrutura doc/
