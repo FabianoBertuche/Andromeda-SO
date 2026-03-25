@@ -1,5 +1,6 @@
 import { IKnowledgeRepository } from "../../../../../../core/src/domain/knowledge/IKnowledgeRepository";
 import { KnowledgeDocument, KnowledgeSourceType, KnowledgeStatus } from "../../../../../../core/src/domain/knowledge/types";
+import { KnowledgeLanguageService } from "./KnowledgeLanguageService";
 
 export interface AddDocumentDTO {
     collectionId: string;
@@ -10,10 +11,14 @@ export interface AddDocumentDTO {
     rawText?: string;
     metadata?: Record<string, any>;
     tenantId: string;
+    detectLanguage?: boolean;
 }
 
 export class AddDocumentUseCase {
-    constructor(private knowledgeRepository: IKnowledgeRepository) { }
+    constructor(
+        private knowledgeRepository: IKnowledgeRepository,
+        private languageService?: KnowledgeLanguageService,
+    ) { }
 
     async execute(dto: AddDocumentDTO): Promise<KnowledgeDocument> {
         const documentData: Partial<KnowledgeDocument> = {
@@ -23,14 +28,15 @@ export class AddDocumentUseCase {
             sourcePath: dto.sourcePath,
             mimeType: dto.mimeType,
             rawText: dto.rawText,
-            status: KnowledgeStatus.PENDING, // Always starts as pending for processing
+            status: KnowledgeStatus.PENDING,
             metadata: dto.metadata || {},
         };
 
         const document = await this.knowledgeRepository.addDocument(dto.collectionId, documentData, dto.tenantId);
 
-        // Note: In a real flow, this would trigger an event or call a service for chunking
-        // TriggerProcessingEvent(document.id);
+        if (dto.detectLanguage !== false && this.languageService && document.rawText) {
+            void this.languageService.detectAndStore(document.id);
+        }
 
         return document;
     }

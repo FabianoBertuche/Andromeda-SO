@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, History, Lightbulb, LineChart, MessageSquare, Plus, Save, Shield, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { Bot, History, Lightbulb, LineChart, MessageSquare, Plus, Save, Shield, SlidersHorizontal, Sparkles, Upload } from 'lucide-react';
 import {
   dryRunSandbox,
   chatWithAgent,
@@ -52,6 +52,8 @@ import type {
 import { useI18n, useTooltipEntry, useTooltipText } from '../../contexts/I18nContext';
 import { RichTooltip, TooltipIcon } from '../ui/RichTooltip';
 import type { TooltipEntry } from '../../lib/tooltip-messages';
+import { AgentImportModal } from '../AgentImportModal';
+import { AgentExportModal } from '../AgentExportModal';
 
 type AgentTab = 'identity' | 'history' | 'performance' | 'suggestions' | 'behavior' | 'safeguards' | 'sandbox' | 'chat';
 type MarkdownKey = keyof AgentMarkdownSections;
@@ -295,6 +297,8 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const selectedAgent = useMemo(() => agents.find((agent) => agent.id === selectedAgentId) || null, [agents, selectedAgentId]);
   const selectedSandboxProfile = useMemo(
@@ -727,14 +731,24 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
       <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="text-xs uppercase tracking-[0.3em] text-slate-500">Agents</div>
-          <button
-            type="button"
-            onClick={() => setIsCreateOpen((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-full border border-indigo-400/50 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-100 transition hover:bg-indigo-500/20"
-          >
-            <Plus className="h-4 w-4" />
-            New Agent
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-700/50"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/50 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-100 transition hover:bg-indigo-500/20"
+            >
+              <Plus className="h-4 w-4" />
+              New Agent
+            </button>
+          </div>
         </div>
         <div className="space-y-3">
           {agents.map((agent) => (
@@ -2120,6 +2134,22 @@ export function AgentManagementView({ agents, selectedAgentId, sessionId, onSele
           <div className="text-sm text-slate-400">Selecione um agente para abrir a gestao.</div>
         )}
       </section>
+      
+      {showImportModal && (
+        <AgentImportModal
+          onClose={() => setShowImportModal(false)}
+          onSuccess={refreshAgents}
+        />
+      )}
+      
+      {showExportModal && selectedAgent && (
+        <AgentExportModal
+          agentId={selectedAgent.id}
+          agentName={selectedAgent.name}
+          onClose={() => setShowExportModal(false)}
+          onSuccess={refreshAgents}
+        />
+      )}
     </div>
   );
 }

@@ -246,21 +246,24 @@ model KnowledgeCollection {
 }
 
 model KnowledgeDocument {
-  id           String              @id @default(uuid())
-  collectionId String
-  title        String
-  sourceType   String
-  sourcePath   String?
-  mimeType     String?
-  rawText      String?
-  checksum     String?
-  status       String
-  metadata     Json                @default("{}")
-  tenantId     String              @default("default")
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  deletedAt    DateTime?
-  archivedAt   DateTime?
+  id              String              @id @default(uuid())
+  collectionId    String
+  title           String
+  sourceType      String
+  sourcePath      String?
+  mimeType        String?
+  rawText         String?
+  checksum        String?
+  status          String
+  detectedLang    String?
+  detectedLocale  String?
+  langConfidence  Float?
+  metadata        Json                @default("{}")
+  tenantId        String              @default("default")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  deletedAt       DateTime?
+  archivedAt      DateTime?
 
   collection KnowledgeCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   chunks     KnowledgeChunk[]
@@ -702,4 +705,136 @@ model AgentHandoff {
   @@index([tenantId, status])
   @@index([tenantId, deletedAt])
   @@map("agent_handoffs")
+}
+
+model Agent {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  role            String
+  description     String
+  teamId          String   @default("team-core")
+  category        String   @default("general")
+  type            String   @default("specialist")
+  defaultModel    String   @default("automatic-router")
+  status          String   @default("active")
+  isDefault       Boolean  @default(false)
+  version         String   @default("v1.0.0")
+  preferredLocale String   @default("pt-BR")
+  fallbackLocale  String   @default("en-US")
+
+  identity        Json
+  soul            Json
+  rules           Json
+  playbook        Json
+  context         Json
+  safeguardConfig Json
+  personaConfig   Json
+
+  tenantId        String   @default("default")
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  archivedAt      DateTime?
+
+  bundles         AgentBundle[]
+
+  @@index([tenantId])
+  @@index([slug])
+  @@index([deletedAt])
+  @@map("agents")
+}
+
+model AgentBundle {
+  id                String   @id @default(uuid())
+  agentId           String
+  tenantId          String   @default("default")
+  version           String
+  schemaVersion     String
+  checksum          String
+  filePath          String
+  includesKnowledge Boolean  @default(false)
+  includesVersions  Boolean  @default(true)
+  exportedAt        DateTime @default(now())
+  exportedBy        String?
+  deletedAt         DateTime?
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([deletedAt])
+  @@map("agent_bundles")
+}
+
+model LocaleRegistry {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("locale_registry")
+}
+
+model LocalizedMessage {
+  id        String   @id @default(uuid())
+  key       String
+  locale    String
+  value     String
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+  @@index([locale])
+  @@index([category])
+  @@map("localized_messages")
+}
+
+model UserPreferences {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  preferredLocale  String   @default("pt-BR")
+  fallbackLocale   String   @default("en-US")
+  theme            String   @default("dark")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_preferences")
+}
+
+model AgentImportJob {
+  id               String            @id @default(uuid())
+  tenantId         String            @default("default")
+  bundleChecksum   String
+  status           AgentImportStatus @default(PENDING)
+  conflictPolicy   ConflictPolicy   @default(ABORT)
+  importedAgentId  String?
+  report           Json?
+  errorMessage     String?
+  startedAt        DateTime          @default(now())
+  completedAt      DateTime?
+  createdBy        String
+
+  @@index([tenantId, status])
+  @@map("agent_import_jobs")
+}
+
+enum AgentImportStatus {
+  PENDING
+  VALIDATING
+  CONFLICT_DETECTED
+  IMPORTING
+  COMPLETED
+  FAILED
+}
+
+enum ConflictPolicy {
+  ABORT
+  RENAME
+  OVERWRITE
 }

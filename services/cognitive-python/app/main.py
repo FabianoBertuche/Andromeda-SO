@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from time import perf_counter
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import Depends, FastAPI
 
 from app.security import verify_service_token
+from app.routers.language import router as language_router
 from contracts.base import CognitiveMetrics, CognitiveRequest, CognitiveResponse, TraceContext
 from contracts.classification import TaskClassification
 from contracts.health import HealthResponse, ReadinessResponse
@@ -34,6 +35,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.include_router(language_router)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -192,9 +195,19 @@ async def retrieve_knowledge(payload: CognitiveRequest) -> CognitiveResponse:
     started_at = perf_counter()
     query = str(payload.input.get("query", ""))
     top_k = int(payload.input.get("topK", 5))
+    lang_filter: Optional[str] = payload.input.get("langFilter")
     
     query_embedding = await embedding_service.generate_query_embedding(query)
     results = vector_store.search(query_embedding, top_k=top_k)
+    
+    if lang_filter and results:
+        filtered_results = []
+        for result in results:
+            result_lang = result.get("metadata", {}).get("detectedLang")
+            if result_lang == lang_filter:
+                filtered_results.append(result)
+        if filtered_results:
+            results = filtered_results
     
     return build_response(
         payload=payload,

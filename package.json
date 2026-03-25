@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/api",
     "packages/core",
+    "packages/cli",
     "apps/web"
   ],
   "scripts": {
@@ -21,11 +22,13 @@
     "test:e2e:agents": "npm run test:e2e --workspace web -- agents.spec.ts --project=chromium",
     "test": "npm test --workspaces",
     "build": "npm run build --workspaces",
-    "dev": "node scripts/dev.mjs"
+    "dev": "node scripts/dev.mjs",
+    "cli": "tsx packages/cli/src/index.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
+    "@types/unzipper": "^0.10.11",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^4.0.18"

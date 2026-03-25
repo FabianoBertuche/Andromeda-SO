@@ -24,10 +24,20 @@ export const logger = pino({
             'api_key',
             'apiKey',
             'keyHash',
+            'authorization',
+            'cookie',
             '*.password',
             '*.token',
             '*.api_key',
+            '*.authorization',
+            '*.cookie',
+            'ENCRYPTION_KEY',
+            'JWT_SECRET',
         ],
         remove: true,
     },
 });
+
+export function createLoggerWithContext(requestId: string) {
+    return logger.child({ requestId });
+}

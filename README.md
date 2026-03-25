@@ -3,7 +3,7 @@
 > Sistema operacional de agentes de IA orientado a execução confiável, memória útil,
 > skills reutilizáveis, auditoria independente e roteamento inteligente de capacidade.
 
-**Desenvolvido no Antigravity via Vibe Code** | Status atual: **MVP09 em desenvolvimento**
+**Desenvolvido no Antigravity via Vibe Code** | Status atual: **MVP12 implementado ✅**
 
 ---
 
@@ -172,6 +172,10 @@ npm run test:regression   # suite de regressão MVP01→MVP08
 - ❌ Sandbox sem persistência real
 - ❌ `prisma.findMany()` sem `tenantId` no where (MVP09+)
 - ❌ JWT secret ou senha em qualquer nível de log
+- ❌ BCRYPT_ROUNDS < 12 em produção (LEI 05)
+- ❌ Senha sem validação de complexidade (LEI 07)
+- ❌ API key em texto plano no banco (LEI 04)
+- ❌ Uso de `live_` keys em ambiente de dev/test (LEI 13)
 
 ---
 

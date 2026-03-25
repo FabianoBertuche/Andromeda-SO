@@ -30,16 +30,20 @@ import { performanceRouter } from "./modules/performance/dependencies";
 import { costsRouter } from "./modules/costs/dependencies";
 import { playbookSuggestionsRouter } from "./modules/evolution/playbook/dependencies";
 import { plannerRouter } from "./modules/planner/dependencies";
+import { i18nRouter, userPreferencesRouter } from "./modules/i18n/dependencies";
+import { agentPortabilityRouter } from "./modules/agent-portability/interfaces/http/agent-portability.routes";
 
 import { authController } from "./modules/auth/dependencies";
 import { createAuthRoutes } from "./modules/auth/interfaces/http/auth.routes";
 import { authMiddleware } from "./shared/middleware/auth.middleware";
 import { requireRole } from "./shared/middleware/rbac.middleware";
 import { globalRateLimiter, authRateLimiter } from "./shared/middleware/rate-limit.middleware";
+import { requestIdMiddleware } from "./shared/middleware/request-id.middleware";
 
 const app = express();
 
 app.disable("x-powered-by");
+app.use(requestIdMiddleware);
 app.use(requestContextMiddleware);
 
 morgan.token("request-id", (_req, res) => (res.getHeader("X-Request-ID") as string | undefined) || "-");
@@ -90,6 +94,9 @@ v1Router.use("/", authMiddleware, tenantMiddleware, plannerRouter);
 v1Router.use("/internal/cognitive", authMiddleware, tenantMiddleware, cognitiveRoutes);
 v1Router.use("/backup", authMiddleware, requireRole('owner'), backupRouter);
 v1Router.use("/dlq", authMiddleware, requireRole('admin'), dlqRouter);
+v1Router.use("/i18n", authMiddleware, tenantMiddleware, i18nRouter);
+v1Router.use("/users", authMiddleware, tenantMiddleware, userPreferencesRouter);
+v1Router.use("/", authMiddleware, tenantMiddleware, agentPortabilityRouter);
 
 app.use("/v1", v1Router);
 

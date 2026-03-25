@@ -7,12 +7,18 @@ import { RuntimeAgentConversationService } from "./application/RuntimeAgentConve
 import { createDefaultAgentProfile } from "./domain/agent-profile";
 import { FileBackedAgentRegistry } from "./infrastructure/FileBackedAgentRegistry";
 import { FileSystemAgentProfileRepository } from "./infrastructure/FileSystemAgentProfileRepository";
+import { PrismaAgentProfileRepository } from "./infrastructure/PrismaAgentProfileRepository";
 import { PrismaAgentVersionRepository } from "./infrastructure/PrismaAgentVersionRepository";
+import { AgentMigrationService } from "./infrastructure/AgentMigrationService";
 import { createAgentManagementRouter } from "./interfaces/http/agent-management.routes";
 import { getPrismaClient } from "../../infrastructure/database/prisma";
 
-export const agentProfileRepository = new FileSystemAgentProfileRepository();
 const prisma = getPrismaClient();
+
+export const agentProfileRepository = process.env.DATABASE_URL
+    ? new PrismaAgentProfileRepository(prisma)
+    : new FileSystemAgentProfileRepository();
+
 export const agentVersionRepository = new PrismaAgentVersionRepository(prisma);
 export const agentVersioningService = new AgentVersioningService(agentVersionRepository);
 export const agentPromptAssembler = new AgentPromptAssembler();
@@ -24,6 +30,27 @@ export const agentManagementRouter = createAgentManagementRouter({
     profileService: agentProfileService,
     conversationService: agentConversationService,
 });
+
+export async function runAgentMigration(): Promise<void> {
+    if (!process.env.DATABASE_URL) {
+        console.log("Skipping agent migration: DATABASE_URL not set.");
+        return;
+    }
+
+    const fsRepo = new FileSystemAgentProfileRepository();
+    const dbRepo = new PrismaAgentProfileRepository(prisma);
+    const migrationService = new AgentMigrationService(dbRepo);
+
+    const existingAgents = await dbRepo.list();
+    if (existingAgents.length > 0) {
+        console.log(`Agent migration already completed: ${existingAgents.length} agents in database.`);
+        return;
+    }
+
+    console.log("Running one-time agent migration from filesystem to database...");
+    const result = await migrationService.migrate({ createBackup: true });
+    console.log(`Migration complete: ${result.migrated.length} agents migrated, ${result.skipped.length} skipped, ${result.errors.length} errors.`);
+}
 
 void bootstrapDefaultAgentProfiles();
 

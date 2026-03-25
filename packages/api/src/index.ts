@@ -10,6 +10,7 @@ import { Server } from "socket.io";
 import app from "./app";
 import { globalWsGateway } from "./modules/communication/interfaces/websocket/communication.ws-gateway";
 import { getAllowedOrigins } from "./shared/http/origin-config";
+import { bootstrapI18n } from "./modules/i18n/bootstrap";
 
 const port = process.env.PORT || 5000;
 
@@ -23,6 +24,10 @@ const io = new Server(httpServer, {
 });
 
 globalWsGateway.initialize(io);
+
+if (process.env.DATABASE_URL) {
+    void bootstrapI18n();
+}
 
 httpServer.listen(port, () => {
     console.log(`🚀 Andromeda OS API running on port ${port} (HTTP + WS)`);

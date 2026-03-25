@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { env } from '../../../../shared/config/env';
 import { IUserRepository, ITokenRepository } from '../../domain/ports';
+import { validatePassword } from '../../../../shared/services/password-policy';
+import { Role } from '../../domain/user';
 
 export class LoginUseCase {
     constructor(
@@ -37,7 +39,7 @@ export class LoginUseCase {
         await this.tokenRepository.saveRefreshToken({
             userId: user.id,
             tokenHash,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 dias aprox
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
         });
 
         return {
@@ -51,6 +53,44 @@ export class LoginUseCase {
                     role: user.role,
                     tenantId: user.tenantId,
                 },
+            },
+        };
+    }
+}
+
+export class RegisterUseCase {
+    constructor(
+        private userRepository: IUserRepository
+    ) { }
+
+    async execute(email: string, password: string, tenantId: string = 'default') {
+        const { valid, errors } = validatePassword(password);
+        
+        if (!valid) {
+            return { success: false, errors };
+        }
+
+        const existingUser = await this.userRepository.findByEmail(email);
+        if (existingUser) {
+            return { success: false, error: 'Email already registered' };
+        }
+
+        const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+
+        const user = await this.userRepository.create({
+            email,
+            passwordHash,
+            role: Role.VIEWER,
+            tenantId,
+        });
+
+        return {
+            success: true,
+            data: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                tenantId: user.tenantId,
             },
         };
     }

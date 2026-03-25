@@ -2,13 +2,15 @@ import { Router } from "express";
 import { KnowledgeController } from "./KnowledgeController";
 import { CreateCollectionUseCase } from "../../application/use-cases/CreateCollectionUseCase";
 import { AddDocumentUseCase } from "../../application/use-cases/AddDocumentUseCase";
+import { KnowledgeLanguageService } from "../../application/use-cases/KnowledgeLanguageService";
 import { PrismaKnowledgeRepository } from "../../infrastructure/persistence/PrismaKnowledgeRepository";
 import { getPrismaClient } from "../../../../infrastructure/database/prisma";
 
 const prisma = getPrismaClient();
 const knowledgeRepository = new PrismaKnowledgeRepository(prisma);
 const createCollectionUseCase = new CreateCollectionUseCase(knowledgeRepository);
-const addDocumentUseCase = new AddDocumentUseCase(knowledgeRepository);
+const languageService = new KnowledgeLanguageService();
+const addDocumentUseCase = new AddDocumentUseCase(knowledgeRepository, languageService);
 
 const controller = new KnowledgeController(
     knowledgeRepository,
